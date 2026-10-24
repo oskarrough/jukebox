@@ -5,6 +5,7 @@
 const MELODIC = [
 	'steeldrum',
 	'marimba',
+	'rhodes',
 	'vibes',
 	'celesta',
 	'glock',
@@ -35,6 +36,7 @@ const MELODIC = [
 	'pizz',
 	'upright',
 	'ebass',
+	'moog',
 	'fretless',
 	'synbass',
 	'timpani',
@@ -65,6 +67,7 @@ const DRUMS = [
 	'clave',
 	'block',
 	'cowbell',
+	'cuica',
 	'guiro',
 	'tomlo',
 	'tommid',

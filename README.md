@@ -17,7 +17,7 @@ Links play straight away: `/?song=konvoi&kind=convoy&d=20&car=1`. The address ba
 
 ## Writing songs
 
-The format is Simon Willison's [Scrimshaw](https://tools.simonwillison.net/scrimshaw-jukebox), with some additions: quarter tones (`Eq4`), an oud, qanun, ney, 808, overdriven guitar (`drive`), electric bass (`ebass`) and darbuka drums (`dum`, `tek`, `riq`). The page has a guide under "Guide". A `key G` or `key Dm` line in the head sets the song's key; the key switch transposes what you wrote, and loop bricks land in that key.
+The format is Simon Willison's [Scrimshaw](https://tools.simonwillison.net/scrimshaw-jukebox), with some additions: quarter tones (`Eq4`), an oud, qanun, ney, 808, overdriven guitar (`drive`), electric bass (`ebass`), darbuka drums (`dum`, `tek`, `riq`), a Rhodes (`rhodes`), a Minimoog-style lead (`moog`) and a cuíca (`cuica`). The page has a guide under "Guide". A `key G` or `key Dm` line in the head sets the song's key; the key switch transposes what you wrote, and loop bricks land in that key.
 
 To add a song, click "New", write it, click "Export" (downloads the current song as a `.song` file, the same format `music/` and `bun test` already use), and put it in `music/`. It shows up on its own, and `bun test` checks it compiles and loops.
 
@@ -82,5 +82,5 @@ Then composing happens here, and nkgta picks up new songs with `bun update jukeb
 ## Licence and credits
 
 - The score format, synth and piano roll started from Simon Willison's [Scrimshaw Jukebox](https://tools.simonwillison.net/scrimshaw-jukebox), under the Apache License 2.0. `LICENSE` is that licence, and it covers this repo; the changes since are Oskar's.
-- The songs in `music/` were written for NK GTA. Some say in their `about` line which music they're after. There are no audio samples here: every sound is synthesised.
+- Most songs in `music/` were written for NK GTA; `dodgethis-theme`, `altamesa`, `overthrow` and `flagfall` are for Dodgethis. Some say in their `about` line which music they're after. There are no audio samples here: every sound is synthesised.
 - NK GTA's sound effects (`public/sfx/`) did not come over; their source isn't recorded.

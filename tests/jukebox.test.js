@@ -163,7 +163,10 @@ describe('song key', () => {
 		expect(parseKey('Dm')).toEqual({ letter: 'D', acc: '', minor: true, pc: 2, name: 'Dm' })
 		expect(parseKey('F#').name).toBe('F#')
 		expect(compile('key G\nvoice a sine\npattern A\na | G4 |\nloop A').key.name).toBe('G')
-		for (const name of SCORES) expect(score(name).key).toBeNull()
+		for (const name of SCORES) {
+			const text = readFileSync(new URL(`${name}.song`, dir), 'utf8')
+			if (!/^key\s/m.test(text)) expect(compile(text).key).toBeNull()
+		}
 	})
 
 	test('new songs and bricks follow the key, instead of always landing in C', () => {

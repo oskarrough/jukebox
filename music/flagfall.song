@@ -1,0 +1,78 @@
+title    Flagfall
+about    The night jungle. Slow, swung jazz-funk in F dorian after Azymuth at midnight: a Rhodes under a slow tremolo, a fretless that walks in the dark, celesta and glockenspiel for the orchid bells, frogs and insects in the hedges, and the main theme glowing in the break.
+tempo    104
+beats    4
+steps    4
+swing    0.14
+reverb   0.5
+key      Fm
+
+# F dorian: F G Ab Bb C D Eb, the same notes as Ab lydian, so the main theme drops in a tritone up without a seam.
+voice keys   rhodes   vol=0.8  pan=-0.2 center=Eb4 rel=0.3
+voice bells  celesta  vol=0.55 pan=0.3
+voice lead   moog     vol=0.4  pan=0.1 glide=0.08 bright=0.7
+voice orchid glock    vol=0.3  pan=0.45
+voice bass   fretless vol=0.85 glide=0.07
+voice ahh    voices   vol=0.35 center=C5 att=0.8 rel=1.4
+voice kick   kick     vol=0.75
+voice rim    rim      vol=0.35 pan=-0.1
+voice hat    hat      vol=0.22 pan=0.2
+voice bongo  bongo    vol=0.4  pan=0.35
+voice bugs   shaker   vol=0.2  pan=-0.4
+voice frog   block    vol=0.25 pan=-0.3
+voice guiro  guiro    vol=0.2  pan=0.4
+voice crash  ride     vol=0.25
+
+# the gardens wake: insects, frogs, and the Rhodes coming up through the leaves
+pattern intro
+keys   | [Fm9]-- ... [Fm9]- .. [Fm9]----- | [Bb9]-- ... [Bb9]- .. [Bb9]----- | [Fm9]-- ... [Fm9]- .. [Fm9]----- | [Bb9]-- ... [Bb9]- .. [Bb9]----- |
+bugs   | oooooooooooooooo | % | % | % |
+frog   | ......x........x | ................ | ...x............ | ................ |
+orchid | ............ C6 ... | ................ | ......... G6 ...... | ................ |
+bass   | _ | _ | F2-- . F3- C3- F2-- . Eb3- C3- | Bb1-- . Bb2- F2- Bb1-- . Ab2- F2- |
+guiro  | _ | _ | _ | ............x... |
+
+pattern A
+keys   | [Fm9]-- ... [Fm9]- .. [Fm9]----- | [Bb9]-- ... [Bb9]- .. [Bb9]----- | [Fm9]-- ... [Fm9]- .. [Fm9]----- | [Bb9]-- ... [Bb9]- .. [Bb9]----- | [Dbmaj9]-- ... [Dbmaj9]- .. [Dbmaj9]----- | [C7sus4]-- ... [C7sus4]- .. [C7]----- | [Fm9]-- ... [Fm9]- .. [Fm9]----- | [Bb9]-- ... [Bb9]- .. [Bb9]----- |
+bass   | F2-- . F3- C3- F2-- . Eb3- C3- | Bb1-- . Bb2- F2- Bb1-- . Ab2- F2- | F2-- . F3- C3- F2-- . Eb3- C3- | Bb1-- . Bb2- F2- Bb1-- . Ab2- F2- | Db2-- . Db3- Ab2- Db2-- . C3- Ab2- | C2-- . C3- G2- C2-- . Bb2- E2- | F2-- . F3- C3- F2-- . Eb3- C3- | Bb1-- . Bb2- F2- Bb1-- . Ab2- F2- |
+bells  | C5--- Eb5- F5- G5- Ab5- G5- Eb5- | F5------- D5- C5- Ab4- ~Bb4- | C5--- Eb5- F5- G5- Bb5- Ab5- G5- | F5--------------- | Ab5--- F5- Eb5- C5------- | Bb4- C5- F5- Eb5----- E5--- | F5------- Ab5- G5- F5- Eb5- | F5------- ........ |
+kick   | x......x..x..... | % | % | % | % | % | % | x......x..x...x. |
+rim    | ....x.......x... | % | % | % | % | % | % | ....x.......x.xx |
+hat    | x.xxx.xxx.xxx.xx | % | % | % | % | % | % | % |
+bongo  | ..o...x...o.x.o. | % | % | % | % | % | % | ..o.x.x.x.o.xxxx |
+bugs   | oooooooooooooooo | % | % | % | % | % | % | % |
+frog   | ......x........x | ................ | ...x............ | ................ | ......x........x | ................ | ...x...x........ | ................ |
+guiro  | _ | _ | _ | ............x... | _ | _ | _ | ............x... |
+crash  | x............... | _ | _ | _ | _ | _ | _ | _ |
+
+# the Moog takes the tune down an octave, the bells answer
+pattern A2 from A
+lead   | C4--- D#4- F4- G4- G#4- G4- D#4- | F4------- D4- C4- G#3- ~A#3- | C4--- D#4- F4- G4- A#4- G#4- G4- | F4--------------- | G#4--- F4- D#4- C4------- | A#3- C4- F4- D#4----- E4--- | F4------- G#4- G4- F4- D#4- | F4------- ........ |
+orchid | _ | ............ C6 ... | _ | ............ F6 ... | _ | ............ G6 ... | _ | ........ C6 Bb5 Ab5 G5 F5 Eb5 C5 Bb4 |
+
+# deeper in: the chords wander and the vocoder hums along
+pattern B
+keys   | [Bbm9]-- ... [Bbm9]- .. [Bbm9]----- | [Eb9]-- ... [Eb9]- .. [Eb9]----- | [Abmaj9]-- ... [Abmaj9]- .. [Abmaj9]----- | [Dbmaj9]-- ... [Dbmaj9]- .. [Dbmaj9]----- | [Gm7b5]-- ... [Gm7b5]- .. [Gm7b5]----- | [C7]-- ... [C7]- .. [C7]----- | [Fm9]-- ... [Fm9]- .. [Fm9]----- | [C7sus4]-- ... [C7sus4]- .. [C7sus4]----- |
+ahh    | [Bbm9]--------------- | [Eb9]--------------- | [Abmaj9]--------------- | [Dbmaj9]--------------- | [Gm7b5]--------------- | [C7]--------------- | [Fm9]--------------- | [C7sus4]--------------- |
+bass   | Bb1-- . Bb2- F2- Bb1-- . Ab2- Db3- | Eb2-- . Eb3- Bb2- Eb2-- . Db3- Bb2- | Ab1-- . Ab2- Eb2- Ab1-- . G2- Eb2- | Db2-- . Db3- Ab2- Db2-- . C3- Ab2- | G1-- . G2- Db2- G1-- . F2- Db2- | C2-- . C3- G2- C2-- . Bb2- E2- | F2-- . F3- C3- F2-- . Eb3- C3- | C2-- . C3- G2- C2-- . Bb2- E2- |
+lead   | Db5--- F5--- Ab5------- | G5--- F5- Db5- C5------- | C5--- Eb5--- G5- Bb5- ~Ab5--- | F5--------------- | Bb4- Db5- F5- Ab5- G5------- | E5--- G5- Bb5- Ab5- G5- E5- C5- | Ab5- G5- F5- Eb5- C5------- | Bb4------- C5------- |
+bells  | _ | _ | _ | _ | Bb4- Db5- F5- Ab5- G5------- | E5--- G5- Bb5- Ab5- G5- E5- C5- | Ab5- G5- F5- Eb5- C5------- | Bb4------- C5------- |
+kick   | x......x..x..... | % | % | % | % | % | % | x......x..x...x. |
+rim    | ....x.......x... | % | % | % | % | % | % | ....x.......x.xx |
+hat    | x.xxx.xxx.xxx.xx | % | % | % | % | % | % | % |
+bongo  | ..o...x...o.x.o. | % | % | % | % | % | % | ..o.x.x.x.o.xxxx |
+bugs   | oooooooooooooooo | % | % | % | % | % | % | % |
+crash  | x............... | _ | _ | _ | x............... | _ | _ | _ |
+
+# the orchids glow: the main theme on celesta, nothing but the night around it
+pattern C
+bells  | D#5- . C5 D#5- F5- G#5--- F5- D#5- | D5- . F5 . A#5- C6------ A#5- | C6- . A#5 G#5- G5- G#5--- D#5- F5- | G#5------- . . A#5- G#5- F5- |
+keys   | [Abmaj9]--------------- | [Bb/Ab]--------------- | [Fm9]--------------- | [Dbmaj9]------- [Eb7sus4]------- |
+ahh    | [Abmaj9]--------------- | [Bb/Ab]--------------- | [Fm9]--------------- | [Dbmaj9]------- [Eb7sus4]------- |
+bass   | Ab1--------------- | Ab1--------------- | F2--------------- | Db2------- Eb2------- |
+bugs   | oooooooooooooooo | % | % | % |
+frog   | ......x........x | ................ | ...x...x........ | ......x.....x... |
+orchid | ..... C6 .......... | ............ Eb6 ... | ......... Ab6 ...... | ................ |
+
+play intro
+loop A A2 B A2 C

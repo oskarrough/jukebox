@@ -1,0 +1,98 @@
+title    Dodgethis
+about    The main theme. Yellow Magic Orchestra's square waves and synth brass meet Azymuth's Rhodes, singing fretless and samba kit, built like the Tower of Babel: one voice, then another, until every tongue is saying the hook at once and the whole thing comes down.
+tempo    112
+beats    4
+steps    4
+reverb   0.35
+key      D
+
+# D lydian: D E F# G# A B C#. The G# over the D pedal is the lift; everything else is the major pentatonic, so any two voices can sing over each other.
+voice arp    chip     vol=0.32 pan=0.3  gate=0.55
+voice keys   rhodes   vol=0.75 pan=-0.2 center=E4
+voice bass   fretless vol=0.8  glide=0.06
+voice lead   moog     vol=0.62 glide=0.05
+voice tongue chip     vol=0.3  pan=-0.35
+voice brass  brass    vol=0.5  pan=0.2  center=A4
+voice glass  vibes    vol=0.7  pan=0.4
+voice ahh    voices   vol=0.45 center=A4 att=0.4 rel=0.9
+voice sub    synbass  vol=0.5  gate=0.6
+voice kick   kick     vol=0.85
+voice snare  snare    vol=0.5
+voice hat    hat      vol=0.3  pan=0.2
+voice shaker shaker   vol=0.4  pan=-0.3
+voice conga  conga    vol=0.45 pan=0.35
+voice cuica  cuica    vol=0.5  pan=-0.4
+voice tom    tommid   vol=0.55
+voice crash  crash    vol=0.3
+
+# one tongue, then the Rhodes and the bass answer it
+pattern intro
+arp    | D4 F#4 A4 C#5 E5 C#5 A4 F#4 D4 F#4 A4 C#5 E5 C#5 A4 F#4 | D4 G#4 B4 E5 F#5 E5 B4 G#4 D4 G#4 B4 E5 F#5 E5 B4 G#4 | B3 D4 F#4 A4 C#5 A4 F#4 D4 B3 D4 F#4 A4 C#5 A4 F#4 D4 | G3 B3 D4 F#4 A4 F#4 D4 B3 A3 D4 E4 G4 B4 G4 E4 D4 | D4 F#4 A4 C#5 E5 C#5 A4 F#4 D4 F#4 A4 C#5 E5 C#5 A4 F#4 | D4 G#4 B4 E5 F#5 E5 B4 G#4 D4 G#4 B4 E5 F#5 E5 B4 G#4 | B3 D4 F#4 A4 C#5 A4 F#4 D4 B3 D4 F#4 A4 C#5 A4 F#4 D4 | G3 B3 D4 F#4 A4 F#4 D4 B3 A3 D4 E4 G4 B4 G4 E4 D4 |
+shaker | _ | _ | XoxoXoxoXoxoXoxo | % | % | % | % | % |
+keys   | _ | _ | _ | _ | [Dmaj9]-- ... [Dmaj9]- .. [Dmaj9]----- | [E/D]-- ... [E/D]- .. [E/D]----- | [Bm9]-- ... [Bm9]- .. [Bm9]----- | [Gmaj9]-- ... [Gmaj9]- .. [A7sus4]----- |
+bass   | _ | _ | _ | _ | D2-- . D3- A2- D2-- . C#3- A2- | D2-- . D3- B2- D2-- . E3- F#3- | B1-- . B2- F#2- B1-- . A2- C#3- | G1-- . G2- D2- A1-- . G2- ~A2- |
+cuica  | _ | _ | _ | _ | _ | _ | _ | ........x.o.X.x. |
+crash  | _ | _ | _ | _ | x............... | _ | _ | _ |
+
+pattern A
+arp    | D4 F#4 A4 C#5 E5 C#5 A4 F#4 D4 F#4 A4 C#5 E5 C#5 A4 F#4 | D4 G#4 B4 E5 F#5 E5 B4 G#4 D4 G#4 B4 E5 F#5 E5 B4 G#4 | B3 D4 F#4 A4 C#5 A4 F#4 D4 B3 D4 F#4 A4 C#5 A4 F#4 D4 | G3 B3 D4 F#4 A4 F#4 D4 B3 A3 D4 E4 G4 B4 G4 E4 D4 |
+keys   | [Dmaj9]-- ... [Dmaj9]- .. [Dmaj9]----- | [E/D]-- ... [E/D]- .. [E/D]----- | [Bm9]-- ... [Bm9]- .. [Bm9]----- | [Gmaj9]-- ... [Gmaj9]- .. [A7sus4]----- |
+bass   | D2-- . D3- A2- D2-- . C#3- A2- | D2-- . D3- B2- D2-- . E3- F#3- | B1-- . B2- F#2- B1-- . A2- C#3- | G1-- . G2- D2- A1-- . G2- ~A2- |
+lead   | A4- . F#4 A4- B4- D5--- B4- A4- | G#4- . B4 . E5- F#5------ E5- | F#5- . E5 D5- C#5- D5--- A4- B4- | D5------- . . E5- D5- B4- |
+kick   | x.....x.x.....x. | % | % | x.....x.x...x.x. |
+snare  | ..o.x..o...ox..o | % | % | ..o.x..o..o.x.xx |
+hat    | x.x.x.x.x.x.x.x. | % | % | x.x.x.x.x.x.xxxx |
+shaker | XoxoXoxoXoxoXoxo | % | % | % |
+conga  | ....o.x.....x.xx | % | % | ....o.x...x.x.x. |
+cuica  | _ | _ | _ | ........x.o.X.x. |
+crash  | x............... | _ | _ | _ |
+
+# the hook again, a square wave on top and synth brass answering
+pattern A2 from A
+lead   | A4- . F#4 A4- B4- D5--- B4- A4- | G#4- . B4 . E5- F#5------ E5- | F#5- . E5 D5- C#5- D5--- A4- B4- | D5------- E5 F#5 A5--- ~B5- |
+tongue | A5- . F#5 A5- B5- D6--- B5- A5- | G#5- . B5 . E6- F#6------ E6- | F#6- . E6 D6- C#6- D6--- A5- B5- | D6------- E6 F#6 A6--- ~B6- |
+brass  | _ | ............ [E/D]- [E/D]- | _ | ............ [A7sus4]- [A7sus4]- |
+
+# the chords lift and the Moog sings over vocoder air
+pattern B
+arp    | G3 B3 D4 F#4 A4 F#4 D4 B3 G3 B3 D4 F#4 A4 F#4 D4 B3 | F#3 A3 C#4 E4 G#4 E4 C#4 A3 F#3 A3 C#4 E4 G#4 E4 C#4 A3 | E3 G3 B3 D4 F#4 D4 B3 G3 E3 G3 B3 D4 F#4 D4 B3 G3 | A3 D4 E4 G4 B4 G4 E4 D4 A3 D4 E4 G4 B4 G4 E4 D4 | G3 B3 D4 F#4 A4 F#4 D4 B3 G3 B3 D4 F#4 A4 F#4 D4 B3 | F#3 A3 C#4 E4 G#4 E4 C#4 A3 F#3 A3 C#4 E4 G#4 E4 C#4 A3 | Bb3 D4 F4 A4 C5 A4 F4 D4 Bb3 D4 F4 A4 C5 A4 F4 D4 | A3 D4 E4 G4 B4 G4 E4 D4 A3 D4 E4 G4 B4 G4 E4 D4 |
+keys   | [Gmaj9]-- ... [Gmaj9]- .. [Gmaj9]----- | [F#m9]-- ... [F#m9]- .. [F#m9]----- | [Em9]-- ... [Em9]- .. [Em9]----- | [A7sus4]-- ... [A7sus4]- .. [A7sus4]----- | [Gmaj9]-- ... [Gmaj9]- .. [Gmaj9]----- | [F#m9]-- ... [F#m9]- .. [F#m9]----- | [Bbmaj7]-- ... [Bbmaj7]- .. [Bbmaj7]----- | [A7sus4]-- ... [A7sus4]- .. [A7sus4]----- |
+ahh    | [Gmaj9]--------------- | [F#m9]--------------- | [Em9]--------------- | [A7sus4]--------------- | [Gmaj9]--------------- | [F#m9]--------------- | [Bbmaj7]--------------- | [A7sus4]--------------- |
+bass   | G1-- . G2- D2- G1-- . F#2- E2- | F#1-- . F#2- C#2- F#1-- . E2- C#2- | E2-- . E3- B2- E2-- . D3- B2- | A1-- . A2- E2- A1-- . G2- E2- | G1-- . G2- D2- G1-- . F#2- E2- | F#1-- . F#2- C#2- F#1-- . E2- C#2- | Bb1-- . Bb2- F2- Bb1-- . A2- F2- | A1-- . A2- E2- A1-- . G2- E2- |
+lead   | B4------- ~A4- ~B4- D5--- | C#5------- . A4 ~G#4- A4--- | F#5--- E5- D5- B4- ~D5----- | E5--------------- | D5- E5- F#5--- A5- ~F#5----- | E5--- C#5- A4- ~C#5------- | D5--- F5- A5- ~G5------- | E5------- . D5 E5- G5- A5- |
+kick   | x.....x.x.....x. | % | % | % | % | % | % | x.....x.x...x.x. |
+snare  | ..o.x..o...ox..o | % | % | % | % | % | % | ..o.x..o..o.x.xx |
+hat    | x.x.x.x.x.x.x.x. | % | % | % | % | % | % | x.x.x.x.x.xxxxxx |
+shaker | XoxoXoxoXoxoXoxo | % | % | % | % | % | % | % |
+conga  | ....o.x.....x.xx | % | % | % | % | % | % | ....o.x...x.x.x. |
+cuica  | _ | _ | _ | ........x.o.X.x. | _ | _ | _ | ..x.o.X.x.o.X... |
+crash  | x............... | _ | _ | _ | _ | _ | _ | _ |
+
+# Babel: every voice takes up the hook a bar after the last, in its own octave, until they are all talking at once
+pattern C
+keys   | [Dmaj9]-- ... [Dmaj9]- .. [Dmaj9]----- | [E/D]-- ... [E/D]- .. [E/D]----- | [Dmaj9]-- ... [Dmaj9]- .. [Dmaj9]----- | [E/D]-- ... [E/D]- .. [E/D]----- | [Dmaj9]-- ... [Dmaj9]- .. [Dmaj9]----- | [E/D]-- ... [E/D]- .. [E/D]----- | [Bbmaj7]-- ... [Bbmaj7]- .. [Bbmaj7]----- | [A7sus4]--------------- |
+bass   | D2-- . D3- A2- D2-- . C#3- A2- | D2-- . D3- B2- D2-- . E3- F#3- | D2-- . D3- A2- D2-- . C#3- A2- | D2-- . D3- B2- D2-- . E3- F#3- | D2-- . D3- A2- D2-- . C#3- A2- | D2-- . D3- B2- D2-- . E3- F#3- | Bb1-- . Bb2- F2- Bb1-- . A2- F2- | A1--------------- |
+sub    | D2- D3- D2- D3- D2- D3- D2- D3- | % | % | % | % | % | Bb1- Bb2- Bb1- Bb2- Bb1- Bb2- Bb1- Bb2- | A1- A2- A1- A2- A1- A2- A1- A2- |
+lead   | A4- . F#4 A4- B4- D5--- B4- A4- | G#4- . B4 . E5- F#5------ E5- | F#5- . E5 D5- C#5- D5--- A4- B4- | D5------- . . E5- D5- B4- | A4- . F#4 A4- B4- D5--- B4- A4- | G#4- . B4 . E5- F#5------ E5- | F#5- . E5 D5- C#5- D5--- A4- B4- | D5------- E5 F#5 A5--- ~B5- |
+tongue | _ | A5- . F#5 A5- B5- D6--- B5- A5- | G#5- . B5 . E6- F#6------ E6- | F#6- . E6 D6- C#6- D6--- A5- B5- | D6------- . . E6- D6- B5- | A5- . F#5 A5- B5- D6--- B5- A5- | G#5- . B5 . E6- F#6------ E6- | F#6- . E6 D6- C#6- D6--- A5- B5- |
+brass  | _ | _ | A3- . F#3 A3- B3- D4--- B3- A3- | G#3- . B3 . E4- F#4------ E4- | F#4- . E4 D4- C#4- D4--- A3- B3- | D4------- . . E4- D4- B3- | A3- . F#3 A3- B3- D4--- B3- A3- | G#3- . B3 . E4- F#4------ E4- |
+glass  | _ | _ | _ | A4- . F#4 A4- B4- D5--- B4- A4- | G#4- . B4 . E5- F#5------ E5- | F#5- . E5 D5- C#5- D5--- A4- B4- | D5------- . . E5- D5- B4- | A4- . F#4 A4- B4- D5--- B4- A4- |
+ahh    | _ | _ | _ | _ | [Dmaj9]--------------- | [E/D]--------------- | [Bbmaj7]--------------- | [A7sus4]--------------- |
+kick   | x.......x....... | % | x.....x.x.....x. | % | % | % | % | x.x.x.x.x.x.x.x. |
+snare  | ....x.......x... | % | ..o.x..o...ox..o | % | % | % | % | ....x...x.x.xxxx |
+hat    | x.x.x.x.x.x.x.x. | % | % | % | xxxxxxxxxxxxxxxx | % | % | % |
+shaker | XoxoXoxoXoxoXoxo | % | % | % | % | % | % | % |
+tom    | _ | _ | _ | _ | _ | _ | _ | ........x.x.xxxx |
+crash  | x............... | _ | _ | _ | x............... | _ | _ | _ |
+
+# the tower comes down: the arpeggio falls into threes against the bar, and only the shaker keeps time
+pattern D
+arp    | D4 A4 E5 D4 A4 E5 D4 A4 E5 D4 A4 E5 D4 A4 E5 C#5 | D4 A4 E5 D4 A4 E5 D4 A4 E5 D4 A4 E5 D4 A4 E5 C#5 | D4 A4 E5 D4 A4 E5 D4 A4 E5 D4 A4 E5 D4 A4 E5 C#5 | D4 A4 E5 D4 A4 E5 D4 A4 E5 D4 A4 E5 D4 A4 E5 C#5 |
+ahh    | [Dmaj9]--------------- | [E/D]--------------- | [Bm9]--------------- | [A7sus4]--------------- |
+bass   | D2--------------- | _ | B1--------------- | A1------- ~A2------- |
+shaker | XoxoXoxoXoxoXoxo | % | % | % |
+cuica  | _ | ........x.o.X... | _ | ..x.o.X.x.o.X.x. |
+crash  | X............... | _ | _ | _ |
+
+play intro
+loop A A2 B A2 C D
