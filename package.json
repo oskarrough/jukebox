@@ -1,0 +1,33 @@
+{
+	"name": "jukebox",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Oskar's jukebox: compose and play music for his games, as plain-text songs and a Web Audio synth.",
+	"files": [
+		"src",
+		"music",
+		"LICENSE"
+	],
+	"type": "module",
+	"exports": {
+		"./score": "./src/score.js",
+		"./synth": "./src/synth.js",
+		"./player": "./src/player.js",
+		"./roll": "./src/roll.js",
+		"./songs": "./src/songs.js",
+		"./music/*": "./music/*"
+	},
+	"scripts": {
+		"dev": "vite",
+		"build": "bun run check && vite build",
+		"preview": "vite preview",
+		"test": "bun test",
+		"check": "oxlint --quiet && oxfmt --check",
+		"format": "oxfmt"
+	},
+	"devDependencies": {
+		"oxfmt": "^0.72.0",
+		"oxlint": "^1.87.0",
+		"vite": "^8.3.4"
+	}
+}

@@ -1,9 +1,10 @@
-// The jukebox: every song in public/music, to hear, edit and replay as each kind of source
+// The jukebox: every song in music/, to hear, edit and replay as each kind of source
 // at any distance, through the same synth and muffling as the street. The address bar
 // always links to what's playing: ?song=sonnenallee&kind=bar&d=6.
 import { compile } from './score.js'
 import { drawRoll, voiceColors } from './roll.js'
-import { AHEAD, SCORES, begin, end, feed, shape, synthFor, tune } from '../music.js'
+import { AHEAD, begin, end, feed, shape, synthFor, tune } from './player.js'
+import { NAMES as SCORES, SONGS } from './songs.js'
 
 // What "Neuer Song" opens: short, and it plays as it is.
 export const STARTER = `title    Neuer Song
@@ -50,10 +51,7 @@ const muted = new Map()
 const mutedIn = (n) => muted.get(n) ?? muted.set(n, new Set()).get(n)
 
 async function text(n) {
-	if (!texts.has(n)) {
-		const r = await fetch(`/music/${n}.song`)
-		texts.set(n, await r.text())
-	}
+	if (!texts.has(n)) texts.set(n, SONGS[n])
 	return texts.get(n)
 }
 

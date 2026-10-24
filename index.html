@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<title>NK GTA · Jukebox</title>
+		<title>Jukebox</title>
 		<style>
 			html,
 			body {
@@ -78,10 +78,6 @@
 				background: #444;
 				color: inherit;
 				text-decoration: none;
-			}
-			.button.game {
-				background: #9be86a;
-				color: #111;
 			}
 			#pos {
 				flex: 1;
@@ -181,7 +177,7 @@
 				color: #9be86a;
 			}
 		</style>
-		<script type="module" src="/src/jukebox/page.js"></script>
+		<script type="module" src="/src/page.js"></script>
 	</head>
 	<body>
 		<aside>
@@ -198,16 +194,13 @@
 					<code>Bq3</code> das B von Rast. Glissandi mit <code>~</code> gleiten auch in Vierteltöne.
 				</p>
 				<p>
-					<code>street Sonnenallee</code> im Kopf macht das Lied zum Lied der Straße: Spätis, Bars, Fenster und Autos dort spielen meistens
-					eins ihrer Lieder. <code>at doener cafe</code> tut dasselbe für Arten von Orten: <code>spaeti</code>, <code>bar</code>,
+					In NK GTA macht <code>street Sonnenallee</code> im Kopf das Lied zum Lied der Straße: Spätis, Bars, Fenster und Autos dort spielen
+					meistens eins ihrer Lieder. <code>at doener cafe</code> tut dasselbe für Arten von Orten: <code>spaeti</code>, <code>bar</code>,
 					<code>doener</code>, <code>imbiss</code>, <code>cafe</code>, und <code>feld</code> für ein großes offenes Feld wie Tempelhof.
 					<code>at autoradio</code> stellt das Lied in dein eigenes Autoradio: Das läuft immer, sobald du in einem Auto sitzt, und spielt
 					seine Lieder nacheinander. Konvoi gehört allein dem Hochzeitskonvoi und läuft sonst nirgends.
 				</p>
-				<p>
-					Links spielen gleich los: <code>jukebox.html?song=konvoi&amp;kind=convoy&amp;d=20</code>. Die Adresszeile zeigt immer, was gerade
-					läuft.
-				</p>
+				<p>Links spielen gleich los: <code>?song=konvoi&amp;kind=convoy&amp;d=20</code>. Die Adresszeile zeigt immer, was gerade läuft.</p>
 				<p>
 					Instrumente: <code>oud</code>, <code>qanun</code>, <code>ney</code>, <code>808</code>, <code>drive</code> für die verzerrte
 					E-Gitarre, <code>ebass</code> für den gezupften E-Bass; Trommeln <code>dum</code> und <code>tek</code> für die Darbuka,
@@ -219,7 +212,6 @@
 			<h1>Jukebox</h1>
 			<button id="new">Neuer Song</button>
 			<button id="download">Herunterladen</button>
-			<a class="button game" href="/">Zum Spiel</a>
 		</header>
 		<div class="bar">
 			<button id="play">Abspielen</button>
