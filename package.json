@@ -23,11 +23,13 @@
 		"preview": "vite preview",
 		"test": "bun test",
 		"check": "oxlint --quiet && oxfmt --check",
-		"format": "oxfmt"
+		"format": "oxfmt",
+		"deploy": "wrangler deploy"
 	},
 	"devDependencies": {
 		"oxfmt": "^0.72.0",
 		"oxlint": "^1.87.0",
-		"vite": "^8.3.4"
+		"vite": "^8.3.4",
+		"wrangler": "^4.148.0"
 	}
 }
