@@ -1,6 +1,6 @@
 # Jukebox
 
-Oskar's jukebox: the place to compose music for his games. Songs are plain-text `.song` files in `music/`, played live by a small Web Audio synth (no samples). The page lists every song, plays it, and lets you edit it while it plays: it replays as you type, shows what doesn't parse, draws a scrolling piano roll, and lets you switch voices off and on. You can also hear a song the way a game would place it: as a Späti radio, a bar door, an open window, a passing car, a wedding convoy or your own car radio, at any distance.
+Oskar's jukebox: the place to compose music for his games. Songs are plain-text `.song` files in `music/`, played live by a small Web Audio synth (no samples). The page lists every song, plays it, and lets you edit it while it plays: it replays as you type, shows what doesn't parse, draws a scrolling piano roll, and lets you switch voices off and on. Loop bricks (after Dance eJay) drop a bar of drums, bass, chords or melody into the song as a new voice: drag one in or tap it. You can also hear a song the way a game would place it: as a Späti radio, a bar door, an open window, a passing car, a wedding convoy or your own car radio, at any distance.
 
 It started as the jukebox in [NK GTA](https://github.com/oskarrough/nkgta), with its history carried over.
 
@@ -29,8 +29,9 @@ A song's head can also say where it belongs in a game: `street Sonnenallee`, `at
 - `src/synth.js`: the Web Audio synth that plays them. `createSynth(context, destination)`.
 - `src/player.js`: plays a compiled song as a source of some kind at some distance, picked up wherever it has got to: `begin`, `feed`, `tune`, `shape`, `end`, `synthFor`.
 - `src/roll.js`: the scrolling piano roll.
+- `src/bricks.js`: the loop bricks, and `addBrick(text, brick)`, which adds one to a song's text.
 - `src/songs.js`: every song in `music/` as text, via Vite's `import.meta.glob`.
-- `src/page.js` and `index.html`: the jukebox page.
+- `src/page.js`, `src/page.css` and `index.html`: the jukebox page. Plain HTML, CSS and JS: Teenage Engineering meets Ableton meets Dance eJay, a light machine with a black screen, a session grid of clips, track buttons and loop bricks.
 
 No runtime dependencies; Vite, oxlint and oxfmt are dev tools.
 

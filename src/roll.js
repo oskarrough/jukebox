@@ -40,7 +40,7 @@ export function drawRoll(canvas, song, at, muted) {
 	}
 	const g = canvas.getContext('2d')
 	g.setTransform(dpr, 0, 0, dpr, 0, 0)
-	g.fillStyle = '#111'
+	g.fillStyle = '#0b0b0b'
 	g.fillRect(0, 0, W, H)
 	const { lo, hi, drums, colors } = range(song)
 	const span = W < 500 ? 4.5 : 7 // seconds across

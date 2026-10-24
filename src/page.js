@@ -1,6 +1,7 @@
 // The jukebox: every song in music/, to hear, edit and replay as each kind of source
 // at any distance, through the same synth and muffling as the street. The address bar
 // always links to what's playing: ?song=sonnenallee&kind=bar&d=6.
+import { BRICKS, addBrick } from './bricks.js'
 import { compile } from './score.js'
 import { drawRoll, voiceColors } from './roll.js'
 import { AHEAD, begin, end, feed, shape, synthFor, tune } from './player.js'
@@ -55,16 +56,25 @@ async function text(n) {
 	return texts.get(n)
 }
 
+// The session's clip colours, bold and few.
+const CLIP_COLORS = ['#ff5a1f', '#2d6cdf', '#17b26a', '#ffcf2e', '#ff6fae', '#8a6cff', '#00b8c4', '#ff8f3a']
+
 function listScores() {
 	$('scores').replaceChildren(
-		...names().map((n) => {
+		...names().map((n, i) => {
 			const button = document.createElement('button')
 			const song = songs.get(n)
-			button.className = n === name ? 'on' : ''
+			button.className = n === name ? 'clip on' : 'clip'
+			button.style.setProperty('--c', CLIP_COLORS[i % CLIP_COLORS.length])
+			const tri = document.createElement('span')
+			tri.className = 'tri'
+			const title = document.createElement('b')
+			title.textContent = song?.title ?? n
 			const small = document.createElement('small')
 			small.textContent = [`${n}.song`, song?.street, song?.at?.join(' '), song?.about].filter(Boolean).join(' · ')
-			button.append(song?.title ?? n, small)
-			button.onclick = () => pick(n)
+			button.append(tri, title, small)
+			// Like a clip in a session: clicking one starts it.
+			button.onclick = () => pick(n).then(() => playing || play())
 			return button
 		}),
 	)
@@ -95,6 +105,7 @@ function edited() {
 	$('errors').textContent = song.errors.map((e) => `Zeile ${e.line}: ${e.msg}`).join('\n')
 	if (song.errors.length) return
 	songs.set(name, song)
+	$('lcdTitle').textContent = song.title
 	listScores()
 	listVoices(song)
 	$('pos').max = length(song)
@@ -143,6 +154,8 @@ function listVoices(song) {
 			const dot = document.createElement('i')
 			const inst = document.createElement('small')
 			dot.style.background = colors[i]
+			button.style.setProperty('--c', colors[i])
+			if (v.name === fresh) button.classList.add('fresh')
 			inst.textContent = v.inst
 			button.append(dot, v.name, inst)
 			button.setAttribute('aria-pressed', String(!off.has(v.name)))
@@ -173,6 +186,7 @@ function play() {
 	since = from - (context.currentTime + 0.05)
 	start(song)
 	$('play').textContent = 'Stopp'
+	document.body.classList.add('live')
 }
 
 function stop() {
@@ -180,6 +194,7 @@ function stop() {
 	end(playing, context)
 	playing = null
 	$('play').textContent = 'Abspielen'
+	document.body.classList.remove('live')
 }
 
 // Jumps to `at` seconds into the song, playing or not.
@@ -212,6 +227,106 @@ function tick() {
 	showPosition(folded(playing.song, Math.max(0, now - playing.start)))
 	$('where').textContent = `${Math.round(sound.cutoff)} Hz`
 }
+
+// The kinds of source as pads, standing in for the select.
+const PADS = {
+	radio: ['🏪', 'Späti'],
+	bar: ['🍺', 'Bar'],
+	window: ['🪟', 'Fenster'],
+	car: ['🚗', 'Auto'],
+	convoy: ['💍', 'Konvoi'],
+	own: ['📻', 'Mein Auto'],
+}
+
+function listKinds() {
+	$('kinds').replaceChildren(
+		...[...$('kind').options].map((o) => {
+			const button = document.createElement('button')
+			const [icon, label] = PADS[o.value] ?? ['♪', o.textContent]
+			const glyph = document.createElement('span')
+			glyph.textContent = icon
+			button.className = o.value === $('kind').value ? 'pad on' : 'pad'
+			button.title = o.textContent
+			button.append(glyph, label)
+			button.onclick = () => {
+				$('kind').value = o.value
+				$('kind').dispatchEvent(new Event('change'))
+				listKinds()
+			}
+			return button
+		}),
+	)
+}
+
+// The voice a brick just added, to make it pop once.
+let fresh = null
+
+// Drops a loop brick into the song: a new voice playing it in every pattern.
+function drop(id) {
+	const brick = BRICKS.find((b) => b.id === id)
+	if (!brick) return
+	const { text, voice } = addBrick($('score').value, brick)
+	$('score').value = text
+	fresh = voice
+	edited()
+	fresh = null
+	if (!playing && songs.get(name)) play()
+}
+
+function listBricks() {
+	const shelves = Map.groupBy(BRICKS, (b) => b.shelf)
+	$('bricks').replaceChildren(
+		...[...shelves].map(([shelf, bricks]) => {
+			const row = document.createElement('div')
+			row.className = 'shelf'
+			const label = document.createElement('span')
+			label.textContent = shelf
+			const wrap = document.createElement('div')
+			row.append(label, wrap)
+			wrap.append(
+				...bricks.map((b) => {
+					const button = document.createElement('button')
+					button.className = 'brick'
+					button.dataset.shelf = shelf
+					button.draggable = true
+					button.title = `${b.label}: ${b.inst}, zieh mich ins Lied`
+					const steps = document.createElement('span')
+					steps.className = 'steps'
+					const cells = b.steps ? b.steps.replace(/\s+/g, '').split('') : b.notes
+					steps.append(
+						...cells.map((c) => {
+							const cell = document.createElement('i')
+							cell.className = c === '.' ? '' : c === '-' ? 'h' : 'x'
+							return cell
+						}),
+					)
+					button.append(b.label, steps)
+					button.onclick = () => drop(b.id)
+					button.ondragstart = (e) => {
+						e.dataTransfer.setData('application/x-brick', b.id)
+						e.dataTransfer.effectAllowed = 'copy'
+						document.body.classList.add('dragging')
+					}
+					button.ondragend = () => document.body.classList.remove('dragging')
+					return button
+				}),
+			)
+			return row
+		}),
+	)
+}
+
+// A brick dropped anywhere on the machine goes into the song.
+document.addEventListener('dragover', (e) => {
+	if (e.dataTransfer.types.includes('application/x-brick')) e.preventDefault()
+})
+document.addEventListener('drop', (e) => {
+	const id = e.dataTransfer.getData('application/x-brick')
+	document.body.classList.remove('dragging')
+	if (!id) return
+	e.preventDefault()
+	drop(id)
+})
 
 function download() {
 	const a = document.createElement('a')
@@ -257,6 +372,8 @@ for (const n of SCORES)
 		if (!songs.has(n)) songs.set(n, compile(t))
 		listScores()
 	})
+listKinds()
+listBricks()
 pick(wanted ?? name).then(() => wanted && play())
 setInterval(tick, 50)
 requestAnimationFrame(draw)

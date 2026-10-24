@@ -3,6 +3,9 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { compile, noteToMidi } from '../src/score.js'
 import { mtof } from '../src/synth.js'
 import { HEAR, cueAt, join, shape } from '../src/player.js'
+import { BRICKS, addBrick } from '../src/bricks.js'
+
+const STARTER_ISH = 'voice kick kick\npattern A\nkick | x... x... x... x... |\nloop A'
 
 const dir = new URL('../music/', import.meta.url)
 const SCORES = readdirSync(dir)
@@ -87,5 +90,29 @@ describe('playing from a distance', () => {
 		const at = (j) => j.cue.offset + song[j.cue.list].events[j.cue.i].t
 		expect(at(again)).toBeGreaterThan(at(first) + 20)
 		expect(first.start + at(first)).toBeGreaterThanOrEqual(5)
+	})
+})
+
+describe('loop bricks', () => {
+	test('every brick drops into every song and plays', () => {
+		for (const name of SCORES) {
+			const text = readFileSync(new URL(`${name}.song`, dir), 'utf8')
+			for (const brick of BRICKS) {
+				const { text: next, voice } = addBrick(text, brick)
+				const song = compile(next)
+				expect(song.errors).toEqual([])
+				expect(song.voices.map((v) => v.name)).toContain(voice)
+			}
+		}
+	})
+
+	test('a brick stretches to a bar of three beats', () => {
+		const text = 'beats 3\nvoice a sine\npattern A\na | C4----------- |\nloop A'
+		for (const brick of BRICKS) expect(compile(addBrick(text, brick).text).errors).toEqual([])
+	})
+
+	test('a second brick of the same kind gets its own voice', () => {
+		const once = addBrick(STARTER_ISH, BRICKS[0]).text
+		expect(addBrick(once, BRICKS[0]).voice).toBe('kick3')
 	})
 })
