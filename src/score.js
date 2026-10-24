@@ -125,6 +125,19 @@ const CHORDS = {
 function pcOf(letter, acc) {
 	return (PC[letter.toLowerCase()] + ACC[acc || ''] + 12) % 12
 }
+
+// `key C`, `key Dm`, `key F#`. Existing songs may omit it.
+export function parseKey(s) {
+	if (s == null || s === '') return null
+	const m = /^([A-G])(#|b)?\s*(maj|major|min|minor|m)?$/i.exec(String(s).trim())
+	if (!m) return null
+	const letter = m[1].toUpperCase()
+	const acc = m[2] || ''
+	const mode = (m[3] || '').toLowerCase()
+	const minor = mode === 'm' || mode === 'min' || mode === 'minor'
+	const pc = (PC[letter.toLowerCase()] + (ACC[acc] || 0) + 12) % 12
+	return { letter, acc, minor, pc, name: letter + acc + (minor ? 'm' : '') }
+}
 function placeNear(pc, lo) {
 	return lo + ((((pc - lo) % 12) + 12) % 12)
 }
@@ -172,6 +185,7 @@ function parse(text) {
 		steps: 4,
 		swing: 0,
 		reverb: 0.3,
+		key: null,
 		voices: [],
 		voiceMap: {},
 		patterns: {},
@@ -242,6 +256,12 @@ function parse(text) {
 			case 'reverb':
 				song.reverb = num(restStr, 0, 1, 0.3)
 				break
+			case 'key': {
+				const k = parseKey(restStr)
+				if (!k) err(ln, `key needs a name like C, Dm or F#; got "${restStr}".`)
+				else song.key = k
+				break
+			}
 			case 'voice':
 				parseVoice(words.slice(1), ln)
 				break
@@ -649,6 +669,7 @@ function compile(text) {
 		beats: song.beats,
 		steps: song.steps,
 		reverb: song.reverb,
+		key: song.key,
 		voices,
 		intro,
 		loop,

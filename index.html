@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -20,24 +20,42 @@
 					<span class="sticker">made in Neukölln</span>
 				</div>
 				<div class="transport">
-					<button id="play" class="key big">Abspielen</button>
+					<button id="play" class="key big">Play</button>
 					<div class="lcd">
 						<b id="lcdTitle"></b>
 						<span id="time"></span>
 						<span id="where"></span>
 					</div>
-					<button id="new" class="key">Neuer Song</button>
-					<button id="download" class="key">Herunterladen</button>
+					<label class="key-picker">
+						<span>Key</span>
+						<select id="keyRoot" aria-label="Key"></select>
+						<select id="keyMode" aria-label="Major or minor">
+							<option value="maj">major</option>
+							<option value="min">minor</option>
+						</select>
+					</label>
 				</div>
 			</header>
 
-			<section class="panel session">
-				<h2>Session <small>Klick startet den Clip</small></h2>
+			<section class="panel session" id="session">
+				<div class="session-bar">
+					<button id="sessionToggle" class="session-toggle" type="button" aria-expanded="true" aria-controls="scores" title="Songs">
+						<span class="session-toggle-mark"></span>
+					</button>
+					<div class="session-now">
+						<b id="sessionTitle"></b>
+						<small id="sessionFile"></small>
+					</div>
+					<div class="session-actions">
+						<button id="new" class="key">New</button>
+						<button id="download" class="key">Export</button>
+					</div>
+				</div>
 				<nav id="scores" class="clips"></nav>
 			</section>
 
 			<section class="screen">
-				<canvas id="roll" aria-label="Die Noten, wie sie gerade spielen"></canvas>
+				<canvas id="roll" aria-label="The notes as they play"></canvas>
 				<div class="strip">
 					<input id="pos" type="range" min="0" max="1" step="0.1" value="0" list="marks" aria-label="Position" />
 					<datalist id="marks"><option id="loopStart" value="0"></option></datalist>
@@ -45,67 +63,58 @@
 			</section>
 
 			<section class="panel tracks">
-				<h2>Spuren <small>an und aus, während es spielt</small></h2>
-				<div id="voices" aria-label="Stimmen: klicken schaltet sie aus und an"></div>
+				<h2>Tracks <small>mute while it plays</small></h2>
+				<div id="voices" aria-label="Voices: click to mute and unmute"></div>
 			</section>
 
 			<section class="panel bricks">
-				<h2>Bausteine <small>ins Lied ziehen oder antippen</small></h2>
+				<h2>Bricks <small>drag into the song or tap</small></h2>
 				<div id="bricks"></div>
 			</section>
 
 			<section class="panel editor">
-				<h2>Partitur <small>spielt neu, während du tippst</small></h2>
-				<textarea id="score" spellcheck="false" aria-label="Partitur"></textarea>
-				<pre id="errors" data-ok="● Spielbar."></pre>
+				<h2>Score <small>replays as you type</small></h2>
+				<textarea id="score" spellcheck="false" aria-label="Score"></textarea>
+				<pre id="errors" data-ok="Playable."></pre>
 			</section>
 
-			<aside class="panel source">
-				<h2>Quelle <small>wie im Spiel</small></h2>
-				<select id="kind" class="hidden" aria-label="Quelle">
-					<option value="radio">Späti-Radio</option>
-					<option value="bar">Bartür</option>
-					<option value="window">offenes Fenster</option>
-					<option value="car">vorbeifahrendes Auto</option>
-					<option value="convoy">Hochzeitskonvoi</option>
-					<option value="own">eigenes Autoradio</option>
-				</select>
-				<div id="kinds" class="pads"></div>
-				<label class="fader">
-					<span>Entfernung</span>
-					<input id="distance" type="range" min="0" max="45" step="0.5" value="4" />
-					<output id="metres"></output>
-				</label>
-				<label class="toggle"><input id="inCar" type="checkbox" /> <span>im Auto</span></label>
+			<aside class="panel rack" id="rack">
+				<h2>Rack <small>devices in series</small></h2>
+				<div id="devices"></div>
 				<details class="guide">
-					<summary>Anleitung</summary>
+					<summary>Guide</summary>
 					<p>
-						Das Format ist Simon Willisons
-						<a href="https://tools.simonwillison.net/scrimshaw-jukebox">Scrimshaw</a>; seine Anleitung erklärt Stimmen, Patterns und
-						Schlagzeugspuren. Dazu kommt bei uns:
+						The format is Simon Willison's
+						<a href="https://tools.simonwillison.net/scrimshaw-jukebox">Scrimshaw</a>; his guide covers voices, patterns and drum tracks. On
+						top of that:
 					</p>
 					<p>
-						<code>q</code> ist ein halbes b, einen Viertelton tiefer: <code>Eq4</code> ist das E der Maqamat Rast und Bayati,
-						<code>Bq3</code> das B von Rast. Glissandi mit <code>~</code> gleiten auch in Vierteltöne.
+						<code>q</code> is a half-flat, a quarter tone down: <code>Eq4</code> is the E of maqamat Rast and Bayati, <code>Bq3</code> the B
+						of Rast. Glissandi with <code>~</code> slide into quarter tones too.
 					</p>
 					<p>
-						In NK GTA macht <code>street Sonnenallee</code> im Kopf das Lied zum Lied der Straße: Spätis, Bars, Fenster und Autos dort
-						spielen meistens eins ihrer Lieder. <code>at doener cafe</code> tut dasselbe für Arten von Orten: <code>spaeti</code>,
-						<code>bar</code>, <code>doener</code>, <code>imbiss</code>, <code>cafe</code>, und <code>feld</code> für ein großes offenes Feld
-						wie Tempelhof. <code>at autoradio</code> stellt das Lied in dein eigenes Autoradio: Das läuft immer, sobald du in einem Auto
-						sitzt, und spielt seine Lieder nacheinander. Konvoi gehört allein dem Hochzeitskonvoi und läuft sonst nirgends.
+						<code>key G</code> or <code>key Dm</code> in the head sets the song's key. The key switch transposes what you wrote; loop bricks
+						land in that key. New songs start in whatever key is selected.
 					</p>
 					<p>
-						Links spielen gleich los: <code>?song=konvoi&amp;kind=convoy&amp;d=20</code>. Die Adresszeile zeigt immer, was gerade läuft.
+						In NK GTA, <code>street Sonnenallee</code> in the head makes the song the song of that street: Spätis, bars, windows and cars
+						there usually play one of its songs. <code>at doener cafe</code> does the same for kinds of place: <code>spaeti</code>,
+						<code>bar</code>, <code>doener</code>, <code>imbiss</code>, <code>cafe</code>, and <code>feld</code> for a wide open field like
+						Tempelhof. <code>at autoradio</code> puts the song on your own car radio: it always runs once you sit in a car, and plays its
+						songs one after another. Konvoi belongs to the wedding convoy alone and plays nowhere else.
 					</p>
 					<p>
-						Instrumente: <code>oud</code>, <code>qanun</code>, <code>ney</code>, <code>808</code>, <code>drive</code> für die verzerrte
-						E-Gitarre, <code>ebass</code> für den gezupften E-Bass; Trommeln <code>dum</code> und <code>tek</code> für die Darbuka,
-						<code>riq</code> für das Tamburin.
+						Links start playing straight away: <code>?song=konvoi&amp;kind=convoy&amp;d=20</code>. The address bar always shows what is
+						playing.
+					</p>
+					<p>
+						Instruments: <code>oud</code>, <code>qanun</code>, <code>ney</code>, <code>808</code>, <code>drive</code> for the overdriven
+						electric guitar, <code>ebass</code> for the picked electric bass; drums <code>dum</code> and <code>tek</code> for the darbuka,
+						<code>riq</code> for the tambourine.
 					</p>
 				</details>
 			</aside>
 		</main>
-		<button id="unblock" hidden>▶ Abspielen</button>
+		<button id="unblock" hidden>Play</button>
 	</body>
 </html>
