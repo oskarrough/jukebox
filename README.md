@@ -17,9 +17,9 @@ Links play straight away: `/?song=konvoi&kind=convoy&d=20&car=1`. The address ba
 
 ## Writing songs
 
-The format is Simon Willison's [Scrimshaw](https://tools.simonwillison.net/scrimshaw-jukebox), with some additions: quarter tones (`Eq4`), an oud, qanun, ney, 808, overdriven guitar (`drive`), electric bass (`ebass`) and darbuka drums (`dum`, `tek`, `riq`). The page has a guide under "Anleitung".
+The format is Simon Willison's [Scrimshaw](https://tools.simonwillison.net/scrimshaw-jukebox), with some additions: quarter tones (`Eq4`), an oud, qanun, ney, 808, overdriven guitar (`drive`), electric bass (`ebass`) and darbuka drums (`dum`, `tek`, `riq`). The page has a guide under "Guide". A `key G` or `key Dm` line in the head sets the song's key; the key switch transposes what you wrote, and loop bricks land in that key.
 
-To add a song, click "Neuer Song", write it, click "Herunterladen", and put the `.song` file in `music/`. It shows up on its own, and `bun test` checks it compiles and loops.
+To add a song, click "New", write it, click "Export" (downloads the current song as a `.song` file, the same format `music/` and `bun test` already use), and put it in `music/`. It shows up on its own, and `bun test` checks it compiles and loops.
 
 A song's head can also say where it belongs in a game: `street Sonnenallee`, `at doener cafe`, `at feld`, `at autoradio`. The jukebox only parses these; it's up to the game what they mean.
 
@@ -28,8 +28,10 @@ A song's head can also say where it belongs in a game: `street Sonnenallee`, `at
 - `src/score.js`: parses a `.song` text into a song: voices, a timeline of notes for the intro and the loop, and any errors. `compile(text)`.
 - `src/synth.js`: the Web Audio synth that plays them. `createSynth(context, destination)`.
 - `src/player.js`: plays a compiled song as a source of some kind at some distance, picked up wherever it has got to: `begin`, `feed`, `tune`, `shape`, `end`, `synthFor`.
+- `src/effects.js`: the Ableton-style device chain (Source, Distance, Inferno). `runChain(state)` is what `shape()` uses; add a device by appending to `EFFECTS`.
+- `src/key.js`: song key, transposing a score, and writing a new song or brick in that key.
 - `src/roll.js`: the scrolling piano roll.
-- `src/bricks.js`: the loop bricks, and `addBrick(text, brick)`, which adds one to a song's text.
+- `src/bricks.js`: the loop bricks, and `addBrick(text, brick)`, which adds one to a song's text in the song's key.
 - `src/songs.js`: every song in `music/` as text, via Vite's `import.meta.glob`.
 - `src/page.js`, `src/page.css` and `index.html`: the jukebox page. Plain HTML, CSS and JS: Teenage Engineering meets Ableton meets Dance eJay, a light machine with a black screen, a session grid of clips, track buttons and loop bricks.
 

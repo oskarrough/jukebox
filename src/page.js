@@ -1,40 +1,20 @@
-// The jukebox: every song in music/, to hear, edit and replay as each kind of source
-// at any distance, through the same synth and muffling as the street. The address bar
-// always links to what's playing: ?song=sonnenallee&kind=bar&d=6.
+// The jukebox: every song in music/, to hear, edit and replay through a rack of
+// devices (source, distance, inferno) the same way the street hears them. The
+// address bar always links to what's playing: ?song=sonnenallee&kind=bar&d=6.
 import { BRICKS, addBrick } from './bricks.js'
-import { compile } from './score.js'
+import { EFFECTS, SOURCES, effectState, runChain } from './effects.js'
+import { KEY_ROOTS, inferKey, setSongKey, starter } from './key.js'
+import { compile, parseKey } from './score.js'
 import { drawRoll, voiceColors } from './roll.js'
-import { AHEAD, begin, end, feed, shape, synthFor, tune } from './player.js'
+import { AHEAD, begin, end, feed, synthFor, tune } from './player.js'
 import { NAMES as SCORES, SONGS } from './songs.js'
 
-// What "Neuer Song" opens: short, and it plays as it is.
-export const STARTER = `title    Neuer Song
-about    What it sounds like, and where.
-tempo    100
-beats    4
-steps    4
-reverb   0.3
-
-voice lead  marimba  vol=0.8
-voice pad   strings  vol=0.35 center=E4
-voice bass  upright  vol=0.8
-voice kick  kick     vol=0.7
-voice hat   hat      vol=0.35
-
-pattern A
-lead | C5- E5- G5- E5- C5- E5- G5- B5- | A4- C5- E5- C5- A4--- G4--- |
-pad  | [C]--------------- | [Am]--------------- |
-bass | C2--- . C2 G2- C2--- G2--- | A1--- . A1 E2- A1--- E2--- |
-kick | x... .... x... .... | % |
-hat  | ..x. ..x. ..x. ..x. | % |
-
-loop A
-`
+export { starter as STARTER }
 
 const $ = (id) => document.getElementById(id)
 const texts = new Map()
 const songs = new Map()
-// Songs made here, which live only on this page until downloaded.
+// Songs made here, which live only on this page until exported.
 const made = []
 const names = () => SCORES.concat(made)
 let name = SCORES[0]
@@ -44,9 +24,11 @@ let playing = null
 // When the song started on the audio clock; kept across edits so a change
 // replays from where you are.
 let since = 0
-// Where the next Abspielen starts, in seconds into the song.
+// Where the next Play starts, in seconds into the song.
 let from = 0
 let seeking = false
+let pickingKey = false
+const fx = effectState()
 // Voices switched off, per song, by name.
 const muted = new Map()
 const mutedIn = (n) => muted.get(n) ?? muted.set(n, new Set()).get(n)
@@ -56,24 +38,26 @@ async function text(n) {
 	return texts.get(n)
 }
 
-// The session's clip colours, bold and few.
-const CLIP_COLORS = ['#ff5a1f', '#2d6cdf', '#17b26a', '#ffcf2e', '#ff6fae', '#8a6cff', '#00b8c4', '#ff8f3a']
+function srcOf() {
+	return fx.source.kind === 'own' ? { kind: 'car', own: true } : { kind: fx.source.kind, own: false }
+}
 
 function listScores() {
+	const song = songs.get(name)
+	$('sessionTitle').textContent = song?.title ?? name
+	$('sessionFile').textContent = `${name}.song`
 	$('scores').replaceChildren(
-		...names().map((n, i) => {
+		...names().map((n) => {
 			const button = document.createElement('button')
-			const song = songs.get(n)
+			const s = songs.get(n)
 			button.className = n === name ? 'clip on' : 'clip'
-			button.style.setProperty('--c', CLIP_COLORS[i % CLIP_COLORS.length])
 			const tri = document.createElement('span')
 			tri.className = 'tri'
 			const title = document.createElement('b')
-			title.textContent = song?.title ?? n
+			title.textContent = s?.title ?? n
 			const small = document.createElement('small')
-			small.textContent = [`${n}.song`, song?.street, song?.at?.join(' '), song?.about].filter(Boolean).join(' · ')
+			small.textContent = [`${n}.song`, s?.street, s?.at?.join(' '), s?.about].filter(Boolean).join(' · ')
 			button.append(tri, title, small)
-			// Like a clip in a session: clicking one starts it.
 			button.onclick = () => pick(n).then(() => playing || play())
 			return button
 		}),
@@ -83,9 +67,11 @@ function listScores() {
 // The song, how it plays and from how far, as the page's address.
 function remember() {
 	const q = new URLSearchParams({ song: name })
-	if ($('kind').value !== 'radio') q.set('kind', $('kind').value)
-	if ($('distance').value !== '4') q.set('d', $('distance').value)
-	if ($('inCar').checked) q.set('car', '1')
+	if (fx.source.kind !== 'radio') q.set('kind', fx.source.kind)
+	if (String(fx.distance.d) !== '4') q.set('d', String(fx.distance.d))
+	if (fx.inferno.inCar) q.set('car', '1')
+	const off = EFFECTS.filter((d) => fx[d.id].on === false).map((d) => d.id)
+	if (off.length) q.set('off', off.join(','))
 	history.replaceState(null, '', `?${q}`)
 }
 
@@ -98,14 +84,27 @@ async function pick(n) {
 	edited()
 }
 
+function showKey(song) {
+	const key = song.key || inferKey(song)
+	pickingKey = true
+	$('keyRoot').value = KEY_ROOTS.includes(key.letter + key.acc) ? key.letter + key.acc : KEY_ROOTS[key.pc]
+	$('keyMode').value = key.minor ? 'min' : 'maj'
+	pickingKey = false
+}
+
+function readKey() {
+	return parseKey($('keyRoot').value + ($('keyMode').value === 'min' ? 'm' : ''))
+}
+
 // Compiles the score in the editor, shows its errors and, if it plays, swaps it in.
 function edited() {
 	texts.set(name, $('score').value)
 	const song = compile($('score').value)
-	$('errors').textContent = song.errors.map((e) => `Zeile ${e.line}: ${e.msg}`).join('\n')
+	$('errors').textContent = song.errors.map((e) => `Line ${e.line}: ${e.msg}`).join('\n')
 	if (song.errors.length) return
 	songs.set(name, song)
 	$('lcdTitle').textContent = song.title
+	showKey(song)
 	listScores()
 	listVoices(song)
 	$('pos').max = length(song)
@@ -134,7 +133,7 @@ function showPosition(at) {
 
 function start(song) {
 	if (playing) end(playing, context)
-	playing = begin(synth, context, { kind: kind().kind, since }, song)
+	playing = begin(synth, context, { kind: srcOf().kind, since }, song)
 	hush(playing)
 }
 
@@ -159,7 +158,7 @@ function listVoices(song) {
 			inst.textContent = v.inst
 			button.append(dot, v.name, inst)
 			button.setAttribute('aria-pressed', String(!off.has(v.name)))
-			button.title = off.has(v.name) ? `${v.name} an` : `${v.name} aus`
+			button.title = off.has(v.name) ? `${v.name} on` : `${v.name} off`
 			button.onclick = () => {
 				if (off.has(v.name)) off.delete(v.name)
 				else off.add(v.name)
@@ -185,7 +184,7 @@ function play() {
 	context.resume()
 	since = from - (context.currentTime + 0.05)
 	start(song)
-	$('play').textContent = 'Stopp'
+	$('play').textContent = 'Stop'
 	document.body.classList.add('live')
 }
 
@@ -193,7 +192,7 @@ function stop() {
 	from = folded(playing.song, context.currentTime - playing.start)
 	end(playing, context)
 	playing = null
-	$('play').textContent = 'Abspielen'
+	$('play').textContent = 'Play'
 	document.body.classList.remove('live')
 }
 
@@ -206,54 +205,104 @@ function seek(at) {
 	start(playing.song)
 }
 
-function kind() {
-	const value = $('kind').value
-	return value === 'own' ? { kind: 'car', own: true } : { kind: value, own: false }
-}
-
 function tick() {
-	const d = Number($('distance').value)
-	const { own } = kind()
-	$('distance').disabled = own
-	$('metres').textContent = own ? 'drin' : `${Math.round(d * 3)} m`
-	// A browser that wouldn't start sound by itself gets one big button to click.
+	const own = srcOf().own
+	const dFar = $('fx-distance')
+	if (dFar) dFar.disabled = own
+	const metres = $('fx-metres')
+	if (metres) metres.textContent = own ? 'inside' : `${Math.round(fx.distance.d * 3)} m`
 	$('unblock').hidden = !(playing && context.state !== 'running')
 	if (!playing) return
 	const now = context.currentTime
-	if (playing.src.kind !== kind().kind) start(playing.song)
-	const sound = shape(playing.src.kind, own ? 0 : d, own, $('inCar').checked)
+	if (playing.src.kind !== srcOf().kind) start(playing.song)
+	const sound = runChain(fx)
 	tune(playing, sound, 0, now)
 	feed(playing, now + AHEAD, now)
 	showPosition(folded(playing.song, Math.max(0, now - playing.start)))
 	$('where').textContent = `${Math.round(sound.cutoff)} Hz`
 }
 
-// The kinds of source as pads, standing in for the select.
-const PADS = {
-	radio: ['🏪', 'Späti'],
-	bar: ['🍺', 'Bar'],
-	window: ['🪟', 'Fenster'],
-	car: ['🚗', 'Auto'],
-	convoy: ['💍', 'Konvoi'],
-	own: ['📻', 'Mein Auto'],
-}
-
-function listKinds() {
-	$('kinds').replaceChildren(
-		...[...$('kind').options].map((o) => {
-			const button = document.createElement('button')
-			const [icon, label] = PADS[o.value] ?? ['♪', o.textContent]
-			const glyph = document.createElement('span')
-			glyph.textContent = icon
-			button.className = o.value === $('kind').value ? 'pad on' : 'pad'
-			button.title = o.textContent
-			button.append(glyph, label)
-			button.onclick = () => {
-				$('kind').value = o.value
-				$('kind').dispatchEvent(new Event('change'))
-				listKinds()
+function listDevices() {
+	$('devices').replaceChildren(
+		...EFFECTS.map((def) => {
+			const p = fx[def.id]
+			const article = document.createElement('article')
+			article.className = 'fx'
+			article.dataset.on = String(p.on !== false)
+			article.dataset.id = def.id
+			const head = document.createElement('header')
+			head.className = 'fx-head'
+			const power = document.createElement('button')
+			power.type = 'button'
+			power.className = 'power'
+			power.setAttribute('aria-pressed', String(p.on !== false))
+			power.title = p.on !== false ? `${def.title} on` : `${def.title} bypassed`
+			power.onclick = () => {
+				p.on = p.on === false
+				remember()
+				listDevices()
 			}
-			return button
+			const title = document.createElement('h3')
+			title.textContent = def.title
+			const blurb = document.createElement('small')
+			blurb.textContent = def.blurb
+			head.append(power, title, blurb)
+			const body = document.createElement('div')
+			body.className = 'fx-body'
+			if (def.id === 'source') {
+				const pads = document.createElement('div')
+				pads.className = 'pads'
+				for (const src of SOURCES) {
+					const button = document.createElement('button')
+					button.type = 'button'
+					button.className = src.id === p.kind ? 'pad on' : 'pad'
+					button.textContent = src.label
+					button.onclick = () => {
+						p.kind = src.id
+						remember()
+						listDevices()
+					}
+					pads.append(button)
+				}
+				body.append(pads)
+			} else if (def.id === 'distance') {
+				const label = document.createElement('label')
+				label.className = 'fader'
+				const nameEl = document.createElement('span')
+				nameEl.textContent = 'Away'
+				const out = document.createElement('output')
+				out.id = 'fx-metres'
+				out.textContent = srcOf().own ? 'inside' : `${Math.round(p.d * 3)} m`
+				const input = document.createElement('input')
+				input.id = 'fx-distance'
+				input.type = 'range'
+				input.min = '0'
+				input.max = '45'
+				input.step = '0.5'
+				input.value = String(p.d)
+				input.disabled = srcOf().own
+				input.oninput = () => {
+					p.d = Number(input.value)
+					out.textContent = srcOf().own ? 'inside' : `${Math.round(p.d * 3)} m`
+				}
+				input.onchange = remember
+				label.append(nameEl, out, input)
+				body.append(label)
+			} else if (def.id === 'inferno') {
+				const label = document.createElement('label')
+				label.className = 'toggle'
+				const input = document.createElement('input')
+				input.type = 'checkbox'
+				input.checked = !!p.inCar
+				input.onchange = () => {
+					p.inCar = input.checked
+					remember()
+				}
+				label.append(input, 'in the car')
+				body.append(label)
+			}
+			article.append(head, body)
+			return article
 		}),
 	)
 }
@@ -289,7 +338,7 @@ function listBricks() {
 					button.className = 'brick'
 					button.dataset.shelf = shelf
 					button.draggable = true
-					button.title = `${b.label}: ${b.inst}, zieh mich ins Lied`
+					button.title = `${b.label}: ${b.inst}, drag me into the song`
 					const steps = document.createElement('span')
 					steps.className = 'steps'
 					const cells = b.steps ? b.steps.replace(/\s+/g, '').split('') : b.notes
@@ -337,24 +386,53 @@ function download() {
 }
 
 function create() {
-	let n = 'neu'
-	for (let i = 2; names().includes(n); i++) n = `neu-${i}`
+	let n = 'new'
+	for (let i = 2; names().includes(n); i++) n = `new-${i}`
 	made.push(n)
-	texts.set(n, STARTER)
+	texts.set(n, starter(readKey()))
 	pick(n).then(() => playing || play())
 }
+
+function changeKey() {
+	if (pickingKey) return
+	const next = readKey()
+	if (!next) return
+	$('score').value = setSongKey($('score').value, next)
+	edited()
+}
+
+function listKeyRoots() {
+	$('keyRoot').replaceChildren(
+		...KEY_ROOTS.map((r) => {
+			const o = document.createElement('option')
+			o.value = r
+			o.textContent = r
+			return o
+		}),
+	)
+}
+
+const narrow = window.matchMedia('(max-width: 720px)')
+function setSessionOpen(open) {
+	document.body.classList.toggle('session-open', open)
+	$('sessionToggle').setAttribute('aria-expanded', String(open))
+}
+setSessionOpen(!narrow.matches)
+narrow.addEventListener('change', () => setSessionOpen(!narrow.matches))
 
 $('play').onclick = () => (playing ? stop() : play())
 $('unblock').onclick = () => context.resume()
 $('new').onclick = create
 $('download').onclick = download
+$('sessionToggle').onclick = () => setSessionOpen(!document.body.classList.contains('session-open'))
+$('keyRoot').onchange = changeKey
+$('keyMode').onchange = changeKey
 $('pos').onpointerdown = () => (seeking = true)
 $('pos').oninput = () => showPosition(Number($('pos').value))
 $('pos').onchange = () => {
 	seeking = false
 	seek(Number($('pos').value))
 }
-for (const id of ['kind', 'distance', 'inCar']) $(id).addEventListener('change', remember)
 let typing = 0
 $('score').oninput = () => {
 	clearTimeout(typing)
@@ -363,16 +441,20 @@ $('score').oninput = () => {
 
 // The address says what to play: ?song=konvoi&kind=convoy&d=20&car=1.
 const asked = new URLSearchParams(location.search)
-if ([...$('kind').options].some((o) => o.value === asked.get('kind'))) $('kind').value = asked.get('kind')
-if (asked.has('d')) $('distance').value = asked.get('d')
-$('inCar').checked = asked.get('car') === '1'
+if (SOURCES.some((s) => s.id === asked.get('kind'))) fx.source.kind = asked.get('kind')
+if (asked.has('d')) fx.distance.d = Number(asked.get('d'))
+fx.inferno.inCar = asked.get('car') === '1'
+for (const id of (asked.get('off') || '').split(',').filter(Boolean)) {
+	if (fx[id]) fx[id].on = false
+}
 const wanted = SCORES.includes(asked.get('song')) ? asked.get('song') : null
 for (const n of SCORES)
 	text(n).then((t) => {
 		if (!songs.has(n)) songs.set(n, compile(t))
 		listScores()
 	})
-listKinds()
+listKeyRoots()
+listDevices()
 listBricks()
 pick(wanted ?? name).then(() => wanted && play())
 setInterval(tick, 50)

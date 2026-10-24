@@ -4,21 +4,10 @@
 // Started as the playback half of NK GTA's src/music.js; the game-only parts
 // (where sources are on the map, which plays where) stayed in the game.
 import { createSynth } from './synth.js'
+import { KINDS } from './effects.js'
 
-export const HEAR = 18 // tiles, how far music carries
+export { HEAR, KINDS, reach, shape, runChain, EFFECTS, effectState } from './effects.js'
 export const AHEAD = 0.3 // seconds of notes scheduled ahead
-
-// How each kind of source sounds: level, brightest cutoff in Hz, reverb send,
-// and how many tiles it carries if further than HEAR.
-export const KINDS = {
-	radio: { level: 0.55, cutoff: 3200, wet: 0.25 },
-	bar: { level: 0.8, cutoff: 1400, wet: 0.5 },
-	window: { level: 0.7, cutoff: 2200, wet: 0.6 },
-	car: { level: 1, cutoff: 900, wet: 0.15 },
-	field: { level: 0.4, cutoff: 5000, wet: 0.8 },
-	convoy: { level: 1.2, cutoff: 4200, wet: 0.2, hear: 45 }, // windows down, all of it
-}
-export const reach = (kind) => KINDS[kind].hear ?? HEAR
 
 // Where a song has got to after `elapsed` seconds: which timeline, the index of
 // the next note and that timeline's start, in seconds from the song's start.
@@ -67,16 +56,6 @@ export function synthFor(context, master) {
 	const synth = createSynth(context, master)
 	synth.out.gain.value = 0.6
 	return synth
-}
-
-// How a source of `kind` sounds `d` tiles away: level, reverb send and
-// lowpass cutoff. Your own car's radio plays clear; sitting in a car muffles
-// everyone else's.
-export function shape(kind, d, own = false, inCar = false) {
-	const k = KINDS[kind]
-	const near = 1 - Math.min(1, d / reach(kind))
-	const shut = inCar && !own ? 0.45 : 1
-	return { level: k.level * near * near * shut, wet: k.wet * near * shut, cutoff: own ? 6000 : k.cutoff * (0.35 + 0.65 * near) * shut }
 }
 
 // Starts a source's song through its own level, lowpass and pan, silent until

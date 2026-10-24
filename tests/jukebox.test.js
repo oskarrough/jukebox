@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import { readFileSync, readdirSync } from 'node:fs'
-import { compile, noteToMidi } from '../src/score.js'
+import { compile, noteToMidi, parseKey } from '../src/score.js'
 import { mtof } from '../src/synth.js'
-import { HEAR, cueAt, join, shape } from '../src/player.js'
+import { HEAR, cueAt, join, shape, runChain, effectState, EFFECTS } from '../src/player.js'
 import { BRICKS, addBrick } from '../src/bricks.js'
+import { inferKey, keyOf, setSongKey, starter, transposeScore } from '../src/key.js'
 
 const STARTER_ISH = 'voice kick kick\npattern A\nkick | x... x... x... x... |\nloop A'
 
@@ -114,5 +115,78 @@ describe('loop bricks', () => {
 	test('a second brick of the same kind gets its own voice', () => {
 		const once = addBrick(STARTER_ISH, BRICKS[0]).text
 		expect(addBrick(once, BRICKS[0]).voice).toBe('kick3')
+	})
+})
+
+describe('effects rack', () => {
+	test('Source, Distance and Inferno are devices in the chain', () => {
+		expect(EFFECTS.map((fx) => fx.id)).toEqual(['source', 'distance', 'inferno'])
+	})
+
+	test('all on with the current settings matches the old shape()', () => {
+		const fx = effectState()
+		for (const kind of ['radio', 'bar', 'window', 'car', 'convoy']) {
+			for (const d of [0, 4, 18, 40]) {
+				fx.source.kind = kind
+				fx.distance.d = d
+				fx.inferno.inCar = false
+				const a = shape(kind, d)
+				const b = runChain(fx)
+				expect(b.level).toBeCloseTo(a.level)
+				expect(b.wet).toBeCloseTo(a.wet)
+				expect(b.cutoff).toBeCloseTo(a.cutoff)
+			}
+		}
+		const muffled = runChain({ ...effectState(), inferno: { on: true, inCar: true } })
+		const old = shape('radio', 4, false, true)
+		expect(muffled.level).toBeCloseTo(old.level)
+		expect(muffled.cutoff).toBeCloseTo(old.cutoff)
+	})
+
+	test('each device can be bypassed on its own', () => {
+		const far = runChain({ source: { on: true, kind: 'bar' }, distance: { on: false, d: 20 }, inferno: { on: true, inCar: false } })
+		expect(far.level).toBeCloseTo(shape('bar', 0).level)
+		expect(far.cutoff).toBeCloseTo(shape('bar', 0).cutoff)
+
+		const cabin = runChain({ source: { on: true, kind: 'radio' }, distance: { on: true, d: 4 }, inferno: { on: false, inCar: true } })
+		expect(cabin.level).toBeCloseTo(shape('radio', 4, false, false).level)
+
+		const dry = runChain({ source: { on: false, kind: 'car' }, distance: { on: false, d: 20 }, inferno: { on: false, inCar: true } })
+		expect(dry.level).toBeCloseTo(1)
+		expect(dry.cutoff).toBeGreaterThan(8000)
+	})
+})
+
+describe('song key', () => {
+	test('key in the head is parsed, and songs in music/ still play without one', () => {
+		expect(parseKey('C').pc).toBe(0)
+		expect(parseKey('Dm')).toEqual({ letter: 'D', acc: '', minor: true, pc: 2, name: 'Dm' })
+		expect(parseKey('F#').name).toBe('F#')
+		expect(compile('key G\nvoice a sine\npattern A\na | G4 |\nloop A').key.name).toBe('G')
+		for (const name of SCORES) expect(score(name).key).toBeNull()
+	})
+
+	test('new songs and bricks follow the key, instead of always landing in C', () => {
+		const inG = starter('G')
+		expect(inG).toMatch(/^key\s+G$/m)
+		expect(inG).toMatch(/G5-/)
+		expect(inG).toMatch(/\[G\]/)
+		expect(inG).not.toMatch(/\[C\]/)
+		const pulse = BRICKS.find((b) => b.id === 'pulse')
+		const { text } = addBrick('key G\nvoice a sine\npattern A\na | G4 |\nloop A', pulse)
+		expect(text).toMatch(/G2/)
+		expect(text).not.toMatch(/C2/)
+		const { text: inC } = addBrick('key C\nvoice a sine\npattern A\na | C4 |\nloop A', pulse)
+		expect(inC).toMatch(/C2/)
+	})
+
+	test('changing key transposes notes and chords in the score', () => {
+		const moved = setSongKey('key C\nvoice pad strings center=E4\npattern A\npad | [C] [Am] C4 |\nloop A', 'D')
+		expect(moved).toMatch(/^key\s+D$/m)
+		expect(moved).toMatch(/\[D\].*\[Bm\].*D4/)
+		expect(moved).toMatch(/center=F#4/)
+		expect(transposeScore('lead | C5- Eq4- |', 5, parseKey('F'))).toMatch(/F5-.*Aq4-/)
+		expect(keyOf('voice a sine\npattern A\na | G4 G4 D5 |\nloop A').pc).toBe(7)
+		expect(inferKey(compile('voice a sine\npattern A\na | G4 G4 D5 B4 |\nloop A')).name).toMatch(/^G/)
 	})
 })

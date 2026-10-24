@@ -2,6 +2,7 @@
 // a song as a new voice playing it in every pattern. A brick is 16 steps; it
 // stretches to whatever a bar holds in the song.
 import { parse } from './score.js'
+import { keyOf, transposeBrick } from './key.js'
 
 // Drums: x hit, X accent, o soft, . nothing. Melodic: a note or chord starts,
 // - holds it, . rests.
@@ -10,16 +11,16 @@ export const BRICKS = [
 	{ id: 'kick', shelf: 'Drums', label: '4 to the floor', voice: 'kick', inst: 'kick', vol: 0.9, steps: 'x... x... x... x...' },
 	{ id: 'break', shelf: 'Drums', label: 'Breakbeat', voice: 'kick', inst: 'kick', vol: 0.9, steps: 'x... .... ..x. .x..' },
 	{ id: 'snare', shelf: 'Drums', label: 'Backbeat', voice: 'snare', inst: 'snare', vol: 0.6, steps: '.... x... .... x...' },
-	{ id: 'clap', shelf: 'Drums', label: 'Klatschen', voice: 'clap', inst: 'clap', vol: 0.55, steps: '.... x... .... x..x' },
+	{ id: 'clap', shelf: 'Drums', label: 'Claps', voice: 'clap', inst: 'clap', vol: 0.55, steps: '.... x... .... x..x' },
 	{ id: 'hats', shelf: 'Drums', label: 'Hi-Hats', voice: 'hat', inst: 'hat', vol: 0.4, steps: 'x.x. x.x. x.x. xxxx' },
 	{ id: 'offhat', shelf: 'Drums', label: 'Offbeat', voice: 'ohat', inst: 'ohat', vol: 0.3, steps: '..x. ..x. ..x. ..x.' },
 	{ id: 'shaker', shelf: 'Drums', label: 'Shaker', voice: 'shaker', inst: 'shaker', vol: 0.35, steps: 'xoxo xoxo xoxo xoxo' },
 	{ id: 'darbuka', shelf: 'Drums', label: 'Darbuka', voice: 'darbuka', inst: 'dum', vol: 0.7, steps: 'x... ..x. x... ....' },
-	{ id: 'cowbell', shelf: 'Drums', label: 'Kuhglocke', voice: 'cowbell', inst: 'cowbell', vol: 0.35, steps: 'x... x... x... x.x.' },
+	{ id: 'cowbell', shelf: 'Drums', label: 'Cowbell', voice: 'cowbell', inst: 'cowbell', vol: 0.35, steps: 'x... x... x... x.x.' },
 	{
 		id: 'pulse',
 		shelf: 'Bass',
-		label: 'Puls',
+		label: 'Pulse',
 		voice: 'bass',
 		inst: 'synbass',
 		vol: 0.8,
@@ -28,7 +29,7 @@ export const BRICKS = [
 	{
 		id: 'bounce',
 		shelf: 'Bass',
-		label: 'Oktaven',
+		label: 'Octaves',
 		voice: 'bass',
 		inst: 'ebass',
 		vol: 0.8,
@@ -37,8 +38,8 @@ export const BRICKS = [
 	{ id: '808', shelf: 'Bass', label: '808', voice: 'b808', inst: '808', vol: 1, notes: notes('C2 - - - - - . C2 - . . . Eb2 - - -') },
 	{
 		id: 'pad',
-		shelf: 'Akkorde',
-		label: 'Fläche',
+		shelf: 'Chords',
+		label: 'Pad',
 		voice: 'pad',
 		inst: 'pad',
 		vol: 0.35,
@@ -46,8 +47,8 @@ export const BRICKS = [
 	},
 	{
 		id: 'organ',
-		shelf: 'Akkorde',
-		label: 'Orgel-Stabs',
+		shelf: 'Chords',
+		label: 'Organ stabs',
 		voice: 'organ',
 		inst: 'organ',
 		vol: 0.4,
@@ -55,7 +56,7 @@ export const BRICKS = [
 	},
 	{
 		id: 'arp',
-		shelf: 'Melodie',
+		shelf: 'Melody',
 		label: 'Arpeggio',
 		voice: 'arp',
 		inst: 'marimba',
@@ -64,8 +65,8 @@ export const BRICKS = [
 	},
 	{
 		id: 'bells',
-		shelf: 'Melodie',
-		label: 'Glöckchen',
+		shelf: 'Melody',
+		label: 'Bells',
 		voice: 'bell',
 		inst: 'glock',
 		vol: 0.45,
@@ -73,7 +74,7 @@ export const BRICKS = [
 	},
 	{
 		id: 'chip',
-		shelf: 'Melodie',
+		shelf: 'Melody',
 		label: 'Chiptune',
 		voice: 'chip',
 		inst: 'chip',
@@ -110,6 +111,7 @@ const strip = (line) => line.replace(/(^|\s)#.*$/, '').trim()
 // pattern, as many bars long as the pattern.
 export function addBrick(text, brick) {
 	const { song } = parse(text)
+	brick = transposeBrick(brick, keyOf(text, song))
 	let name = brick.voice
 	for (let k = 2; song.voiceMap[name]; k++) name = `${brick.voice}${k}`
 	const lines = text.split('\n')
