@@ -1,0 +1,67 @@
+title    Altamesa
+about    The hollow mesa. A timple strums a slow Canarian folía over an upright bass, a pito flute sings the tune, chácaras rattle and Gnomon's clock never stops ticking. Down the sun wing Carillon's bells take up the main theme in a round; down the shade wing there is only the drone and the boat.
+tempo    100
+beats    3
+steps    2
+reverb   0.45
+key      Am
+
+# A minor with the Andalusian fall (Am G F E). One bar is three slow beats.
+voice timple guitar   vol=0.6  pan=-0.25 center=A4
+voice harp   harp     vol=0.45 pan=0.3
+voice bass   upright  vol=0.75
+voice pito   flute    vol=0.6  pan=0.1
+voice drone  pipe     vol=0.22 att=1.2 rel=2
+voice bell   bell     vol=0.4  pan=0.35
+voice bell2  bell     vol=0.32 pan=-0.35
+voice kiln   timpani  vol=0.5
+voice tick   clave    vol=0.22 pan=0.15
+voice chac   block    vol=0.3  pan=-0.3
+voice tambor bodhran  vol=0.55
+voice shaker shaker   vol=0.25 pan=0.3
+voice gong   gong     vol=0.25
+
+# the clock, the drone and the harp: something very old is awake
+pattern intro
+drone | A2+E3----- | % | % | A2+E3----- |
+harp  | A3 E4 A4 C5 B4 E4 | A3 E4 A4 C5 B4 E4 | F3 C4 F4 A4 G4 C4 | E3 B3 E4 G#4 B4 E4 |
+tick  | x.o.o. | % | % | % |
+
+pattern A
+timple | [Am]- [Am] [Am] [Am]- | [G]- [G] [G] [G]- | [F]- [F] [F] [F]- | [E]- [E] [E] [E]- | [Am]- [Am] [Am] [Am]- | [G]- [G] [G] [G]- | [F]- [F] [F] [F]- | [E]- [E] [E] [E]- |
+bass   | A2--- E2- | G2--- D2- | F2--- C2- | E2--- B1- | A2--- E2- | G2--- D2- | F2--- C2- | E2- G#2- B2- |
+pito   | E5--- C5 D5 | B4--- A4 B4 | C5- A4- F4- | G#4----- | E5--- F5 E5 | D5- B4- G4- | A4- C5- B4 A4 | B4--- G#4- |
+drone  | A2+E3----- | = | = | = | = | = | = | E2+B2----- |
+tick   | x.o.o. | % | % | % | % | % | % | % |
+chac   | ...x.x | ...xxx | ...x.x | x.xxx. | ...x.x | ...xxx | ...x.x | xxxxxx |
+tambor | X..x.. | X..x.. | X..x.. | X.xx.x | X..x.. | X..x.. | X..x.. | X.xX.X |
+
+# the sun comes in through the top of the mesa
+pattern B from A
+timple | [C]- [C] [C] [C]- | [G]- [G] [G] [G]- | [Am]- [Am] [Am] [Am]- | [E]- [E] [E] [E]- | [C]- [C] [C] [C]- | [G7]- [G7] [G7] [G7]- | [Am]- [Am] [Am] [Am]- | [E7]- [E7] [E7] [E7]- |
+bass   | C3--- G2- | G2--- B2- | A2--- C3- | E2--- G#2- | C3--- E3- | G2--- F2- | A2--- E2- | E2- G#2- B2- |
+pito   | G5--- E5- | D5--- B4- | C5- E5- A5- | G#5----- | G5- A5- G5- | F5- D5- B4- | C5- B4- A4- | G#4--- E4- |
+drone  | C3+G3----- | = | A2+E3----- | E2+B2----- | C3+G3----- | = | A2+E3----- | E2+B2----- |
+harp   | C4 E4 G4 C5 G4 E4 | B3 D4 G4 B4 G4 D4 | A3 C4 E4 A4 E4 C4 | G#3 B3 E4 G#4 E4 B3 | C4 E4 G4 C5 G4 E4 | B3 D4 F4 G4 F4 D4 | A3 C4 E4 A4 E4 C4 | G#3 B3 D4 E4 D4 B3 |
+shaker | xoxoxo | % | % | % | % | % | % | % |
+
+# Carillon: the bells take up the main theme in a round, a bar apart, and the kiln answers from below
+pattern C
+bell   | E5- C5 E5 F5- | A5--- F5 E5 | F5- D5 F5 G5- | G#5--- E5- | E5- C5 E5 F5- | A5--- C6 B5 | A5- F5- D5 F5 | E5----- |
+bell2  | _ | E4- C4 E4 F4- | A4--- F4 E4 | F4- D4 F4 G4- | G#4--- E4- | E4- C4 E4 F4- | A4--- C5 B4 | G#4----- |
+harp   | A3 E4 A4 C5 B4 E4 | A3 E4 A4 C5 B4 E4 | F3 C4 F4 A4 G4 C4 | E3 B3 E4 G#4 B4 E4 | A3 E4 A4 C5 B4 E4 | F3 C4 F4 A4 G4 C4 | D3 A3 D4 F4 A4 F4 | E3 B3 E4 G#4 B4 E4 |
+bass   | A2----- | = | F2----- | E2----- | A2----- | F2----- | D2----- | E2----- |
+drone  | A2+E3----- | = | F2+C3----- | E2+B2----- | A2+E3----- | F2+C3----- | D2+A2----- | E2+B2----- |
+kiln   | A1- ....  | ...... | F1- .... | E1- .. E1 E1 | A1- .... | F1- .... | D2- .... | E1- E1? E1? E1- |
+tick   | x.o.o. | % | % | % | % | % | % | % |
+
+# Barquero's ferry down the shade wing: the drone, the boat rocking, a low flute
+pattern D
+drone  | A2+E3----- | = | = | = | F2+C3----- | = | E2+B2----- | = |
+pito   | A4----- | C5- B4- A4- | E4----- | ...... | F4- A4- C5- | B4----- | G#4----- | ...... |
+bass   | A2----- | ...... | A2----- | ...... | F2----- | ...... | E2----- | ...... |
+tick   | x..... | % | % | % | % | % | % | x.o.o. |
+gong   | x..... | ...... | ...... | ...... | ...... | ...... | ...... | ...... |
+
+play intro
+loop A B C A D

@@ -1,0 +1,81 @@
+title    Overthrow
+about    The green isle by day. Bright samba-funk in E dorian, after Azymuth's Jazz Carnival: flute and Minimoog in unison, a marimba ticking like water over stone, Rhodes and a singing fretless, and the main theme coming back on vibes in the quiet where the waterfalls pour off the edge.
+tempo    120
+beats    4
+steps    4
+reverb   0.32
+key      Em
+
+# E dorian (the C# is the sunlight), with the main theme's lydian moved to G for the break.
+voice flute  flute    vol=0.55 pan=-0.15
+voice lead   moog     vol=0.45 pan=0.15 glide=0.05
+voice keys   rhodes   vol=0.7  pan=-0.25 center=E4
+voice mar    marimba  vol=0.55 pan=0.35
+voice glass  vibes    vol=0.7  pan=0.3
+voice bass   fretless vol=0.8  glide=0.06
+voice ahh    voices   vol=0.35 center=B4 att=0.5 rel=1
+voice falls  surf     vol=0.18
+voice kick   kick     vol=0.85
+voice snare  snare    vol=0.5
+voice hat    hat      vol=0.3  pan=0.2
+voice shaker shaker   vol=0.35 pan=-0.3
+voice tamb   tamb     vol=0.3  pan=0.4
+voice conga  conga    vol=0.45 pan=0.35
+voice cuica  cuica    vol=0.45 pan=-0.4
+voice crash  crash    vol=0.3
+
+# water over stone, and the band coming up the steps
+pattern intro
+mar    | E4 B4 D5 B4 G4 B4 F#5 B4 E4 B4 D5 B4 G4 B4 F#5 B4 | A3 E4 G4 B4 C#5 B4 G4 E4 A3 E4 G4 B4 C#5 B4 G4 E4 | E4 B4 D5 B4 G4 B4 F#5 B4 E4 B4 D5 B4 G4 B4 F#5 B4 | A3 E4 G4 B4 C#5 B4 G4 E4 A3 E4 G4 B4 C#5 B4 G4 E4 |
+falls  | x............... | ................ | x............... | ................ |
+keys   | _ | _ | [Em9]-- ... [Em9]- .. [Em9]----- | [A9]-- ... [A9]- .. [A9]----- |
+bass   | _ | _ | E2-- . E3- B2- E2-- . D3- B2- | A1-- . A2- E2- A1-- . G2- E2- |
+hat    | _ | _ | x.x.x.x.x.x.x.x. | x.x.x.x.x.x.xxxx |
+cuica  | _ | _ | _ | ........x.o.X.x. |
+
+pattern A
+mar    | E4 B4 D5 B4 G4 B4 F#5 B4 E4 B4 D5 B4 G4 B4 F#5 B4 | A3 E4 G4 B4 C#5 B4 G4 E4 A3 E4 G4 B4 C#5 B4 G4 E4 | E4 B4 D5 B4 G4 B4 F#5 B4 E4 B4 D5 B4 G4 B4 F#5 B4 | A3 E4 G4 B4 C#5 B4 G4 E4 A3 E4 G4 B4 C#5 B4 G4 E4 | C4 G4 B4 G4 E4 G4 D5 G4 C4 G4 B4 G4 E4 G4 D5 G4 | B3 F#4 A4 F#4 D4 F#4 C#5 F#4 B3 F#4 A4 F#4 D4 F#4 C#5 F#4 | A3 E4 G4 E4 C4 E4 B4 E4 A3 E4 G4 E4 C4 E4 B4 E4 | D4 A4 C5 A4 F#4 A4 E5 A4 D4 A4 C5 A4 F#4 A4 E5 A4 |
+keys   | [Em9]-- ... [Em9]- .. [Em9]----- | [A9]-- ... [A9]- .. [A9]----- | [Em9]-- ... [Em9]- .. [Em9]----- | [A9]-- ... [A9]- .. [A9]----- | [Cmaj9]-- ... [Cmaj9]- .. [Cmaj9]----- | [Bm7]-- ... [Bm7]- .. [Bm7]----- | [Am9]-- ... [Am9]- .. [Am9]----- | [D9]-- ... [D9]- .. [D9]----- |
+bass   | E2-- . E3- B2- E2-- . D3- B2- | A1-- . A2- E2- A1-- . G2- E2- | E2-- . E3- B2- E2-- . D3- B2- | A1-- . A2- E2- A1-- . G2- E2- | C2-- . C3- G2- C2-- . B2- G2- | B1-- . B2- F#2- B1-- . A2- F#2- | A1-- . A2- E2- A1-- . G2- C3- | D2-- . D3- A2- D2-- . C3- A2- |
+flute  | B4- . D5 . E5- F#5- E5 D5- B4--- | C#5------- . A4 B4- C#5--- | B4- . D5 . E5- F#5- A5 G5- F#5--- | E5------- . . C#5- E5- G5- | G5--- E5- D5- B4------- | A4- B4- D5- F#5----- E5- D5- | E5------- G5- E5- C5- B4- | A4------- ........ |
+kick   | x.....x.x.....x. | % | % | % | % | % | % | x.....x.x...x.x. |
+snare  | ..o.x..o...ox..o | % | % | % | % | % | % | ..o.x..o..o.x.xx |
+hat    | x.x.x.x.x.x.x.xo | % | % | % | % | % | % | x.x.x.x.x.x.xxxx |
+shaker | XoxoXoxoXoxoXoxo | % | % | % | % | % | % | % |
+tamb   | ....x.......x... | % | % | % | % | % | % | % |
+conga  | ....o.x.....x.xx | % | % | % | % | % | % | ....o.x...x.x.x. |
+cuica  | _ | _ | _ | ........x.o.X.x. | _ | _ | _ | ..x.o.X.x.o.X... |
+crash  | x............... | _ | _ | _ | _ | _ | _ | _ |
+
+# the Moog joins the flute an octave down
+pattern A2 from A
+lead   | B3- . D4 . E4- F#4- E4 D4- B3--- | C#4------- . A3 B3- C#4--- | B3- . D4 . E4- F#4- A4 G4- F#4--- | E4------- . . C#4- E4- G4- | G4--- E4- D4- B3------- | A3- B3- D4- F#4----- E4- D4- | E4------- G4- E4- C4- B3- | A3------- ........ |
+glass  | _ | _ | _ | _ | _ | _ | _ | ........ D5 C5 A4 F#4 E4 D4 C4 A3 |
+
+# the sky opens: the Moog sings, vocoder air and a marimba that won't sit still
+pattern B
+mar    | C4 G4 B4 G4 E4 G4 D5 G4 C4 G4 B4 G4 E4 G4 D5 G4 | B3 F#4 A4 F#4 D4 F#4 C#5 F#4 B3 F#4 A4 F#4 D4 F#4 C#5 F#4 | A3 E4 G4 E4 C4 E4 B4 E4 A3 E4 G4 E4 C4 E4 B4 E4 | G3 D4 F#4 D4 B3 D4 A4 D4 G3 D4 F#4 D4 B3 D4 A4 D4 | C4 G4 B4 G4 E4 G4 D5 G4 C4 G4 B4 G4 E4 G4 D5 G4 | B3 F#4 A4 F#4 D4 F#4 C#5 F#4 B3 F#4 A4 F#4 D4 F#4 C#5 F#4 | A3 E4 G4 E4 C4 E4 B4 E4 A3 E4 G4 E4 C4 E4 B4 E4 | B3 F#4 A4 F#4 D#4 F#4 C#5 F#4 B3 F#4 A4 F#4 D#4 F#4 C#5 F#4 |
+keys   | [Cmaj9]-- ... [Cmaj9]- .. [Cmaj9]----- | [Bm9]-- ... [Bm9]- .. [Bm9]----- | [Am9]-- ... [Am9]- .. [Am9]----- | [Gmaj9]-- ... [Gmaj9]- .. [Gmaj9]----- | [Cmaj9]-- ... [Cmaj9]- .. [Cmaj9]----- | [Bm9]-- ... [Bm9]- .. [Bm9]----- | [Am9]-- ... [Am9]- .. [Am9]----- | [B7sus4]-- ... [B7sus4]- .. [B7]----- |
+ahh    | [Cmaj9]--------------- | [Bm9]--------------- | [Am9]--------------- | [Gmaj9]--------------- | [Cmaj9]--------------- | [Bm9]--------------- | [Am9]--------------- | [B7sus4]------- [B7]------- |
+bass   | C2-- . C3- G2- C2-- . B2- G2- | B1-- . B2- F#2- B1-- . A2- F#2- | A1-- . A2- E2- A1-- . G2- C3- | G1-- . G2- D2- G1-- . F#2- D2- | C2-- . C3- G2- C2-- . B2- G2- | B1-- . B2- F#2- B1-- . A2- F#2- | A1-- . A2- E2- A1-- . G2- C3- | B1-- . B2- F#2- B1-- . A2- D#2- |
+lead   | E5--- G5--- B5------- | A5--- F#5- D5- C#5------- | C5--- E5--- G5- B5- ~A5--- | F#5--------------- | G5- E5- G5- B5- D6----- B5- | A5- F#5- D5- F#5- A5------- | G5- E5- C5- E5- G5--- F#5- E5- | E5------- D#5------- |
+flute  | _ | _ | _ | _ | G5- E5- G5- B5- D6----- B5- | A5- F#5- D5- F#5- A5------- | G5- E5- C5- E5- G5--- F#5- E5- | E5------- D#5------- |
+kick   | x.....x.x.....x. | % | % | % | % | % | % | x.....x.x...x.x. |
+snare  | ..o.x..o...ox..o | % | % | % | % | % | % | ..o.x..o..o.x.xx |
+hat    | x.x.x.x.x.x.x.xo | % | % | % | % | % | % | x.x.x.x.x.x.xxxx |
+shaker | XoxoXoxoXoxoXoxo | % | % | % | % | % | % | % |
+conga  | ....o.x.....x.xx | % | % | % | % | % | % | ....o.x...x.x.x. |
+crash  | x............... | _ | _ | _ | x............... | _ | _ | _ |
+
+# where the water pours off the isle: the main theme on vibes, the falls, and nothing in a hurry
+pattern C
+mar    | G3 D4 F#4 D4 B3 D4 A4 D4 G3 D4 F#4 D4 B3 D4 A4 D4 | G3 C#4 E4 A4 B4 A4 E4 C#4 G3 C#4 E4 A4 B4 A4 E4 C#4 | E4 B4 D5 B4 G4 B4 F#5 B4 E4 B4 D5 B4 G4 B4 F#5 B4 | C4 G4 B4 G4 E4 G4 D5 G4 C4 G4 B4 G4 E4 G4 D5 G4 |
+glass  | D5- . B4 D5- E5- G5--- E5- D5- | C#5- . E5 . A5- B5------ A5- | B5- . A5 G5- F#5- G5--- D5- E5- | G5------- . . A5- G5- E5- |
+falls  | X............... | ................ | x............... | ................ |
+ahh    | [Gmaj9]--------------- | [A/G]--------------- | [Em9]--------------- | [Cmaj9]------- [D9]------- |
+bass   | G1--------------- | G1--------------- | E2--------------- | C2------- D2------- |
+shaker | XoxoXoxoXoxoXoxo | % | % | % |
+cuica  | _ | _ | _ | ........x.o.X.x. |
+
+play intro
+loop A A2 B A2 C

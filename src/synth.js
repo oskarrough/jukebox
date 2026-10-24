@@ -242,6 +242,36 @@ const INST = {
 			noise(S, out, t, { f: f * 2.5, q: 1.2, tau: 0.004, peak: v * 0.06 })
 		},
 	},
+	// Tine electric piano: FM bark on the attack that mellows into a sine, a bell
+	// ping from the tine, and a slow tremolo. Play it harder and it growls.
+	rhodes: {
+		rev: 0.25,
+		level: 0.9,
+		play(S, out, t, d, f, v, p) {
+			const trem = G(S, 0.88)
+			trem.connect(out)
+			const tau = clamp(1.6 * Math.pow(440 / f, 0.35), 0.5, 3)
+			const g = G(S)
+			g.connect(trem)
+			const end = perc(g.gain, t, { a: 0.003, tau, peak: v * 0.62, damp: t + d + (p.rel || 0.12), dampTau: 0.09 })
+			const lfo = S.ctx.createOscillator()
+			lfo.frequency.value = 4.6
+			const lg = G(S, 0.1)
+			lfo.connect(lg).connect(trem.gain)
+			lfo.start(t)
+			lfo.stop(end)
+			const car = O(S, 'sine', f, t, end, p)
+			const mod = O(S, 'sine', f, t, end, p)
+			const idx = G(S)
+			const bark = f * (0.6 + 2.4 * v * v) * p.bright
+			idx.gain.setValueAtTime(bark, t)
+			idx.gain.setTargetAtTime(f * 0.18 * p.bright, t, 0.22)
+			mod.connect(idx).connect(car.frequency)
+			car.connect(g)
+			partial(S, trem, t, f * 7.1, { a: 0.001, tau: 0.05, peak: v * 0.08 * p.bright })
+			noise(S, trem, t, { type: 'lowpass', f: 900, q: 0.6, tau: 0.008, peak: v * 0.05 })
+		},
+	},
 	vibes: {
 		rev: 0.35,
 		level: 0.4,
@@ -742,6 +772,34 @@ const INST = {
 			o.connect(sat)
 		},
 	},
+	// Monophonic analog lead: two detuned saws and a square an octave down
+	// through a resonant lowpass that opens on each note. Made for ~glides.
+	moog: {
+		rev: 0.28,
+		level: 0.9,
+		play(S, out, t, d, f, v, p) {
+			const g = G(S)
+			const lp = F(S, 'lowpass', f * 2, 6)
+			const lp2 = F(S, 'lowpass', f * 2, 0.7)
+			lp.connect(lp2).connect(g).connect(out)
+			const end = adsr(g.gain, t, d, { a: p.att || 0.008, dc: 0.25, s: 0.85, r: p.rel || 0.09, peak: v * 0.34 })
+			const top = Math.min(9000, (f * 6 + 700) * p.bright * (0.6 + 0.4 * v))
+			for (const fl of [lp, lp2]) {
+				fl.frequency.setValueAtTime(f * 1.5, t)
+				fl.frequency.linearRampToValueAtTime(top, t + 0.025)
+				fl.frequency.setTargetAtTime(Math.min(top, f * 3 + 400), t + 0.025, 0.18)
+			}
+			const os = [-6, 6].map((c) => {
+				const o = O(S, 'sawtooth', f, t, end, p, 1, c)
+				o.connect(lp)
+				return o
+			})
+			const sg = G(S, 0.3)
+			const sub = O(S, 'square', f, t, end, p, 0.5)
+			sub.connect(sg).connect(lp)
+			vibrato(S, t, end, [...os, sub], { rate: 5.4, depth: 9, delay: 0.35, rise: 0.4 })
+		},
+	},
 	fretless: {
 		rev: 0.12,
 		level: 0.69,
@@ -983,6 +1041,29 @@ const DRUM = {
 			const end = perc(g.gain, t, { a: 0.001, tau: 0.085, peak: v * 0.7 })
 			O(S, 'square', 545, t, end).connect(bp)
 			O(S, 'square', 815, t, end).connect(bp)
+		},
+	},
+	// Friction drum of the samba school: a squeak that rises and falls. X sings high, o low.
+	cuica: {
+		rev: 0.2,
+		level: 0.85,
+		hit(S, out, t, v) {
+			const base = 260 + 420 * v
+			const g = G(S)
+			const bp = F(S, 'bandpass', base * 2, 1.5)
+			g.connect(out)
+			bp.connect(g)
+			const end = perc(g.gain, t, { a: 0.012, tau: 0.07, peak: v * 0.7 })
+			const o = O(S, 'triangle', base, t, end)
+			o.frequency.setValueAtTime(base * 0.75, t)
+			o.frequency.exponentialRampToValueAtTime(base * 1.5, t + 0.06)
+			o.frequency.exponentialRampToValueAtTime(base, t + 0.2)
+			o.connect(bp)
+			const s2 = O(S, 'sine', base, t, end)
+			s2.frequency.setValueAtTime(base * 0.75, t)
+			s2.frequency.exponentialRampToValueAtTime(base * 1.5, t + 0.06)
+			s2.frequency.exponentialRampToValueAtTime(base, t + 0.2)
+			s2.connect(g)
 		},
 	},
 	guiro: {
