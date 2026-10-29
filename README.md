@@ -21,7 +21,7 @@ The format is Simon Willison's [Scrimshaw](https://tools.simonwillison.net/scrim
 
 To add a song, click "New", write it, click "Export" (downloads the current song as a `.song` file, the same format `music/` and `bun test` already use), and put it in `music/`. It shows up on its own, and `bun test` checks it compiles and loops.
 
-A song's head can also say where it belongs in a game: `street Sonnenallee`, `at doener cafe`, `at feld`, `at autoradio`. The jukebox only parses these; it's up to the game what they mean.
+A song's head can also say which game it's for, `game dodgethis` (no `game` means NK GTA), and where it belongs in that game: `street Sonnenallee`, `at doener cafe`, `at feld`, `at autoradio`. The jukebox only parses these; it's up to the game what they mean.
 
 ## Code
 

@@ -188,6 +188,7 @@ function parse(text) {
 		about: '',
 		street: '',
 		at: [],
+		game: '',
 		tempo: 120,
 		beats: 4,
 		steps: 4,
@@ -247,6 +248,9 @@ function parse(text) {
 				break
 			case 'street':
 				song.street = restStr
+				break
+			case 'game':
+				song.game = restStr.toLowerCase()
 				break
 			case 'at':
 				song.at = restStr.toLowerCase().split(/\s+/).filter(Boolean)
@@ -695,6 +699,7 @@ function compile(text) {
 		about: song.about,
 		street: song.street,
 		at: song.at,
+		game: song.game,
 		tempo: song.tempo,
 		beats: song.beats,
 		steps: song.steps,
