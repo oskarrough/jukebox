@@ -1,0 +1,69 @@
+title    Noch Licht am Feld
+about    Schillerkiez amapiano for warm bar doors on Herrfurthstraße and Weisestraße, with everyone drifting towards the Feld. A whistled flute hook, floating Rhodes and a skipping 808 keep the evening open.
+key      Am
+street   Herrfurthstraße
+at       bar
+tempo    114
+beats    4
+steps    4
+swing    0.14
+reverb   0.28
+
+# Short 808 notes keep the built-in pitch drop percussive, like a log drum.
+voice log    808      vol=0.85 gate=0.55 rel=0.05 bright=0.8 rev=0.03
+voice keys   rhodes   vol=0.4  pan=-0.22 bright=0.65 gate=0.82 rev=0.35
+voice whistle flute  vol=0.52 pan=0.12 gate=0.85 att=0.025 rel=0.12 rev=0.38
+voice answer marimba vol=0.3  pan=0.32 bright=0.65 rev=0.22
+voice kick   kick    vol=0.55 rev=0.02
+voice shake  shaker  vol=0.27 pan=0.3 rev=0.08
+voice rim    rim     vol=0.28 pan=-0.3 rev=0.12
+voice clap   clap    vol=0.28 rev=0.16
+voice open   ohat    vol=0.15 pan=-0.12 rev=0.12
+
+# Four bars outside the door; the hook is there before the bass arrives.
+pattern doorway
+keys    | A3+C4+E4+B4------- ........ | ...... A3+C4+E4+B4--- ...... | G3+B3+D4+E4------- ........ | ...... G3+B3+D4+E4--- ...... |
+whistle | .. E5- G5- A5--- .. G5- E5- | .... D5- E5--- ...... | .. E5- G5- A5--- .. G5- E5- | D5--- B4- D5- E5--- .... |
+shake   | xoxo xoxo xoxo xoXo | % | % | xoxo xoxo xoxo xoXX |
+rim     | _ | .... .... .... x... | _ | .... .... .... x..o |
+
+# Two bars each of Am9, G6, Fmaj9, Em7; the offbeats leave the bass room.
+pattern street
+keys    | .. A3+C4+E4+B4----- .... A3+C4+E4+B4--- | ...... A3+C4+E4+B4----- .... | .. G3+B3+D4+E4----- .... G3+B3+D4+E4--- | ...... G3+B3+D4+E4----- .... |
+keys    | .. A3+C4+E4+G4----- .... A3+C4+E4+G4--- | ...... A3+C4+E4+G4----- .... | .. G3+B3+D4+E4----- .... G3+B3+D4+E4--- | ...... G3+B3+D4+E4----- .... |
+log     | A2- ... A2 . E3- .. A2- . C3- | .. A2- . G2 A2- ... E2- A2- . | G2- ... G2 . D3- .. G2- . B2- | .. G2- . A2 G2- ... D2- G2- . |
+log     | F2- ... F2 . C3- .. F2- . A2- | .. F2- . E2 F2- ... C2- F2- . | E2- ... E2 . B2- .. E3- . G2- | .. E2- . G2 E2- ... B2- E2- . |
+whistle | .. E5- G5- A5--- .. G5- E5- | .... D5- E5--- ...... | .. E5- G5- A5--- .. G5- E5- | D5--- B4- D5- E5--- .... |
+whistle | .. E5- G5- A5--- .. C6- A5- | G5--- E5--- ........ | .... G5- E5- D5--- B4- .. | E5------- ........ |
+kick    | x... .... x... .... | x... .... ..x. .... | x... .... x... .... | x... .... .... ..o. |
+kick    | x... .... x... .... | x... .... ..x. .... | x... .... x... .... | x... .... .... .... |
+shake   | xoxo xoXo xoxo xoXo | % | % | xoxo xoXo xoxo xoxX | xoxo xoXo xoxo xoXo | % | % | xoxo xoXo xoxo .... |
+rim     | .... ..x. .... .... | .... ..x. .... ..o. | .... ..x. .... .... | .... ..x. .... .... | .... ..x. .... .... | .... ..x. .... ..o. | .... ..x. .... .... | .... ..x. .... ..oo |
+clap    | .... .... .... x... | % | % | % | % | % | % | % |
+
+# Answer from the pavement: the hook rests, a woody little reply takes over.
+pattern pavement from street
+mute whistle
+answer  | .... .... E5- A5- G5- E5- | .... C5- E5- ........ | .... .... D5- G5- E5- D5- | .... B4- D5- ........ |
+answer  | .... .... C5- E5- G5- A5- | .... G5- E5- ........ | .... .... B4- D5- E5- G5- | E5--- ........ .... |
+open    | .... .... ..x. .... | _ | .... .... ..x. .... | _ | .... .... ..x. .... | _ | .... .... ..x. .... | _ |
+
+# Eight bars of air; bass answers only in the second half of each phrase.
+pattern air from street
+mute kick clap whistle rim
+shake   | x.o. x.o. x.o. x.o. | % | % | % | % | % | % | x.o. x.o. x.o. .... |
+log     | _ | ........ A2- . E3- A2- . | _ | ........ G2- . D3- G2- . | _ | ........ F2- . C3- F2- . | _ | ........ E2- . G2- E2- . |
+answer  | E5--- ........ .... | _ | D5--- ........ .... | _ | C5--- ........ .... | _ | B4--- ........ .... | .... .... D5- E5- G5- A5- |
+
+pattern lanterns from street
+open    | .... .... ..x. .... | _ | .... .... ..x. .... | _ | .... .... ..x. .... | _ | .... .... ..x. .... | _ |
+answer  | _ | ........ .... C5- E5- | _ | ........ .... B4- D5- | _ | ........ .... C5- E5- | _ | ........ .... B4- D5- |
+
+# Last phrase thins towards the door again; no crash or hard ending at the seam.
+pattern home from street
+whistle | .. E5- G5- A5--- .. G5- E5- | .... D5- E5--- ...... | _ | _ | .. E5- G5- A5--- .. C6- A5- | G5--- E5--- ........ | _ | ........ .... D5- E5- |
+clap    | .... .... .... x... | % | % | % | .... .... .... x... | % | _ | _ |
+kick    | x... .... x... .... | x... .... ..x. .... | x... .... x... .... | x... .... .... .... | x... .... x... .... | x... .... .... .... | _ | _ |
+
+play doorway
+loop street pavement street air lanterns home
