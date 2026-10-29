@@ -9,8 +9,8 @@ steps    4
 swing    0.14
 reverb   0.28
 
-# Short 808 notes keep the built-in pitch drop percussive, like a log drum.
-voice log    808      vol=0.85 gate=0.55 rel=0.05 bright=0.8 rev=0.03
+# The log drum carries the bass: short hollow hits that fall into pitch.
+voice log    logdrum  vol=0.85 rev=0.03
 voice keys   rhodes   vol=0.4  pan=-0.22 bright=0.65 gate=0.82 rev=0.35
 voice whistle flute  vol=0.52 pan=0.12 gate=0.85 att=0.025 rel=0.12 rev=0.38
 voice answer marimba vol=0.3  pan=0.32 bright=0.65 rev=0.22

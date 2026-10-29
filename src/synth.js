@@ -717,7 +717,7 @@ const INST = {
 	// third an octave up, a small body and the tick of the tezene.
 	saz: {
 		rev: 0.2,
-		level: 1,
+		level: 1.4,
 		play(S, out, t, d, f, v, p) {
 			const chain = () => [F(S, 'highpass', 160, 0.5), F(S, 'peaking', 2900, 1.1, 5 * p.bright), F(S, 'lowpass', 7500 * p.bright, 0.5)]
 			pluck(S, out, t, d, f, v * 0.4, PLUCK.saz, chain())

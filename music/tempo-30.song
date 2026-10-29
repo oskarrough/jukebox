@@ -7,12 +7,11 @@ beats    4
 steps    4
 reverb   0.2
 
-# The 808 cowbell is two square waves a fifth apart, so the riff is written in fifths.
+# The riff is the 808 cowbell played as notes; C#5 is where the stock bell sits.
 # Four bars, C#m C#m A G#: the riff stays, the 808 drifts underneath.
-voice bell  square   vol=0.42 pan=0.1  gate=0.5 bright=0.3 rel=0.06
+voice bell  cowbell808 vol=0.42 pan=0.1
 voice vox   voices   vol=0.5  pan=-0.2 glide=0.25 att=0.03 rel=0.3
-voice b808  808      vol=0.95 glide=0.09 bright=1.6
-voice grit  saw      vol=0.16 glide=0.09 bright=0.12
+voice b808  808      vol=0.95 glide=0.09 bright=1.6 drive=1
 voice kick  kick     vol=0.9
 voice snare snare    vol=0.65
 voice clap  clap     vol=0.5  pan=-0.1
@@ -22,11 +21,10 @@ voice cow   cowbell  vol=0.3  pan=0.1
 voice crash crash    vol=0.3  pan=-0.2
 
 pattern A
-bell  | C#5+G#5 .. C#5+G#5 .. E5+B5- C#5+G#5- B4+F#5- G#4+D#5- B4+F#5- | C#5+G#5 .. C#5+G#5 .. E5+B5- F#5+C#6- E5+B5- C#5+G#5- B4+F#5 C#5+G#5 |
-bell  | C#5+G#5 .. C#5+G#5 .. E5+B5- C#5+G#5- B4+F#5- A4+E5- B4+F#5- | G#4+D#5 .. G#4+D#5 .. B4+F#5- C5+G5- D#5+A#5- C5+G5- G#4+D#5- |
+bell  | C#5 .. C#5 .. E5- C#5- B4- G#4- B4- | C#5 .. C#5 .. E5- F#5- E5- C#5- B4 C#5 |
+bell  | C#5 .. C#5 .. E5- C#5- B4- A4- B4- | G#4 .. G#4 .. B4- C5- D#5- C5- G#4- |
 cow   | x..x .... .... .... | % | % | x..x .... .... .... |
 b808  | C#2------- .. C#2- ~C#3- ~C#2- | C#2------- .. C#2- ~E2- ~F#2- | ~A1------- .. A1- ~A2- ~A1- | G#1------- .. G#1- ~G#2- ~B2- |
-grit  | C#2------- .. C#2- ~C#3- ~C#2- | C#2------- .. C#2- ~E2- ~F#2- | ~A1------- .. A1- ~A2- ~A1- | G#1------- .. G#1- ~G#2- ~B2- |
 kick  | X... .... ..x. .... | X... ..x. ..x. .... | X... .... ..x. .... | X... ..x. .... .x.. |
 snare | .... .... X... .... | % | % | .... .... X... ..xx |
 clap  | .... .... x... .... | % | % | % |
@@ -42,8 +40,8 @@ crash | _ | _ | _ | _ |
 
 # The riff climbs: same rhythm, an octave of trouble higher.
 pattern B from A2
-bell  | G#5+D#6 .. G#5+D#6 .. F#5+C#6- E5+B5- F#5+C#6- E5+B5- C#5+G#5- | E5+B5 .. E5+B5 .. F#5+C#6- G#5+D#6- F#5+C#6- E5+B5- C#5+G#5 E5+B5 |
-bell  | A5+E6 .. A5+E6 .. G#5+D#6- E5+B5- C#5+G#5- E5+B5- G#5+D#6- | G#5+D#6 .. G#5+D#6 .. D#5+A#5- C5+G5- G#4+D#5- C5+G5- D#5+A#5- |
+bell  | G#5 .. G#5 .. F#5- E5- F#5- E5- C#5- | E5 .. E5 .. F#5- G#5- F#5- E5- C#5 E5 |
+bell  | A5 .. A5 .. G#5- E5- C#5- E5- G#5- | G#5 .. G#5 .. D#5- C5- G#4- C5- D#5- |
 vox   | C#5------- ~G#4------- | _ | C#5------- ~A4------- | ~G#4----------- ~D#4--- |
 cow   | _ | _ | _ | _ |
 crash | x... .... .... .... | _ | _ | _ |
@@ -55,14 +53,14 @@ crash | _ | _ | _ | _ |
 
 # The kit gets out of the way and the 808 drifts on its own.
 pattern C from A
-mute bell kick snare clap hat crash grit
+mute bell kick snare clap hat crash
 vox   | C#4------- ~E4------- | ~C#4--------------- | A3------- ~E4------- | ~D#4----------- .... |
 cow   | x... .... x... .... | % | % | x..x ..x. x.x. xxxx |
 snare | _ | _ | _ | .... .... x.x. XXXX |
 
 # The riff on its own, the voice behind it, then the hats and a roll into the drop.
 pattern intro from A2
-mute b808 grit kick clap ohat crash
+mute b808 kick clap ohat crash
 hat   | _ | _ | x.x. x.x. x.x. x.x. | x.x. xxxx XxXx XxXx |
 snare | _ | _ | _ | .... .... x.x. XXXX |
 
