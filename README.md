@@ -11,6 +11,7 @@ bun install
 bun run dev      # the jukebox at http://localhost:5173
 bun run build    # lint + format check, then a static build in dist/
 bun test         # every song compiles and loops, plus the format and playback rules
+bun run render konvoi --seconds 20  # offline WAV and levels, no audio device needed
 ```
 
 Links play straight away: `/?song=konvoi&kind=convoy&d=20&car=1`. The address bar always links to what's playing.
@@ -20,6 +21,10 @@ Links play straight away: `/?song=konvoi&kind=convoy&d=20&car=1`. The address ba
 The format is Simon Willison's [Scrimshaw](https://tools.simonwillison.net/scrimshaw-jukebox), with some additions: quarter tones (`Eq4`), an oud, qanun, ney, 808, overdriven guitar (`drive`), electric bass (`ebass`), darbuka drums (`dum`, `tek`, `riq`), a Rhodes (`rhodes`), a Minimoog-style lead (`moog`), a cuíca (`cuica`), a saz (`saz`), a wah guitar (`wah`), an amapiano log drum (`logdrum`), the 808 cowbell as notes (`cowbell808`) and a vocal chop (`chop`). `drive=` dirties an 808, a log drum or a guitar, and `lead@3 | … |` in a `from` pattern patches one bar. The page's "Guide" lists every instrument and option. A `key G` or `key Dm` line in the head sets the song's key; the key switch transposes what you wrote, and loop bricks land in that key.
 
 To add a song, click "New", write it, click "Export" (downloads the current song as a `.song` file, the same format `music/` and `bun test` already use), and put it in `music/`. It shows up on its own, and `bun test` checks it compiles and loops.
+
+`bun run render <song> [--seconds 20]` accepts a name from `music/` or a `.song` path. It uses Node 22+ and the dev dependency `node-web-audio-api` to run the same synth offline, writing a stereo PCM16 WAV into `renders/` beside the song (gitignored). Without `--seconds`, it renders the intro and one whole loop; with it, it starts at the intro and repeats the loop to fill that duration. The cutoff is exact, including any unfinished note or reverb tail. Renders are limited to ten minutes.
+
+The readout gives peak and RMS in dBFS, sample clipping, the intro's RMS against the rendered loop, and one loudness character per bar, respecting pattern tempo and meter. Higher characters mean louder bars; `_` means silence. Voice levels include their volume and reverb, measured solo through the synth's existing rough K-weighting path before shared compression. Their energy shares estimate which voices dominate; they aren't percentages of the compressed waveform or LUFS. The overall levels and strip measure the finished mix written to the WAV, without normalization. Lower `vol=` on a dominant voice or when it clips, and render again. A short render labels an incomplete loop comparison. Synth noise varies slightly between runs; these measurements guide balance without claiming how the music feels.
 
 A song's head can also say which game it's for, `game dodgethis` (no `game` means NK GTA), and where it belongs in that game: `street Sonnenallee`, `at doener cafe`, `at feld`, `at autoradio`. The jukebox only parses these; it's up to the game what they mean.
 
@@ -35,7 +40,7 @@ A song's head can also say which game it's for, `game dodgethis` (no `game` mean
 - `src/songs.js`: every song in `music/` as text, via Vite's `import.meta.glob`.
 - `src/page.js`, `src/page.css` and `index.html`: the jukebox page. Plain HTML, CSS and JS: Teenage Engineering meets Ableton meets Dance eJay, a light machine with a black screen, a session grid of clips, track buttons and loop bricks.
 
-No runtime dependencies; Vite, oxlint and oxfmt are dev tools.
+No runtime dependencies; Vite, oxlint, oxfmt and the offline audio renderer are dev tools.
 
 ## Using it in a game
 

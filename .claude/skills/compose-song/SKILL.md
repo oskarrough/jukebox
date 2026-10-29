@@ -63,9 +63,11 @@ Every instrument and voice option (`vol pan rev oct trans gate glide bright att 
 ## Check it
 
 - `bun test`: every song compiles without errors and loops.
+- `bun run render <name>`: render the intro and one loop to `music/renders/<name>.wav` (gitignored), and read the levels. Use `--seconds 20` for a short check; it repeats the loop as needed. Node 22+ is required; no audio device is needed.
+- Check the overall peak/RMS and clipping, each voice's peak/RMS and energy share, intro vs loop RMS, and the loudness strip (one character per bar). Voice measurements are solo, roughly K-weighted and before shared compression; overall measurements are the finished mix. Shares estimate balance, not exact contributions to the compressed mix. Lower `vol=` for a voice that dominates or clips; render again. A short check may not reach the loop or may cover only part of it; use the default render for the full comparison.
 - `bun run dev`, then `http://localhost:5173/?song=<name>`: the score panel says "Playable." or lists errors by line. Add `&kind=radio&d=10` to hear it as a game places it. Stop the dev server when you're done.
 - Watch the piano roll: it shows the shape of the hook, voices crowding one register, a bar left empty by mistake.
 
 ## You can't hear it
 
-Describe the song from the score, honestly: which instruments, rhythms and harmony are there, not that it "slaps" or "sits well in the mix". Say what you couldn't check, like levels between voices. The commit message is the song's title and one line of what it is, as in `git log`. Land it the way AGENTS.md says.
+Render it and use the numbers to check levels between voices. Describe the song from the score and measurements, honestly: which instruments, rhythms and harmony are there, not that it "slaps" or "sits well in the mix". RMS isn't a listening judgment: tone, masking and musical feel still need ears. The commit message is the song's title and one line of what it is, as in `git log`. Land it the way AGENTS.md says.

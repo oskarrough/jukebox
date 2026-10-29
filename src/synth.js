@@ -40,6 +40,9 @@ function adsr(param, t, d, { a = 0.01, dc = 0.1, s = 1, r = 0.1, peak = 1 }) {
 	param.setValueAtTime(0, t)
 	param.linearRampToValueAtTime(peak, tOn)
 	if (s < 1) param.setTargetAtTime(peak * s, tOn, Math.max(0.002, dc / 3))
+	// Explicitly hold a flat sustain: node-web-audio-api otherwise extrapolates
+	// the attack ramp into the release target and can produce invalid samples.
+	else param.setValueAtTime(peak, tOff)
 	param.setTargetAtTime(0, tOff, Math.max(0.002, r / 4))
 	return tOff + r * 1.8 + 0.03
 }
@@ -143,7 +146,7 @@ function ks(S, f, cfg) {
 	if (!e) {
 		const len = Math.floor(sr * cfg.dur)
 		const buf = S.ctx.createBuffer(1, len, sr)
-		const y = buf.getChannelData(0)
+		const y = new Float32Array(len)
 		let lp = 0,
 			mean = 0
 		for (let i = 0; i < N; i++) {
@@ -166,6 +169,7 @@ function ks(S, f, cfg) {
 			const k = i / fade
 			y[len - fade + i] *= (1 - k) * (1 - k)
 		}
+		buf.copyToChannel(y, 0)
 		e = S.ks[key] = { buf, f0: sr / (N + b) }
 	}
 	return e
@@ -1379,7 +1383,7 @@ function makeIR(ctx, seconds, decayPow) {
 	const buf = ctx.createBuffer(2, len, sr)
 	const pre = Math.floor(sr * 0.012)
 	for (let ch = 0; ch < 2; ch++) {
-		const y = buf.getChannelData(ch)
+		const y = new Float32Array(len)
 		let lp = 0
 		for (let i = pre; i < len; i++) {
 			const x = (i - pre) / (len - pre)
@@ -1398,6 +1402,7 @@ function makeIR(ctx, seconds, decayPow) {
 			const k = Math.floor((sr * (ms + ch * 2.3)) / 1000)
 			if (k < len) y[k] += amp * (Math.random() < 0.5 ? -1 : 1)
 		}
+		buf.copyToChannel(y, ch)
 	}
 	return buf
 }
@@ -1406,8 +1411,9 @@ function createSynth(ctx, dest, opts = {}) {
 	const S = { ctx, nyq: ctx.sampleRate / 2, waves: {}, ks: {} }
 	const nlen = ctx.sampleRate * 3
 	S.noise = ctx.createBuffer(1, nlen, ctx.sampleRate)
-	const nd = S.noise.getChannelData(0)
+	const nd = new Float32Array(nlen)
 	for (let i = 0; i < nlen; i++) nd[i] = Math.random() * 2 - 1
+	S.noise.copyToChannel(nd, 0)
 
 	const master = G(S, 0.72)
 	const lowShelf = F(S, 'lowshelf', 180, 0.7, 2)
@@ -1518,6 +1524,7 @@ function createSynth(ctx, dest, opts = {}) {
 							c.def.play(S, c.input, t, ev.d, mtof(m), vs, p)
 						})
 					} catch (e) {
+						if (opts.strict) throw e
 						/* keep the music going if one note fails */
 					}
 				},
