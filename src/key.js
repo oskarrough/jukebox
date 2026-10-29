@@ -77,7 +77,7 @@ export function transposeScore(text, semis, key) {
 	return String(text)
 		.split('\n')
 		.map((line) => {
-			const music = /^([A-Za-z_]\w*\s*\|)(.*)$/.exec(line)
+			const music = /^([A-Za-z_]\w*(?:@\d+)?\s*\|)(.*)$/.exec(line)
 			if (music) {
 				const rest = music[2]
 					.split(/(\s+|\|)/)

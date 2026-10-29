@@ -104,7 +104,7 @@ export function brickBar(brick, barSteps) {
 	return tokens.join(' ')
 }
 
-const MUSIC = /^([A-Za-z_]\w*)\s*\|/
+const MUSIC = /^([A-Za-z_]\w*)(?:@\d+)?\s*\|/
 const strip = (line) => line.replace(/(^|\s)#.*$/, '').trim()
 
 // The song `text` with `brick` added: a new voice, and a line of it in every

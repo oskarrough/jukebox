@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { readFileSync, readdirSync } from 'node:fs'
-import { compile, noteToMidi, parseKey } from '../src/score.js'
+import { compile, noteToMidi, parseKey, MELODIC, DRUMS } from '../src/score.js'
 import { mtof } from '../src/synth.js'
 import { HEAR, cueAt, join, shape, runChain, effectState, EFFECTS } from '../src/player.js'
 import { BRICKS, addBrick } from '../src/bricks.js'
@@ -191,5 +191,34 @@ describe('song key', () => {
 		expect(transposeScore('lead | C5- Eq4- |', 5, parseKey('F'))).toMatch(/F5-.*Aq4-/)
 		expect(keyOf('voice a sine\npattern A\na | G4 G4 D5 |\nloop A').pc).toBe(7)
 		expect(inferKey(compile('voice a sine\npattern A\na | G4 G4 D5 B4 |\nloop A')).name).toMatch(/^G/)
+	})
+})
+
+describe('patching bars with from', () => {
+	const base = 'beats 1\nsteps 4\nvoice a sine\nvoice k kick\npattern A\na | C4--- | D4--- | E4--- | F4--- |\nk | x... | % | % | % |\n'
+	const notes = (song) => song.loop.events.filter((e) => e.m).map((e) => e.m[0])
+	test('voice@N replaces bars from N on and keeps the rest', () => {
+		const song = compile(base + 'pattern B from A\na@3 | G4--- |\nloop B')
+		expect(song.errors).toEqual([])
+		expect(notes(song)).toEqual([60, 62, 67, 65])
+		expect(song.loop.events.filter((e) => !e.m).length).toBe(4)
+	})
+	test('a patch past the end, or with nothing to patch, fills the gap with silence', () => {
+		expect(notes(compile(base + 'pattern B from A\na@6 | G4--- |\nloop B'))).toEqual([60, 62, 64, 65, 67])
+		const song = compile('beats 1\nsteps 4\nvoice a sine\npattern A\na@2 | G4--- |\nloop A')
+		expect(song.errors).toEqual([])
+		expect(song.loop.events.map((e) => e.t)).toEqual([0.5])
+	})
+	test('patched lines transpose with the key', () => {
+		expect(transposeScore('a@3 | C4--- |', 2, parseKey('D'))).toMatch(/^a@3 \| D4---/)
+	})
+})
+
+describe('the Guide', () => {
+	test('names every instrument', () => {
+		const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
+		const guide = html.slice(html.indexOf('class="guide"'))
+		const missing = [...MELODIC, ...DRUMS].filter((name) => !guide.includes(`<code>${name}</code>`))
+		expect(missing).toEqual([])
 	})
 })

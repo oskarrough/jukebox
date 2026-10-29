@@ -209,20 +209,22 @@ function parse(text) {
 		const line = raw.replace(/(^|\s)#.*$/, '').trim()
 		if (!line) return
 
-		const pm = /^([A-Za-z_]\w*)\s*\|(.*)$/.exec(line)
+		const pm = /^([A-Za-z_]\w*)(?:@(\d+))?\s*\|(.*)$/.exec(line)
 		if (pm) {
 			if (!cur) {
 				err(ln, 'Music lines go inside a pattern. Add a "pattern NAME" line above this one.')
 				return
 			}
-			const parts = pm[2].split('|').map((s) => s.trim())
+			const parts = pm[3].split('|').map((s) => s.trim())
 			while (parts.length && parts[parts.length - 1] === '') parts.pop()
 			const bars = []
 			parts.forEach((b, k) => {
 				if (b === '') err(ln, `Empty bar ${k + 1} in "${pm[1]}". Use _ for a silent bar.`)
 				else bars.push(b)
 			})
-			;(cur.raw[pm[1]] = cur.raw[pm[1]] || []).push({ bars, ln })
+			const at = pm[2] ? +pm[2] : 0
+			if (pm[2] && at < 1) err(ln, `Bars count from 1: write ${pm[1]}@1 for the first bar.`)
+			;(cur.raw[pm[1]] = cur.raw[pm[1]] || []).push({ bars, ln, at })
 			if (!cur.voiceOrder.includes(pm[1])) cur.voiceOrder.push(pm[1])
 			return
 		}
@@ -551,13 +553,29 @@ function compile(text) {
 			}
 		}
 		for (const v of p.voiceOrder) {
-			raw[v] = p.raw[v]
+			raw[v] = patch(p.raw[v], raw[v])
 			mute.delete(v)
 			if (!order.includes(v)) order.push(v)
 		}
 		p.mute.forEach((v) => mute.add(v))
 		Object.assign(opts, p.opts)
 		return (resolved[name] = { name, ln: p.ln, raw, opts, order, mute })
+	}
+
+	// A line written voice@N | … | replaces bars from N on and keeps the rest,
+	// from this pattern's plain lines if it has any, else from the base pattern.
+	function patch(lines, inherited) {
+		const whole = lines.filter((l) => !l.at)
+		const patches = lines.filter((l) => l.at)
+		if (!patches.length) return lines
+		const base = whole.length ? whole : inherited || []
+		const bars = base.flatMap((l) => l.bars.map((b) => ({ bars: [b], ln: l.ln })))
+		for (const l of patches)
+			l.bars.forEach((b, k) => {
+				for (let i = bars.length; i < l.at - 1 + k; i++) bars.push({ bars: ['_'], ln: l.ln })
+				bars[l.at - 1 + k] = { bars: [b], ln: l.ln }
+			})
+		return bars
 	}
 
 	const compiled = {}

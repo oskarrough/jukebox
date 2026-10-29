@@ -84,44 +84,114 @@
 				<details class="guide">
 					<summary>Guide</summary>
 					<p>
-						The format is Simon Willison's
-						<a href="https://tools.simonwillison.net/scrimshaw-jukebox">Scrimshaw</a>; his guide covers voices, patterns and drum tracks. On
-						top of that:
+						The format started as Simon Willison's <a href="https://tools.simonwillison.net/scrimshaw-jukebox">Scrimshaw</a>. A song is a
+						head, some voices, some patterns and a <code>loop</code> line. Anything after <code>#</code> is a comment.
+					</p>
+					<h3>Head</h3>
+					<p>
+						<code>title</code>, <code>about</code>, <code>composer</code>, <code>tempo 120</code>, <code>beats 4</code> (beats to a bar),
+						<code>steps 4</code> (steps to a beat), <code>swing 0.1</code> (0 to 0.75, delays every other step), <code>reverb 0.3</code> (0
+						to 1). <code>key G</code> or <code>key Dm</code> sets the song's key: the key switch transposes what you wrote, loop bricks land
+						in that key, and new songs start in whatever key is selected.
+					</p>
+					<h3>Notes</h3>
+					<p>
+						With <code>beats 4</code> and <code>steps 4</code>, each bar holds 16 steps, and every bar has to add up to exactly that; the
+						error says which bar is off. Each word is a step. A note like <code>A4</code> uses one; each dash holds it a step longer, so
+						<code>A4-</code> is two steps and <code>A4---</code> four. Each dot is a step of rest, <code>...</code> three. Separate bars
+						with <code>|</code>.
 					</p>
 					<p>
-						With <code>beats 4</code> and <code>steps 4</code>, each bar holds 16 steps. A note like <code>A4</code> uses one step;
-						<code>A4---</code> holds for four. Each dot is a step of rest. Separate bars with <code>|</code>; a bar containing only
-						<code>%</code> repeats the previous bar, and <code>_</code> leaves a whole bar silent. Drum lanes use <code>x</code> for a hit,
-						<code>X</code> for an accent, <code>o</code> for a soft hit and <code>.</code> for a rest.
+						Chords: <code>[Am7]</code>, <code>[C/E]</code>, <code>[D5]</code>, or stack notes yourself with <code>C4+E4+G4</code>.
+						<code>~D4</code> slides into D4 from the voice's previous note. <code>D4!</code> is louder, <code>D4?</code> softer; marks
+						stack. <code>q</code> is a half-flat, a quarter tone down: <code>Eq4</code> is the E of maqamat Rast and Bayati,
+						<code>Bq3</code> the B of Rast, and <code>~</code> slides into quarter tones too.
 					</p>
 					<p>
-						Put <code>play intro</code> before <code>loop A B</code> to play the intro once, then repeat A and B. A pattern called
-						<code>intro</code> on the loop line repeats with everything else.
+						Alone in a bar, <code>%</code> repeats the previous bar, <code>_</code> leaves it silent and <code>=</code> holds the last note
+						through it. Two lines for the same voice in one pattern run on: the second line's bars follow the first's.
+					</p>
+					<h3>Drums</h3>
+					<p>
+						Drum lanes are one character a step: <code>x</code> a hit, <code>X</code> an accent, <code>o</code> a soft hit, <code>.</code> a
+						rest. Spaces don't count, so <code>x... x... x... x...</code> is a bar of four on the floor.
+					</p>
+					<h3>Voices</h3>
+					<p>
+						<code>voice lead flute vol=0.6 pan=-0.3</code>: a name, an instrument, then options. <code>vol</code> 0 to 2 (0.8);
+						<code>pan</code> -1 left to 1 right; <code>rev</code> reverb send 0 to 1 (each instrument has its own);
+						<code>oct=1</code> shifts octaves, <code>trans=-2</code> semitones; <code>gate</code> how much of each note sounds, 0.05 to 1
+						(0.5 is staccato); <code>glide</code> seconds a <code>~</code> slide takes (0.07); <code>bright</code> 0.1 dark to 4 bright (1);
+						<code>att</code> and <code>rel</code> attack and release in seconds; <code>center=E4</code> where chords are voiced;
+						<code>drive</code> 0 to 4, dirt for <code>808</code>, <code>logdrum</code> and <code>drive</code>.
+					</p>
+					<h3>Patterns and the loop</h3>
+					<p>
+						<code>pattern A</code> starts a pattern; its music lines follow, <code>name | bar | bar |</code>. A pattern lasts as long as its
+						longest voice. <code>pattern A tempo=90 beats=3</code> changes timing for that pattern alone.
 					</p>
 					<p>
-						<code>q</code> is a half-flat, a quarter tone down: <code>Eq4</code> is the E of maqamat Rast and Bayati, <code>Bq3</code> the B
-						of Rast. Glissandi with <code>~</code> slide into quarter tones too.
+						<code>pattern B from A</code> starts as a copy of A. A voice you write in B replaces A's whole line for that voice;
+						<code>lead@3 | … |</code> replaces only bar 3 onwards, as many bars as you write, and keeps the rest.
+						<code>mute hat snare</code>
+						drops voices.
 					</p>
 					<p>
-						<code>key G</code> or <code>key Dm</code> in the head sets the song's key. The key switch transposes what you wrote; loop bricks
-						land in that key. New songs start in whatever key is selected.
+						<code>loop A A2 B*2 C+5</code> repeats forever: <code>*2</code> plays a pattern twice, <code>+5</code> or
+						<code>-2</code> transposes it. Put <code>play intro</code> before it to play the intro once first; a pattern called
+						<code>intro</code> on the loop line repeats with everything else. Games join most songs mid-loop, since a radio doesn't wait for
+						you, so the loop has to stand on its own and the intro is a treat for whoever hears the start. With no <code>play</code> or
+						<code>loop</code>, every pattern loops in order.
 					</p>
+					<h3>Placing it in a game</h3>
 					<p>
 						In NK GTA, <code>street Sonnenallee</code> in the head makes the song the song of that street: Spätis, bars, windows and cars
 						there usually play one of its songs. <code>at doener cafe</code> does the same for kinds of place: <code>spaeti</code>,
 						<code>bar</code>, <code>doener</code>, <code>imbiss</code>, <code>cafe</code>, and <code>feld</code> for a wide open field like
 						Tempelhof. <code>at autoradio</code> puts the song on your own car radio: it always runs once you sit in a car, and plays its
-						songs one after another. Konvoi belongs to the wedding convoy alone and plays nowhere else.
+						songs one after another. Konvoi belongs to the wedding convoy alone and plays nowhere else. <code>at</code> takes any words;
+						kinds the game doesn't know yet, like <code>markt</code> for a market, wait harmlessly until it does.
 					</p>
 					<p>
 						Links start playing straight away: <code>?song=konvoi&amp;kind=convoy&amp;d=20</code>. The address bar always shows what is
 						playing.
 					</p>
+					<h3>Instruments</h3>
 					<p>
-						Instruments: <code>oud</code>, <code>qanun</code>, <code>ney</code>, <code>808</code>, <code>drive</code> for the overdriven
-						electric guitar, <code>ebass</code> for the picked electric bass; drums <code>dum</code> and <code>tek</code> for the darbuka,
-						<code>riq</code> for the tambourine; <code>rhodes</code> for the tine electric piano, <code>moog</code> for the analog mono
-						lead, and <code>cuica</code> for the samba friction drum.
+						Keys and mallets: <code>rhodes</code> tine electric piano, <code>organ</code>, <code>pipe</code> organ,
+						<code>harpsichord</code>, <code>accordion</code>, <code>steeldrum</code>, <code>marimba</code>, <code>vibes</code>,
+						<code>celesta</code>, <code>glock</code>, <code>xylophone</code>, <code>musicbox</code>, <code>bell</code>,
+						<code>timpani</code>.
+					</p>
+					<p>
+						Strings: <code>strings</code> section, <code>fiddle</code>, <code>pizz</code>, <code>harp</code>, <code>guitar</code>,
+						<code>drive</code> overdriven electric guitar, <code>wah</code> funk guitar through a wah, <code>banjo</code>, <code>oud</code>,
+						<code>saz</code> bağlama, brighter and shorter than the oud, <code>qanun</code> zither.
+					</p>
+					<p>
+						Winds and brass: <code>flute</code>, <code>ney</code> reed flute, <code>clarinet</code>, <code>oboe</code>,
+						<code>bassoon</code>, <code>brass</code> section, <code>trumpet</code>, <code>horn</code>, <code>tuba</code>.
+					</p>
+					<p>
+						Voices: <code>choir</code> sings ah, <code>voices</code> a soft oo pad, <code>chop</code> one clipped sung syllable, cut at the
+						end of the note.
+					</p>
+					<p>
+						Bass: <code>808</code> sliding sub, <code>logdrum</code> amapiano log drum, <code>ebass</code> picked electric bass,
+						<code>fretless</code>, <code>upright</code>, <code>synbass</code>.
+					</p>
+					<p>
+						Synths: <code>moog</code> mono lead, made for slides, <code>pad</code>, <code>chip</code>, <code>cowbell808</code> the 808
+						cowbell played as notes (<code>C#5</code> is its stock pitch), and plain <code>sine</code>, <code>square</code>,
+						<code>saw</code>, <code>triangle</code>.
+					</p>
+					<p>
+						Drums: <code>kick</code>, <code>snare</code>, <code>rim</code>, <code>clap</code>, <code>hat</code>, <code>ohat</code> open hat,
+						<code>ride</code>, <code>crash</code>, <code>tomlo</code>, <code>tommid</code>, <code>tomhi</code>, <code>shaker</code>,
+						<code>tamb</code>, <code>cowbell</code>, <code>clave</code>, <code>block</code>, <code>guiro</code>, <code>tri</code>,
+						<code>conga</code>, <code>tumba</code>, <code>bongo</code>, <code>bongolo</code>, <code>timbale</code>, <code>cuica</code> samba
+						friction drum (<code>X</code> sings high, <code>o</code> low), <code>bodhran</code>, <code>dum</code> and <code>tek</code> for
+						the darbuka, <code>riq</code>, <code>gong</code>, and two weathers: <code>thunder</code> and <code>surf</code>.
 					</p>
 				</details>
 			</aside>

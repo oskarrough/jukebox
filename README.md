@@ -17,7 +17,7 @@ Links play straight away: `/?song=konvoi&kind=convoy&d=20&car=1`. The address ba
 
 ## Writing songs
 
-The format is Simon Willison's [Scrimshaw](https://tools.simonwillison.net/scrimshaw-jukebox), with some additions: quarter tones (`Eq4`), an oud, qanun, ney, 808, overdriven guitar (`drive`), electric bass (`ebass`), darbuka drums (`dum`, `tek`, `riq`), a Rhodes (`rhodes`), a Minimoog-style lead (`moog`) and a cuíca (`cuica`). The page has a guide under "Guide". A `key G` or `key Dm` line in the head sets the song's key; the key switch transposes what you wrote, and loop bricks land in that key.
+The format is Simon Willison's [Scrimshaw](https://tools.simonwillison.net/scrimshaw-jukebox), with some additions: quarter tones (`Eq4`), an oud, qanun, ney, 808, overdriven guitar (`drive`), electric bass (`ebass`), darbuka drums (`dum`, `tek`, `riq`), a Rhodes (`rhodes`), a Minimoog-style lead (`moog`), a cuíca (`cuica`), a saz (`saz`), a wah guitar (`wah`), an amapiano log drum (`logdrum`), the 808 cowbell as notes (`cowbell808`) and a vocal chop (`chop`). `drive=` dirties an 808, a log drum or a guitar, and `lead@3 | … |` in a `from` pattern patches one bar. The page's "Guide" lists every instrument and option. A `key G` or `key Dm` line in the head sets the song's key; the key switch transposes what you wrote, and loop bricks land in that key.
 
 To add a song, click "New", write it, click "Export" (downloads the current song as a `.song` file, the same format `music/` and `bun test` already use), and put it in `music/`. It shows up on its own, and `bun test` checks it compiles and loops.
 
