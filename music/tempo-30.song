@@ -1,0 +1,70 @@
+title    Tempo 30
+about    Drift phonk for race mode and your own car radio, named for the speed limit nobody on Sonnenallee keeps. A Memphis cowbell riff in C# minor over a sliding, distorted 808, a trap kit in half time and a slowed vocal moan.
+key      C#m
+at       autoradio
+tempo    140
+beats    4
+steps    4
+reverb   0.2
+
+# The 808 cowbell is two square waves a fifth apart, so the riff is written in fifths.
+# Four bars, C#m C#m A G#: the riff stays, the 808 drifts underneath.
+voice bell  square   vol=0.42 pan=0.1  gate=0.5 bright=0.3 rel=0.06
+voice vox   voices   vol=0.5  pan=-0.2 glide=0.25 att=0.03 rel=0.3
+voice b808  808      vol=0.95 glide=0.09 bright=1.6
+voice grit  saw      vol=0.16 glide=0.09 bright=0.12
+voice kick  kick     vol=0.9
+voice snare snare    vol=0.65
+voice clap  clap     vol=0.5  pan=-0.1
+voice hat   hat      vol=0.35 pan=0.25
+voice ohat  ohat     vol=0.25 pan=0.25
+voice cow   cowbell  vol=0.3  pan=0.1
+voice crash crash    vol=0.3  pan=-0.2
+
+pattern A
+bell  | C#5+G#5 .. C#5+G#5 .. E5+B5- C#5+G#5- B4+F#5- G#4+D#5- B4+F#5- | C#5+G#5 .. C#5+G#5 .. E5+B5- F#5+C#6- E5+B5- C#5+G#5- B4+F#5 C#5+G#5 |
+bell  | C#5+G#5 .. C#5+G#5 .. E5+B5- C#5+G#5- B4+F#5- A4+E5- B4+F#5- | G#4+D#5 .. G#4+D#5 .. B4+F#5- C5+G5- D#5+A#5- C5+G5- G#4+D#5- |
+cow   | x..x .... .... .... | % | % | x..x .... .... .... |
+b808  | C#2------- .. C#2- ~C#3- ~C#2- | C#2------- .. C#2- ~E2- ~F#2- | ~A1------- .. A1- ~A2- ~A1- | G#1------- .. G#1- ~G#2- ~B2- |
+grit  | C#2------- .. C#2- ~C#3- ~C#2- | C#2------- .. C#2- ~E2- ~F#2- | ~A1------- .. A1- ~A2- ~A1- | G#1------- .. G#1- ~G#2- ~B2- |
+kick  | X... .... ..x. .... | X... ..x. ..x. .... | X... .... ..x. .... | X... ..x. .... .x.. |
+snare | .... .... X... .... | % | % | .... .... X... ..xx |
+clap  | .... .... x... .... | % | % | % |
+hat   | x.x. x.x. x.x. x.x. | x.x. x.xx x.x. x.x. | x.x. x.x. x.x. x.x. | x.x. xxxx x.x. XxXx |
+crash | x... .... .... .... | _ | _ | _ |
+
+# The voice comes in, slowed down and sliding off every word.
+pattern A2 from A
+vox   | ........ G#4--- ~E4--- | _ | ........ A4--- ~E4--- | ........ G#4----- ~D#4- |
+ohat  | .... ..x. .... ..x. | % | % | % |
+hat   | x.x. x.x. x.x. xxxx | x.x. x.xx x.x. x.x. | x.x. x.x. xxxx x.x. | xxxx xxxx XxXx XxXx |
+crash | _ | _ | _ | _ |
+
+# The riff climbs: same rhythm, an octave of trouble higher.
+pattern B from A2
+bell  | G#5+D#6 .. G#5+D#6 .. F#5+C#6- E5+B5- F#5+C#6- E5+B5- C#5+G#5- | E5+B5 .. E5+B5 .. F#5+C#6- G#5+D#6- F#5+C#6- E5+B5- C#5+G#5 E5+B5 |
+bell  | A5+E6 .. A5+E6 .. G#5+D#6- E5+B5- C#5+G#5- E5+B5- G#5+D#6- | G#5+D#6 .. G#5+D#6 .. D#5+A#5- C5+G5- G#4+D#5- C5+G5- D#5+A#5- |
+vox   | C#5------- ~G#4------- | _ | C#5------- ~A4------- | ~G#4----------- ~D#4--- |
+cow   | _ | _ | _ | _ |
+crash | x... .... .... .... | _ | _ | _ |
+
+pattern B2 from B
+hat   | x.x. x.x. x.x. x.x. | x.xx x.x. x.x. xxxx | x.x. x.x. x.x. x.x. | XxXx XxXx XxXx XxXx |
+snare | .... .... X... .... | % | % | .... .... X... xxXX |
+crash | _ | _ | _ | _ |
+
+# The kit gets out of the way and the 808 drifts on its own.
+pattern C from A
+mute bell kick snare clap hat crash grit
+vox   | C#4------- ~E4------- | ~C#4--------------- | A3------- ~E4------- | ~D#4----------- .... |
+cow   | x... .... x... .... | % | % | x..x ..x. x.x. xxxx |
+snare | _ | _ | _ | .... .... x.x. XXXX |
+
+# The riff on its own, the voice behind it, then the hats and a roll into the drop.
+pattern intro from A2
+mute b808 grit kick clap ohat crash
+hat   | _ | _ | x.x. x.x. x.x. x.x. | x.x. xxxx XxXx XxXx |
+snare | _ | _ | _ | .... .... x.x. XXXX |
+
+play intro
+loop A A2 B B2 C A A2 B B2
