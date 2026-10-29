@@ -58,7 +58,7 @@ describe('songs say where they belong', () => {
 		for (const name of ['tempelhof', 'luftbruecke']) expect(score(name).at).toEqual(['feld'])
 		expect(compile('at Doener  cafe\nvoice a sine\npattern A\na | C4 |').at).toEqual(['doener', 'cafe'])
 	})
-	test('game names the game a song is for; without it a song is NK GTA's', () => {
+	test("game names the game a song is for; without it a song is NK GTA's", () => {
 		for (const name of ['dodgethis-theme', 'altamesa', 'overthrow', 'flagfall']) expect(score(name).game).toBe('dodgethis')
 		expect(score('konvoi').game).toBe('')
 	})
