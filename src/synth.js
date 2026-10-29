@@ -198,7 +198,9 @@ const PLUCK = {
 	oud: { id: 'oud', b: 0.42, decay: 0.993, color: 0.5, dur: 1.4, hang: 0.12, dampTau: 0.07 },
 	qanun: { id: 'qanun', b: 0.22, decay: 0.9965, color: 0.2, dur: 2.2, hang: 0.5, dampTau: 0.15 },
 	ebass: { id: 'ebass', b: 0.3, decay: 0.998, color: 0.35, dur: 2.2, hang: 0.03, dampTau: 0.05 },
+	saz: { id: 'saz', b: 0.16, decay: 0.991, color: 0.08, dur: 1.1, hang: 0.08, dampTau: 0.05 },
 }
+PLUCK.wah = { ...PLUCK.guitar, hang: 0.05 }
 // a soft clip, for the 808
 function saturate(S) {
 	if (!S.curve) {
@@ -211,7 +213,7 @@ function saturate(S) {
 }
 
 /* ------------------------------------------------------------ instruments */
-// play(S, out, t, dur, freq, vel, p) ; p = {from, glide, bright, att, rel}
+// play(S, out, t, dur, freq, vel, p) ; p = {from, glide, bright, att, rel, drive}
 const INST = {
 	steeldrum: {
 		rev: 0.22,
@@ -633,7 +635,7 @@ const INST = {
 			const clip = S.ctx.createWaveShaper()
 			clip.curve = S.drive
 			clip.oversample = '4x'
-			const pre = G(S, 1.2)
+			const pre = G(S, 1.2 * (1 + (p.drive || 0)))
 			const g = G(S)
 			pre
 				.connect(F(S, 'highpass', 90, 0.7))
@@ -710,6 +712,42 @@ const INST = {
 			noise(S, out, t, { f: 1800, q: 1.2, tau: 0.006, peak: v * 0.1 })
 		},
 	},
+	// Bağlama (saz): thin steel strings on a long fretted neck, struck with a
+	// bark plectrum. Bright and quick to die, a course of two strings with a
+	// third an octave up, a small body and the tick of the tezene.
+	saz: {
+		rev: 0.2,
+		level: 1,
+		play(S, out, t, d, f, v, p) {
+			const chain = () => [F(S, 'highpass', 160, 0.5), F(S, 'peaking', 2900, 1.1, 5 * p.bright), F(S, 'lowpass', 7500 * p.bright, 0.5)]
+			pluck(S, out, t, d, f, v * 0.4, PLUCK.saz, chain())
+			pluck(S, out, t + 0.003, d, f * 1.0021, v * 0.3, PLUCK.saz, chain())
+			if (f < 700) pluck(S, out, t + 0.005, d, f * 2, v * 0.14, PLUCK.saz, chain())
+			noise(S, out, t, { f: 3800, q: 1.2, tau: 0.004, peak: v * 0.14 })
+		},
+	},
+	// Funk guitar through a wah: a clean pluck, slightly crunched, into a
+	// resonant bandpass that kicks open on every pick and falls back shut,
+	// the wacka of a chucked chord. Held notes keep rocking the pedal.
+	wah: {
+		rev: 0.15,
+		level: 1.1,
+		play(S, out, t, d, f, v, p) {
+			const bp = F(S, 'bandpass', 450, 3.5)
+			const top = clamp((900 + 1600 * v) * p.bright, 500, 4000)
+			bp.frequency.setValueAtTime(420, t)
+			bp.frequency.linearRampToValueAtTime(top, t + 0.035)
+			bp.frequency.setTargetAtTime(480, t + 0.035, 0.11)
+			if (d > 0.35) {
+				const lfo = S.ctx.createOscillator()
+				lfo.frequency.value = 2.6
+				lfo.connect(G(S, top * 0.35)).connect(bp.frequency)
+				lfo.start(t + 0.2)
+				lfo.stop(t + d + 0.3)
+			}
+			pluck(S, out, t, d, f, v * 0.9, PLUCK.wah, [G(S, 1.8), saturate(S), bp, F(S, 'peaking', 700, 1, 3)])
+		},
+	},
 	// Plucked zither: three strings to a course, bright and ringing.
 	qanun: {
 		rev: 0.35,
@@ -753,23 +791,121 @@ const INST = {
 		},
 	},
 	// Sine bass with a long tail, a thump at the front and a little grit.
+	// drive= pushes it into the clipper until it's nearly a square: phonk.
 	808: {
 		rev: 0.04,
 		level: 1.1,
 		play(S, out, t, d, f, v, p) {
+			const k = p.drive || 0
 			const g = G(S)
-			const sat = saturate(S)
-			sat
-				.connect(F(S, 'lowpass', 1800 * p.bright, 0.5))
+			const pre = G(S, 1 + 1.2 * k)
+			pre
+				.connect(saturate(S))
+				.connect(F(S, 'lowpass', 1800 * p.bright * (1 + k), 0.5))
 				.connect(g)
 				.connect(out)
-			const end = adsr(g.gain, t, d, { a: p.att || 0.003, dc: 1.2, s: 0.55, r: p.rel || 0.12, peak: v * 0.55 })
+			const end = adsr(g.gain, t, d, { a: p.att || 0.003, dc: 1.2, s: 0.55, r: p.rel || 0.12, peak: (v * 0.55) / (1 + 0.1 * k) })
 			const o = O(S, 'sine', f, t, end, p)
 			if (!p.from) {
 				o.frequency.setValueAtTime(f * 2.2, t)
 				o.frequency.exponentialRampToValueAtTime(f, t + 0.04)
 			}
-			o.connect(sat)
+			o.connect(pre)
+		},
+	},
+	// Amapiano log drum: a hollow, woody bass hit that falls into its pitch.
+	// A triangle (odd harmonics, the hollow) over a sine, a knock in the mids
+	// from the stick, a short tail damped at the end of the note.
+	logdrum: {
+		rev: 0.06,
+		level: 1.15,
+		play(S, out, t, d, f, v, p) {
+			const k = p.drive || 0
+			const g = G(S)
+			const pre = G(S, 1.4 + 1.2 * k)
+			pre
+				.connect(saturate(S))
+				.connect(F(S, 'peaking', clamp(f * 3, 200, 1200), 1.4, 5))
+				.connect(F(S, 'lowpass', 2600 * p.bright * (1 + k), 0.6))
+				.connect(g)
+				.connect(out)
+			const tau = clamp(0.3 * Math.pow(110 / f, 0.3), 0.12, 0.45)
+			const end = perc(g.gain, t, { a: 0.002, tau, peak: (v * 0.5) / (1 + 0.1 * k), damp: t + d + (p.rel || 0.04), dampTau: 0.03 })
+			const os = [
+				[O(S, 'triangle', f, t, end, p), 0.7],
+				[O(S, 'sine', f, t, end, p), 0.6],
+			]
+			for (const [o, a] of os) {
+				if (!p.from) {
+					o.frequency.setValueAtTime(f * 1.9, t)
+					o.frequency.exponentialRampToValueAtTime(f, t + 0.055)
+				}
+				o.connect(G(S, a)).connect(pre)
+			}
+			noise(S, out, t, { f: clamp(f * 6, 600, 2400), q: 1.5, tau: 0.006, peak: v * 0.12 })
+		},
+	},
+	// The TR-808 cowbell, played as notes: two squares 540 and 800 Hz apart
+	// in the stock bell, so C#5 is where Memphis tapes have it. A clack that
+	// falls into a short ring, through the 808's bandpass. The drift-phonk riff.
+	cowbell808: {
+		rev: 0.12,
+		level: 1.4,
+		play(S, out, t, d, f, v, p) {
+			const g = G(S)
+			const bp = F(S, 'bandpass', f * 1.5, 1.1)
+			const hp = F(S, 'highpass', f * 2.5, 0.7)
+			const hg = G(S, 0.12 * p.bright)
+			bp.connect(g)
+			hp.connect(hg).connect(g)
+			g.connect(out)
+			const pk = v * 0.5
+			const off = t + Math.max(d, 0.03)
+			g.gain.setValueAtTime(0, t)
+			g.gain.linearRampToValueAtTime(pk, t + 0.001)
+			g.gain.setTargetAtTime(pk * 0.35, t + 0.001, 0.008)
+			g.gain.setTargetAtTime(0, t + 0.03, 0.15)
+			g.gain.setTargetAtTime(0, off, (p.rel || 0.05) / 3)
+			const end = Math.min(t + 1.1, off + (p.rel || 0.05) * 2.5 + 0.02)
+			for (const r of [1, 800 / 540]) {
+				const o = O(S, 'square', f, t, end, p, r)
+				o.connect(bp)
+				o.connect(hp)
+			}
+		},
+	},
+	// A vocal chop: one clipped syllable, "yah", cut off at the end of the note.
+	// A breath at the front, formants sliding from ee to ah, and the formants
+	// follow the pitch like a sample played up or down the keys.
+	chop: {
+		rev: 0.3,
+		level: 1.8,
+		play(S, out, t, d, f, v, p) {
+			const g = G(S)
+			g.connect(out)
+			const end = adsr(g.gain, t, d, { a: p.att || 0.006, dc: 0.08, s: 0.75, r: p.rel || 0.025, peak: v * 1.6 })
+			const src = G(S, 1)
+			const os = [-6, 6].map((c) => {
+				const o = O(S, 'sawtooth', f, t, end, p, 1, c)
+				if (!p.from) {
+					o.frequency.setValueAtTime(f * 0.96, t)
+					o.frequency.exponentialRampToValueAtTime(f, t + 0.04)
+				}
+				o.connect(G(S, 0.5)).connect(src)
+				return o
+			})
+			if (d > 0.35) vibrato(S, t, end, os, { rate: 5.5, depth: 10, delay: 0.2, rise: 0.3 })
+			const fk = clamp(Math.sqrt(f / 260), 0.75, 1.6) * p.bright
+			for (const [f0, f1, q, a] of [
+				[300, 760, 6, 1],
+				[2250, 1150, 8, 0.6],
+				[2950, 2500, 10, 0.3],
+			]) {
+				const bp = F(S, 'bandpass', f0 * fk, q)
+				bp.frequency.setTargetAtTime(clamp(f1 * fk, 10, S.nyq * 0.9), t + 0.01, 0.025)
+				src.connect(bp).connect(G(S, a)).connect(g)
+			}
+			noise(S, g, t, { type: 'highpass', f: 2500, q: 0.7, a: 0.002, tau: 0.012, peak: v * 0.06 })
 		},
 	},
 	// Monophonic analog lead: two detuned saws and a square an octave down
@@ -1329,7 +1465,7 @@ function createSynth(ctx, dest, opts = {}) {
 								if (seen.has(m)) continue
 								seen.add(m)
 								todo.push([mtof(m), cfg])
-								if (v.inst === 'harpsichord') todo.push([mtof(m) * 2, cfg])
+								if (v.inst === 'harpsichord' || v.inst === 'saz') todo.push([mtof(m) * 2, cfg])
 							}
 			})
 			let i = 0
@@ -1376,7 +1512,7 @@ function createSynth(ctx, dest, opts = {}) {
 						}
 						const n = ev.m.length,
 							vs = ev.vel / Math.sqrt(n)
-						const p = { bright: c.v.bright, att: c.v.att, rel: c.v.rel, glide: c.v.glide, from: null }
+						const p = { bright: c.v.bright, att: c.v.att, rel: c.v.rel, glide: c.v.glide, drive: c.v.drive, from: null }
 						ev.m.forEach((m, i) => {
 							p.from = ev.g != null && i === n - 1 ? mtof(ev.g) : null
 							c.def.play(S, c.input, t, ev.d, mtof(m), vs, p)

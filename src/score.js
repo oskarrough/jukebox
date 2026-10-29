@@ -45,6 +45,11 @@ const MELODIC = [
 	'qanun',
 	'ney',
 	'808',
+	'logdrum',
+	'cowbell808',
+	'chop',
+	'saz',
+	'wah',
 	'sine',
 	'square',
 	'saw',
@@ -355,6 +360,7 @@ function parse(text) {
 			bright: 1,
 			att: null,
 			rel: null,
+			drive: 0,
 			ln,
 		}
 		for (const opt of w.slice(2)) {
@@ -395,6 +401,9 @@ function parse(text) {
 					break
 				case 'rel':
 					v.rel = num(val, 0.005, 6, 0.1)
+					break
+				case 'drive':
+					v.drive = num(val, 0, 4, 0)
 					break
 				case 'center': {
 					const m = noteToMidi(val)
