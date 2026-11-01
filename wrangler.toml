@@ -7,4 +7,4 @@ pattern = "jukebox.0sk.ar"
 custom_domain = true
 
 [assets]
-directory = "./dist"
+directory = "./dist/client"

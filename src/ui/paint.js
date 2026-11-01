@@ -1,0 +1,59 @@
+// Colours for the score: splits a line of a .song into pieces, each with a
+// kind the page paints, and the voice it belongs to when it has one. The
+// pieces always join back into the line, character for character.
+
+const HEAD = /^(title|about|composer|by|key|tempo|beats|steps|swing|reverb|tags|game|street|at)\b/i
+
+// [kind, text, voice?] for each piece of `line`, with `voices` the names in
+// the song.
+export function paint(line, voices) {
+	const out = []
+	const push = (kind, text, voice) => text && out.push([kind, text, voice])
+	// A # starts a comment at the start of a line or after a space; in C#4 it's a sharp.
+	const found = line.match(/(^|\s)#/)
+	const hash = found ? found.index + found[1].length : -1
+	const body = hash < 0 ? line : line.slice(0, hash)
+	const comment = hash < 0 ? '' : line.slice(hash)
+	const words = (s, kind, voice) => {
+		for (const m of s.matchAll(/(\s+)|(\S+)/g)) push(m[1] ? 'space' : kind, m[0], voice)
+	}
+	let m
+	if ((m = body.match(/^(\s*)(voice)(\s+)(\S+)(\s+)(\S+)(.*)$/i))) {
+		push('space', m[1])
+		push('word', m[2])
+		push('space', m[3])
+		push('name', m[4], m[4])
+		push('space', m[5])
+		push('inst', m[6])
+		for (const o of m[7].matchAll(/(\s+)|(\w+)(=)(\S*)|(\S+)/g)) {
+			if (o[1]) push('space', o[1])
+			else if (o[2]) {
+				push('opt', o[2] + o[3])
+				push('value', o[4])
+			} else push('value', o[5])
+		}
+	} else if ((m = body.match(/^(\s*)(pattern|loop|play|mute)\b(.*)$/i))) {
+		push('space', m[1])
+		push('word', m[2])
+		words(m[3], m[2].toLowerCase() === 'mute' ? 'name' : 'part')
+	} else if ((m = body.match(/^(\s*)(\S+?)(@\d+)?(\s*)(\|.*)$/))) {
+		const voice = voices.includes(m[2]) ? m[2] : null
+		push('space', m[1])
+		push('name', m[2], voice)
+		push('opt', m[3])
+		push('space', m[4])
+		for (const n of m[5].matchAll(/(\|)|(\s+)|(\[[^\]]*\][-]*)|([%_=])|(\.+)|([^\s|.]+)/g)) {
+			if (n[1]) push('bar', n[1])
+			else if (n[2]) push('space', n[2])
+			else if (n[3]) push('chord', n[3], voice)
+			else if (n[4]) push('same', n[4])
+			else if (n[5]) push('rest', n[5])
+			else push('note', n[6], voice)
+		}
+	} else if ((m = body.match(HEAD)) && !/^\s/.test(body)) {
+		push('word', m[0])
+		push('value', body.slice(m[0].length))
+	} else push('value', body)
+	push('comment', comment)
+	return out
+}

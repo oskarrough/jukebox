@@ -4,6 +4,8 @@ import { compile, noteToMidi, parseKey, MELODIC, DRUMS } from '../src/score.js'
 import { mtof } from '../src/synth.js'
 import { HEAR, cueAt, join, shape, runChain, effectState, EFFECTS } from '../src/player.js'
 import { BRICKS, addBrick } from '../src/bricks.js'
+import { paint } from '../src/ui/paint.js'
+import { caretAt, columnOf, marksFor } from '../src/ui/link.js'
 import { inferKey, keyOf, setSongKey, starter, transposeScore } from '../src/key.js'
 
 const STARTER_ISH = 'voice kick kick\npattern A\nkick | x... x... x... x... |\nloop A'
@@ -173,12 +175,26 @@ describe('song key', () => {
 		}
 	})
 
+	test('the painted score is the score, character for character, and a sharp is not a comment', () => {
+		for (const name of SCORES)
+			for (const line of readFileSync(new URL(`${name}.song`, dir), 'utf8').split('\n'))
+				expect(
+					paint(line, [])
+						.map((p) => p[1])
+						.join(''),
+				).toBe(line)
+		expect(paint('a | C#4 # x |', ['a']).find((p) => p[0] === 'comment')[1]).toBe('# x |')
+	})
+
+	test('every song is tagged, and tags are any words', () => {
+		expect(compile('title X\ntags NKGTA wip\nvoice a sine\npattern A\na | C4 |\nloop A').tags).toEqual(['nkgta', 'wip'])
+		for (const name of SCORES) expect(compile(readFileSync(new URL(`${name}.song`, dir), 'utf8')).tags.length).toBeGreaterThan(0)
+	})
+
 	test('new songs and bricks follow the key, instead of always landing in C', () => {
 		const inG = starter('G')
 		expect(inG).toMatch(/^key\s+G$/m)
-		expect(inG).toMatch(/G5-/)
-		expect(inG).toMatch(/\[G\]/)
-		expect(inG).not.toMatch(/\[C\]/)
+		expect(inG).not.toMatch(/^(voice|pattern)\s/m)
 		const pulse = BRICKS.find((b) => b.id === 'pulse')
 		const { text } = addBrick('key G\nvoice a sine\npattern A\na | G4 |\nloop A', pulse)
 		expect(text).toMatch(/G2/)
@@ -220,9 +236,63 @@ describe('patching bars with from', () => {
 
 describe('the Guide', () => {
 	test('names every instrument', () => {
-		const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
-		const guide = html.slice(html.indexOf('class="guide"'))
+		const html = readFileSync(new URL('../src/ui/Guide.jsx', import.meta.url), 'utf8')
+		const guide = html.slice(html.indexOf('id="guide"'))
 		const missing = [...MELODIC, ...DRUMS].filter((name) => !guide.includes(`<code>${name}</code>`))
 		expect(missing).toEqual([])
+	})
+})
+
+describe('the score and the roll', () => {
+	const text = `tempo 120
+voice lead square
+voice kick kick
+pattern A
+lead | C4- D4- E4--- ........ | G4--------------- |
+kick | x...x...x...x... | % |
+pattern B from A
+lead@2 | A4--------------- |
+loop A B`
+	const song = compile(text)
+	const at = (line, col) =>
+		caretAt(
+			text,
+			text
+				.split('\n')
+				.slice(0, line - 1)
+				.join('\n').length +
+				1 +
+				col,
+		)
+
+	test('the caret knows its pattern, voice and bar', () => {
+		expect(at(5, 7)).toEqual({ ln: 5, k: 0, voice: 'lead', pattern: 'A' })
+		expect(at(5, 36)).toEqual({ ln: 5, k: 1, voice: 'lead', pattern: 'A' })
+		expect(at(4, 3)).toEqual({ ln: 4, k: -1, voice: null, pattern: 'A' })
+		expect(at(9, 7).pattern).toBe('B')
+	})
+
+	test("a bar lights wherever it plays, B's copy of A included", () => {
+		const m = marksFor(song, at(5, 7))
+		expect([...m.bars]).toEqual(['A:0', 'B:0'])
+		expect(m.first).toBe(0)
+		expect([...marksFor(song, at(8, 10)).bars]).toEqual(['B:1'])
+		expect([...marksFor(song, at(7, 3)).whole]).toEqual(['B'])
+	})
+
+	test('a note on the roll finds its column', () => {
+		const lead = text.split('\n')[4]
+		expect(lead.slice(columnOf(lead, 0, 2, false))).toStartWith('D4-')
+		expect(lead.slice(columnOf(lead, 0, 13, false))).toStartWith('..')
+		expect(lead.slice(columnOf(lead, 1, 0, false))).toStartWith('G4')
+		const kick = text.split('\n')[5]
+		expect(columnOf(kick, 0, 4, true)).toBe(kick.indexOf('x', 8))
+		expect(song.loop.events.find((e) => e.v === 0 && e.st === 2).b).toBe(0)
+	})
+
+	test('a song can loop one pattern', () => {
+		const one = compile(text, 'B')
+		expect(one.loop.sections.map((s) => s.name)).toEqual(['B'])
+		expect(one.intro.dur).toBe(0)
 	})
 })

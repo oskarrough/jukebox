@@ -28,9 +28,69 @@ function range(song) {
 	return ranges.get(song)
 }
 
-// Draws `song` at `at` seconds from its start (past its length means it has
-// looped) onto `canvas`, with the voices named in `muted` faded.
-export function drawRoll(canvas, song, at, muted) {
+// Where everything goes on a `W`×`H` roll of `song` at `at` seconds from its
+// start (past its length means it has looped).
+function layout(song, at, W, H) {
+	const { lo, hi, drums, colors } = range(song)
+	const span = W < 500 ? 4.5 : 7 // seconds across
+	const pre = span * 0.22 // of them already played
+	const pps = W / span
+	const x0 = W * 0.22
+	const drumH = drums.length ? Math.min(5, 44 / drums.length) : 0
+	const drumTop = H - drums.length * drumH - 6
+	const noteH = Math.max(3, (drumTop - 12) / (hi - lo + 1))
+	// the intro once, then as many turns of the loop as are on screen
+	const a = at - pre
+	const z = at + span - pre
+	const windows = []
+	if (a < song.intro.dur) windows.push([song.intro, 0])
+	if (song.loop.dur) {
+		const k0 = Math.max(0, Math.floor((a - song.intro.dur) / song.loop.dur))
+		const k1 = Math.floor((z - song.intro.dur) / song.loop.dur)
+		for (let k = k0; k <= k1 && k < k0 + 4; k++) windows.push([song.loop, song.intro.dur + k * song.loop.dur])
+	}
+	return {
+		lo,
+		hi,
+		drums,
+		colors,
+		pps,
+		x0,
+		a,
+		z,
+		windows,
+		drumH,
+		drumTop,
+		noteH,
+		xOf: (t) => x0 + (t - at) * pps,
+		yOf: (m) => 6 + (hi - m) * noteH,
+		tOf: (x) => at + (x - x0) / pps,
+	}
+}
+
+// What's under `x`,`y` on the roll: the moment, and the note or the pattern
+// name there if any, as { t, event, section } with times from the song's start.
+export function hitRoll(canvas, song, at, x, y) {
+	const L = layout(song, at, canvas.clientWidth, canvas.clientHeight)
+	const t = Math.max(0, L.tOf(x))
+	const near = (t0, w) => x >= L.xOf(t0) - 3 && x <= L.xOf(t0) + w + 3
+	for (const [tl, off] of L.windows) {
+		const s = tl.sections.find((s) => t >= off + s.start && t < off + s.start + s.dur)
+		if (s && y < 20 && near(off + s.start, 40)) return { t, section: s }
+		for (const e of tl.events) {
+			const v = song.voices[e.v]
+			const top = v.drum ? L.drumTop + L.drums.indexOf(e.v) * L.drumH : null
+			const hit = v.drum ? y >= top - 2 && y <= top + L.drumH + 2 : e.m.some((m) => y >= L.yOf(m) - 2 && y <= L.yOf(m) + L.noteH + 2)
+			if (hit && near(off + e.t, v.drum ? 3 : e.d * L.pps)) return { t, event: e, section: tl.sections[e.s] }
+		}
+	}
+	return { t }
+}
+
+// Draws `song` at `at` seconds from its start onto `canvas`, with the voices
+// named in `muted` faded and the bars in `marks` (from marksFor) lit. Returns
+// which voices are sounding at `at`, by index.
+export function drawRoll(canvas, song, at, muted, marks) {
 	const dpr = window.devicePixelRatio || 1
 	const W = canvas.clientWidth
 	const H = canvas.clientHeight
@@ -42,37 +102,25 @@ export function drawRoll(canvas, song, at, muted) {
 	g.setTransform(dpr, 0, 0, dpr, 0, 0)
 	g.fillStyle = '#0b0b0b'
 	g.fillRect(0, 0, W, H)
-	const { lo, hi, drums, colors } = range(song)
-	const span = W < 500 ? 4.5 : 7 // seconds across
-	const pre = span * 0.22 // of them already played
-	const pps = W / span
-	const x0 = W * 0.22
-	const drumH = drums.length ? Math.min(5, 44 / drums.length) : 0
-	const drumTop = H - drums.length * drumH - 6
-	const noteH = Math.max(3, (drumTop - 12) / (hi - lo + 1))
-	const yOf = (m) => 6 + (hi - m) * noteH
+	const { lo, hi, drums, colors, pps, x0, a, z, windows, drumH, drumTop, noteH, yOf } = layout(song, at, W, H)
 
 	// a faint line at every C
 	g.fillStyle = '#262626'
 	for (let m = Math.ceil(lo / 12) * 12; m <= hi; m += 12) g.fillRect(0, Math.round(yOf(m)), W, 1)
 
-	// the intro once, then as many turns of the loop as are on screen
-	const a = at - pre
-	const z = at + span - pre
-	const windows = []
-	if (a < song.intro.dur) windows.push([song.intro, 0])
-	if (song.loop.dur) {
-		const k0 = Math.max(0, Math.floor((a - song.intro.dur) / song.loop.dur))
-		const k1 = Math.floor((z - song.intro.dur) / song.loop.dur)
-		for (let k = k0; k <= k1 && k < k0 + 4; k++) windows.push([song.loop, song.intro.dur + k * song.loop.dur])
-	}
 	g.font = '11px ui-monospace, monospace'
+	const sounding = new Set()
 	for (const [tl, off] of windows) {
 		for (const s of tl.sections)
 			for (let b = 0; b < s.bars; b++) {
 				const bt = off + s.start + b * s.barDur
 				if (bt < a - 1 || bt > z) continue
 				const x = Math.round(x0 + (bt - at) * pps)
+				// the bar the caret is in
+				if (marks && (marks.whole.has(s.name) || marks.bars.has(`${s.name}:${b}`))) {
+					g.fillStyle = '#ffffff14'
+					g.fillRect(x, 0, Math.round(s.barDur * pps), H)
+				}
 				g.fillStyle = b === 0 ? '#555' : '#2c2c2c'
 				g.fillRect(x, 0, 1, H)
 				if (b === 0) {
@@ -87,6 +135,7 @@ export function drawRoll(canvas, song, at, muted) {
 			const dim = muted.has(v.name)
 			const x = x0 + (t - at) * pps
 			const on = at >= t && at < t + (e.d || 0.08)
+			if ((on || (v.drum && at >= t && at < t + 0.12)) && !dim) sounding.add(e.v)
 			g.fillStyle = colors[e.v]
 			if (v.drum) {
 				g.globalAlpha = dim ? 0.2 : on || (at >= t && at < t + 0.12) ? 1 : 0.7
@@ -107,4 +156,5 @@ export function drawRoll(canvas, song, at, muted) {
 	g.globalAlpha = 1
 	g.fillStyle = '#ffd96b'
 	g.fillRect(Math.round(x0), 0, 2, H)
+	return sounding
 }

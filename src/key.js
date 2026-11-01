@@ -149,32 +149,15 @@ export function transposeBrick(brick, key) {
 	}
 }
 
+// A new song: a blank canvas in the chosen key, with only its head.
 export const STARTER = `title    New song
-about    What it sounds like, and where.
 key      C
 tempo    100
 beats    4
 steps    4
-reverb   0.3
-
-voice lead  marimba  vol=0.8
-voice pad   strings  vol=0.35 center=E4
-voice bass  upright  vol=0.8
-voice kick  kick     vol=0.7
-voice hat   hat      vol=0.35
-
-pattern A
-lead | C5- E5- G5- E5- C5- E5- G5- B5- | A4- C5- E5- C5- A4--- G4--- |
-pad  | [C]--------------- | [Am]--------------- |
-bass | C2--- . C2 G2- C2--- G2--- | A1--- . A1 E2- A1--- E2--- |
-kick | x... .... x... .... | % |
-hat  | ..x. ..x. ..x. ..x. | % |
-
-loop A
 `
 
 export function starter(key) {
 	const k = typeof key === 'string' ? parseKey(key) : key
-	if (!k || k.name === 'C') return STARTER
-	return setSongKey(STARTER, k)
+	return STARTER.replace(/^key\s.*$/m, `key      ${k?.name ?? 'C'}`)
 }

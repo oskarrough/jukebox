@@ -1,6 +1,6 @@
 # Jukebox
 
-Oskar's jukebox: the place to compose music for his games. Songs are plain-text `.song` files in `music/`, played live by a small Web Audio synth (no samples). The page lists every song, plays it, and lets you edit it while it plays: it replays as you type, shows what doesn't parse, draws a scrolling piano roll, and lets you switch voices off and on. Loop bricks (after Dance eJay) drop a bar of drums, bass, chords or melody into the song as a new voice: drag one in or tap it. You can also hear a song the way a game would place it: as a Späti radio, a bar door, an open window, a passing car, a wedding convoy or your own car radio, at any distance.
+Oskar's jukebox: the place to compose music for his games. Songs are plain-text `.song` files in `music/`, played live by a small Web Audio synth (no samples). The page lists every song, plays it, and lets you edit it while it plays: it replays as you type, shows what doesn't parse, draws a scrolling piano roll tied to the score (the bar you're writing lights up on the roll, a note clicked on the roll puts the caret on it, ⌘L loops the pattern you're in), and lets you switch voices off and on. ⌘S saves into `music/` while the dev server runs; unsaved edits wait in the browser. Loop bricks (after Dance eJay) drop a bar of drums, bass, chords or melody into the song as a new voice: drag one in or tap it. You can also hear a song the way a game would place it: as a Späti radio, a bar door, an open window, a passing car, a wedding convoy or your own car radio, at any distance.
 
 It started as the jukebox in [NK GTA](https://github.com/oskarrough/nkgta), with its history carried over.
 
@@ -9,7 +9,7 @@ It started as the jukebox in [NK GTA](https://github.com/oskarrough/nkgta), with
 ```sh
 bun install
 bun run dev      # the jukebox at http://localhost:5173
-bun run build    # lint + format check, then a static build in dist/
+bun run build    # lint + format check, then a static build in dist/client/
 bun test         # every song compiles and loops, plus the format and playback rules
 bun run render konvoi --seconds 20  # offline WAV and levels, no audio device needed
 ```
@@ -26,7 +26,7 @@ To add a song, click "New", write it, click "Export" (downloads the current song
 
 The readout gives peak and RMS in dBFS, sample clipping, the intro's RMS against the rendered loop, and one loudness character per bar, respecting pattern tempo and meter. Higher characters mean louder bars; `_` means silence. Voice levels include their volume and reverb, measured solo through the synth's existing rough K-weighting path before shared compression. Their energy shares estimate which voices dominate; they aren't percentages of the compressed waveform or LUFS. The overall levels and strip measure the finished mix written to the WAV, without normalization. Lower `vol=` on a dominant voice or when it clips, and render again. A short render labels an incomplete loop comparison. Synth noise varies slightly between runs; these measurements guide balance without claiming how the music feels.
 
-A song's head can also say which game it's for, `game dodgethis` (no `game` means NK GTA), and where it belongs in that game: `street Sonnenallee`, `at doener cafe`, `at feld`, `at autoradio`. The jukebox only parses these; it's up to the game what they mean.
+A song's head can have `tags`, any words you like (`tags nkgta wip`), and the song list filters by them. It can also say which game it's for, `game dodgethis` (no `game` means NK GTA), and where it belongs in that game: `street Sonnenallee`, `at doener cafe`, `at feld`, `at autoradio`. The jukebox only parses these; it's up to the game what they mean.
 
 ## Code
 
@@ -38,9 +38,9 @@ A song's head can also say which game it's for, `game dodgethis` (no `game` mean
 - `src/roll.js`: the scrolling piano roll.
 - `src/bricks.js`: the loop bricks, and `addBrick(text, brick)`, which adds one to a song's text in the song's key.
 - `src/songs.js`: every song in `music/` as text, via Vite's `import.meta.glob`.
-- `src/page.js`, `src/page.css` and `index.html`: the jukebox page. Plain HTML, CSS and JS: Teenage Engineering meets Ableton meets Dance eJay, a light machine with a black screen, a session grid of clips, track buttons and loop bricks.
+- `src/App.jsx`, `src/Document.jsx`, `src/App.css` and `src/ui/`: the jukebox page, in [Solid 2](https://v2.solidjs.com) through `@solidjs/vite-plugin`'s start mode (no `index.html`). `src/ui/state.js` holds the page's state and actions; each part of the page is a component beside it: `TopBar`, `SongList`, `Roll`, `Voices`, `Editor`, `GamePanel`, `Guide`; `paint.js` colours the score and `link.js` ties it to the roll. After Teenage Engineering, Ableton, Logic and Dance eJay: the songs on the left, filtered by tag; a black screen with the piano roll; the voices beside the score; loop bricks, the game's sound and the guide a click away.
 
-No runtime dependencies; Vite, oxlint, oxfmt and the offline audio renderer are dev tools.
+The page depends on `solid-js` and `@solidjs/web`; what games import (`score`, `synth`, `player`, `roll`, `songs`) depends on nothing. Vite, oxlint, oxfmt and the offline audio renderer are dev tools.
 
 ## Using it in a game
 

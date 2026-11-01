@@ -189,6 +189,7 @@ function parse(text) {
 		street: '',
 		at: [],
 		game: '',
+		tags: [],
 		tempo: 120,
 		beats: 4,
 		steps: 4,
@@ -251,6 +252,9 @@ function parse(text) {
 				break
 			case 'game':
 				song.game = restStr.toLowerCase()
+				break
+			case 'tags':
+				song.tags = restStr.toLowerCase().split(/\s+/).filter(Boolean)
 				break
 			case 'at':
 				song.at = restStr.toLowerCase().split(/\s+/).filter(Boolean)
@@ -529,7 +533,8 @@ function parseDrumBars(bars, barSteps, voice, ctx) {
 }
 
 /* ---------------------------------------------------------------- compile */
-function compile(text) {
+// With `only`, the song loops that one pattern.
+function compile(text, only) {
 	const { song, errors } = parse(text)
 	const err = (ln, msg) => errors.push({ line: ln, msg })
 
@@ -573,11 +578,11 @@ function compile(text) {
 		const patches = lines.filter((l) => l.at)
 		if (!patches.length) return lines
 		const base = whole.length ? whole : inherited || []
-		const bars = base.flatMap((l) => l.bars.map((b) => ({ bars: [b], ln: l.ln })))
+		const bars = base.flatMap((l) => l.bars.map((b, k) => ({ bars: [b], ln: l.ln, k: (l.k ?? 0) + k })))
 		for (const l of patches)
 			l.bars.forEach((b, k) => {
-				for (let i = bars.length; i < l.at - 1 + k; i++) bars.push({ bars: ['_'], ln: l.ln })
-				bars[l.at - 1 + k] = { bars: [b], ln: l.ln }
+				for (let i = bars.length; i < l.at - 1 + k; i++) bars.push({ bars: ['_'], ln: l.ln, k: -1 })
+				bars[l.at - 1 + k] = { bars: [b], ln: l.ln, k }
 			})
 		return bars
 	}
@@ -593,6 +598,8 @@ function compile(text) {
 		const swing = r.opts.swing != null ? r.opts.swing : song.swing
 		const barSteps = beats * steps
 		const perVoice = {}
+		// Where each voice's bars are written: the line, and which bar on it.
+		const where = {}
 		let nBars = 0
 		for (const vName of r.order) {
 			if (r.mute.has(vName)) continue
@@ -603,6 +610,7 @@ function compile(text) {
 				continue
 			}
 			const bars = [].concat(...lines.map((l) => l.bars))
+			where[vName] = lines.flatMap((l) => l.bars.map((_, k) => ({ ln: l.ln, k: (l.k ?? 0) + k })))
 			const ctx = { pattern: name, err: (m) => err(lines[0].ln, m) }
 			// report errors on the specific line that holds the bar
 			let barLine = []
@@ -615,7 +623,7 @@ function compile(text) {
 			nBars = Math.max(nBars, bars.length)
 		}
 		if (!nBars) err(r.ln, `Pattern "${name}" has no music lines.`)
-		return (compiled[name] = { name, tempo, beats, steps, swing, barSteps, bars: Math.max(1, nBars), perVoice })
+		return (compiled[name] = { name, tempo, beats, steps, swing, barSteps, bars: Math.max(1, nBars), perVoice, where, ln: r.ln })
 	}
 
 	const voices = song.voices
@@ -651,6 +659,8 @@ function compile(text) {
 					tempo: p.tempo,
 					beats: p.beats,
 					steps: p.steps,
+					where: p.where,
+					ln: p.ln,
 				})
 				const evs = []
 				for (const vName in p.perVoice) {
@@ -662,7 +672,8 @@ function compile(text) {
 						if (e.step >= total) continue
 						const t0 = timeOf(e.step)
 						let d = timeOf(Math.min(total, e.step + e.len)) - t0
-						const ev = { t: t + t0, d, v: vi, vel: e.vel, s: sIdx }
+						// b and st: the bar in the pattern, and the step in it
+						const ev = { t: t + t0, d, v: vi, vel: e.vel, s: sIdx, b: Math.floor(e.step / p.barSteps), st: e.step % p.barSteps }
 						if (!voice.drum) {
 							ev.m = e.notes.map((n) => n + voice.trans + ref.trans)
 							ev.d = Math.max(0.02, d * voice.gate)
@@ -688,9 +699,14 @@ function compile(text) {
 	if (!playRefs.length && !loopRefs.length) {
 		loopRefs = song.patternOrder.map((n) => ({ name: n, trans: 0, times: 1, ln: song.patterns[n].ln }))
 	}
+	if (only && song.patterns[only]) {
+		playRefs = []
+		loopRefs = [{ name: only, trans: 0, times: 1, ln: song.patterns[only].ln }]
+	}
 	const intro = timeline(playRefs)
 	const loop = timeline(loopRefs)
-	if (!intro.dur && !loop.dur && !errors.length) errors.push({ line: 1, msg: 'Nothing to play yet. Add a pattern and a loop line.' })
+	const empty = !intro.dur && !loop.dur
+	if (empty && !errors.length) errors.push({ line: 1, msg: 'Nothing to play yet. Add a pattern and a loop line.' })
 
 	errors.sort((a, b) => a.line - b.line)
 	return {
@@ -700,6 +716,9 @@ function compile(text) {
 		street: song.street,
 		at: song.at,
 		game: song.game,
+		tags: song.tags,
+		// Nothing to play yet: a new song, before its first pattern.
+		empty,
 		tempo: song.tempo,
 		beats: song.beats,
 		steps: song.steps,

@@ -16,6 +16,7 @@ key      Am
 tempo    96
 street   Weserstraße
 at       bar
+tags     nkgta
 
 voice lead  rhodes vol=0.5 pan=-0.2
 voice bass  808    vol=0.9 drive=0.5
@@ -44,11 +45,12 @@ loop A B A B*2
 - `pattern B from A` copies A. A voice line in B replaces A's line; `lead@3 | … |` replaces bar 3 on and keeps the rest; `mute` drops voices.
 - `play intro` plays once, `loop A B*2 C+5` repeats forever (`*2` twice, `+5` up five semitones).
 
-Every instrument and voice option (`vol pan rev oct trans gate glide bright att rel center drive`) is in the page's Guide, `index.html`; `src/synth.js` comments how each instrument sounds. Use the real instrument: if your genre needs one that's missing, add it to `src/synth.js` and `src/score.js` rather than faking it with square waves.
+Every instrument and voice option (`vol pan rev oct trans gate glide bright att rel center drive`) is in the page's Guide, `src/ui/Guide.jsx`; `src/synth.js` comments how each instrument sounds. Use the real instrument: if your genre needs one that's missing, add it to `src/synth.js` and `src/score.js` rather than faking it with square waves.
 
 ## Placing it in a game
 
 - No `game` line means NK GTA; `game dodgethis` is for Dodgethis.
+- `tags nkgta` or `tags dodgethis`: any words, to find the song by in the jukebox's list. Every song has one.
 - `street Sonnenallee`: Spätis, bars, windows and cars on that street usually play it.
 - `at spaeti bar doener imbiss cafe feld autoradio`: kinds of place. `autoradio` is your own car radio, `feld` an open field like Tempelhof. Words the game doesn't know yet, like `markt`, wait harmlessly.
 
@@ -65,7 +67,7 @@ Every instrument and voice option (`vol pan rev oct trans gate glide bright att 
 - `bun test`: every song compiles without errors and loops.
 - `bun run render <name>`: render the intro and one loop to `music/renders/<name>.wav` (gitignored), and read the levels. Use `--seconds 20` for a short check; it repeats the loop as needed. Node 22+ is required; no audio device is needed.
 - Check the overall peak/RMS and clipping, each voice's peak/RMS and energy share, intro vs loop RMS, and the loudness strip (one character per bar). Voice measurements are solo, roughly K-weighted and before shared compression; overall measurements are the finished mix. Shares estimate balance, not exact contributions to the compressed mix. Lower `vol=` for a voice that dominates or clips; render again. A short check may not reach the loop or may cover only part of it; use the default render for the full comparison.
-- `bun run dev`, then `http://localhost:5173/?song=<name>`: the score panel says "Playable." or lists errors by line. Add `&kind=radio&d=10` to hear it as a game places it. Stop the dev server when you're done.
+- `bun run dev`, then `http://localhost:5173/?song=<name>`: errors show under the score, their line numbers in red. Add `&kind=radio&d=10` to hear it the way a game places it. Stop the dev server when you're done.
 - Watch the piano roll: it shows the shape of the hook, voices crowding one register, a bar left empty by mistake.
 
 ## You can't hear it

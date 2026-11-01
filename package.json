@@ -27,7 +27,14 @@
 		"format": "oxfmt",
 		"deploy": "wrangler deploy"
 	},
+	"dependencies": {
+		"@solidjs/web": "2.0.0-rc.20",
+		"solid-js": "2.0.0-rc.20"
+	},
 	"devDependencies": {
+		"@solidjs/diagnostics": "2.0.0-rc.20",
+		"@solidjs/vite-plugin": "3.0.0-next.54",
+		"eslint-plugin-solid": "~0.18.1",
 		"node-web-audio-api": "^2.2.0",
 		"oxfmt": "^0.72.0",
 		"oxlint": "^1.87.0",
