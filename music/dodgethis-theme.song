@@ -1,6 +1,7 @@
 title    Dodgethis
 about    The main theme. Yellow Magic Orchestra's square waves and synth brass meet Azymuth's Rhodes, singing fretless and samba kit, built like the Tower of Babel: one voice, then another, until every tongue is saying the hook at once and the whole thing comes down.
 game     dodgethis
+tags     dodgethis
 tempo    112
 beats    4
 steps    4
@@ -69,13 +70,13 @@ conga  | ....o.x.....x.xx | % | % | % | % | % | % | ....o.x...x.x.x. |
 cuica  | _ | _ | _ | ........x.o.X.x. | _ | _ | _ | ..x.o.X.x.o.X... |
 crash  | x............... | _ | _ | _ | _ | _ | _ | _ |
 
-# Babel: every voice takes up the hook a bar after the last, in its own octave, until they are all talking at once
+# Babel: the brass and the vibes take up the hook a bar after the last, in their own octaves; the square joins the lead in step when everyone is talking at once
 pattern C
 keys   | [Dmaj9]-- ... [Dmaj9]- .. [Dmaj9]----- | [E/D]-- ... [E/D]- .. [E/D]----- | [Dmaj9]-- ... [Dmaj9]- .. [Dmaj9]----- | [E/D]-- ... [E/D]- .. [E/D]----- | [Dmaj9]-- ... [Dmaj9]- .. [Dmaj9]----- | [E/D]-- ... [E/D]- .. [E/D]----- | [Bbmaj7]-- ... [Bbmaj7]- .. [Bbmaj7]----- | [A7sus4]--------------- |
 bass   | D2-- . D3- A2- D2-- . C#3- A2- | D2-- . D3- B2- D2-- . E3- F#3- | D2-- . D3- A2- D2-- . C#3- A2- | D2-- . D3- B2- D2-- . E3- F#3- | D2-- . D3- A2- D2-- . C#3- A2- | D2-- . D3- B2- D2-- . E3- F#3- | Bb1-- . Bb2- F2- Bb1-- . A2- F2- | A1--------------- |
 sub    | D2- D3- D2- D3- D2- D3- D2- D3- | % | % | % | % | % | Bb1- Bb2- Bb1- Bb2- Bb1- Bb2- Bb1- Bb2- | A1- A2- A1- A2- A1- A2- A1- A2- |
 lead   | A4- . F#4 A4- B4- D5--- B4- A4- | G#4- . B4 . E5- F#5------ E5- | F#5- . E5 D5- C#5- D5--- A4- B4- | D5------- . . E5- D5- B4- | A4- . F#4 A4- B4- D5--- B4- A4- | G#4- . B4 . E5- F#5------ E5- | F#5- . E5 D5- C#5- D5--- A4- B4- | D5------- E5 F#5 A5--- ~B5- |
-tongue | _ | A5- . F#5 A5- B5- D6--- B5- A5- | G#5- . B5 . E6- F#6------ E6- | F#6- . E6 D6- C#6- D6--- A5- B5- | D6------- . . E6- D6- B5- | A5- . F#5 A5- B5- D6--- B5- A5- | G#5- . B5 . E6- F#6------ E6- | F#6- . E6 D6- C#6- D6--- A5- B5- |
+tongue | _ | _ | _ | _ | A5- . F#5 A5- B5- D6--- B5- A5- | G#5- . B5 . E6- F#6------ E6- | F#6- . E6 D6- C#6- D6--- A5- B5- | D6------- E6 F#6 A6--- ~B6- |
 brass  | _ | _ | A3- . F#3 A3- B3- D4--- B3- A3- | G#3- . B3 . E4- F#4------ E4- | F#4- . E4 D4- C#4- D4--- A3- B3- | D4------- . . E4- D4- B3- | A3- . F#3 A3- B3- D4--- B3- A3- | G#3- . B3 . E4- F#4------ E4- |
 glass  | _ | _ | _ | A4- . F#4 A4- B4- D5--- B4- A4- | G#4- . B4 . E5- F#5------ E5- | F#5- . E5 D5- C#5- D5--- A4- B4- | D5------- . . E5- D5- B4- | A4- . F#4 A4- B4- D5--- B4- A4- |
 ahh    | _ | _ | _ | _ | [Dmaj9]--------------- | [E/D]--------------- | [Bbmaj7]--------------- | [A7sus4]--------------- |
