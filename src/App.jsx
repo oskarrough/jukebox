@@ -64,9 +64,6 @@ export default function App() {
 			<Editor />
 			<GamePanel />
 			<Guide />
-			<button id="unblock" hidden={!jb.blocked()} onClick={jb.resume}>
-				Play
-			</button>
 		</main>
 	)
 }

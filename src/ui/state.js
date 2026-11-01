@@ -160,7 +160,6 @@ export const jb = createRoot(() => {
 	let from = 0
 	const [live, setLive] = createSignal(false)
 	const [pos, setPos] = createSignal(0)
-	const [blocked, setBlocked] = createSignal(false)
 	// How loud each voice looks right now, by index, for the meters.
 	const [levels, setLevels] = createSignal([])
 
@@ -221,7 +220,6 @@ export const jb = createRoot(() => {
 	}
 
 	function tick() {
-		setBlocked(!!playing && context.state !== 'running')
 		if (!playing) return
 		const now = context.currentTime
 		if (playing.src.kind !== srcKind()) start(playing.song)
@@ -445,11 +443,13 @@ export const jb = createRoot(() => {
 		narrow.addEventListener('change', fit)
 		const wanted = names().includes(asked.get('song')) ? asked.get('song') : null
 		// After the page has settled: picking a song flushes, which can't happen
-		// while it settles.
+		// while it settles. It only plays if the browser lets sound start
+		// before a click; otherwise it waits on the play button.
 		if (wanted)
 			queueMicrotask(() => {
 				pick(wanted)
-				play()
+				context ??= new AudioContext()
+				if (context.state === 'running') play()
 			})
 		setBooted(true)
 		const timer = setInterval(tick, 50)
@@ -500,7 +500,6 @@ export const jb = createRoot(() => {
 		setDragging,
 		live,
 		pos,
-		blocked,
 		levels,
 		setLevels,
 		length,
@@ -516,7 +515,6 @@ export const jb = createRoot(() => {
 		save,
 		canSave,
 		unsaved,
-		resume: () => context?.resume(),
 		boot,
 	}
 })
