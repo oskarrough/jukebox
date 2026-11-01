@@ -536,7 +536,10 @@ const INST = {
 			ng.gain.setValueAtTime(0, t)
 			ng.gain.linearRampToValueAtTime(v * 0.05, t + 0.03)
 			ng.gain.setTargetAtTime(v * 0.012, t + 0.03, 0.06)
-			ng.gain.setTargetAtTime(0, Math.max(t + d, t + 0.04), 0.03)
+			// pin the level where the breath stops (see adsr)
+			const tb = Math.max(t + d, t + 0.04)
+			ng.gain.setValueAtTime(v * 0.012 + v * 0.038 * Math.exp(-(tb - t - 0.03) / 0.06), tb)
+			ng.gain.setTargetAtTime(0, tb, 0.03)
 			n.connect(hp).connect(ng).connect(out)
 		},
 	},
@@ -794,7 +797,10 @@ const INST = {
 			ng.gain.setValueAtTime(0, t)
 			ng.gain.linearRampToValueAtTime(v * 0.16, t + 0.04)
 			ng.gain.setTargetAtTime(v * 0.06, t + 0.04, 0.1)
-			ng.gain.setTargetAtTime(0, Math.max(t + d, t + 0.05), 0.05)
+			// pin the level where the breath stops (see adsr)
+			const tb = Math.max(t + d, t + 0.05)
+			ng.gain.setValueAtTime(v * 0.06 + v * 0.1 * Math.exp(-(tb - t - 0.04) / 0.1), tb)
+			ng.gain.setTargetAtTime(0, tb, 0.05)
 			n.connect(bp).connect(ng).connect(out)
 		},
 	},
