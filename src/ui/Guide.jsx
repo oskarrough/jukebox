@@ -6,6 +6,13 @@ export function Guide() {
 				The format started as Simon Willison's <a href="https://tools.simonwillison.net/scrimshaw-jukebox">Scrimshaw</a>. A song is a head,
 				some voices, some patterns and a <code>loop</code> line. Anything after <code>#</code> is a comment.
 			</p>
+			<h3>Writing</h3>
+			<p>
+				<kbd>⌥↑</kbd> <kbd>⌥↓</kbd>, or <kbd>⌥</kbd>-drag, nudges what's under the caret: a note by a semitone (<kbd>⇧</kbd> an octave), a
+				number by its last digit, a drum step from <code>.</code> to <code>o</code> <code>x</code> <code>X</code>. On a drum line, the pads
+				under the score switch its steps. Click the roll to find a note in the score; <kbd>⌘L</kbd> loops the pattern you're in,{' '}
+				<kbd>⌘↩</kbd> plays and stops, <kbd>⌘S</kbd> saves.
+			</p>
 			<h3>Head</h3>
 			<p>
 				<code>title</code>, <code>about</code>, <code>composer</code>, <code>tags nkgta wip</code> (any words, to find the song by in the

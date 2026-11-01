@@ -110,26 +110,22 @@ function KeyPicker() {
 	const mode = () => (jb.key().minor ? 'min' : 'maj')
 	return (
 		<div class="key-picker">
-			<select aria-label="Key" title="Change key and transpose the song" onChange={(e) => jb.changeKey(e.currentTarget.value, mode())}>
-				<For each={KEY_ROOTS}>
-					{(r) => (
-						<option value={r} selected={r === root()}>
-							{r}
-						</option>
-					)}
-				</For>
+			<select
+				aria-label="Key"
+				title="Change key and transpose the song"
+				value={root()}
+				onChange={(e) => jb.changeKey(e.currentTarget.value, mode())}
+			>
+				<For each={KEY_ROOTS}>{(r) => <option value={r}>{r}</option>}</For>
 			</select>
 			<select
 				aria-label="Major or minor"
 				title="Switch between major and minor"
+				value={mode()}
 				onChange={(e) => jb.changeKey(root(), e.currentTarget.value)}
 			>
-				<option value="maj" selected={mode() === 'maj'}>
-					maj
-				</option>
-				<option value="min" selected={mode() === 'min'}>
-					min
-				</option>
+				<option value="maj">maj</option>
+				<option value="min">min</option>
 			</select>
 		</div>
 	)

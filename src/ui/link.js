@@ -54,11 +54,9 @@ export function marksFor(song, at) {
 // The column in `line` where the note at `step` of bar `k` is written: drum
 // lanes take a character a step, a note its dashes, a rest its dots.
 export function columnOf(line, k, step, drum) {
-	let start = -1
-	for (let bar = -1, i = 0; i < line.length && bar < k; i++) if (line[i] === '|' && ++bar === k) start = i + 1
-	if (start < 0) return 0
-	const end = line.indexOf('|', start)
-	const bar = line.slice(start, end < 0 ? line.length : end)
+	const found = barAt(line, k)
+	if (!found) return 0
+	const { start, text: bar } = found
 	let at = 0
 	for (const m of bar.matchAll(drum ? /\S/g : /\S+/g)) {
 		const t = m[0]
@@ -67,4 +65,18 @@ export function columnOf(line, k, step, drum) {
 		at += len
 	}
 	return start + bar.search(/\S|$/)
+}
+
+// Bar `k` (from 0) of a music line: where it starts and ends, and its text.
+export function barAt(line, k) {
+	let start = -1
+	for (let bar = -1, i = 0; i < line.length; i++)
+		if (line[i] === '|' && ++bar === k) {
+			start = i + 1
+			break
+		}
+	if (start < 0) return null
+	const close = line.indexOf('|', start)
+	const end = close < 0 ? line.length : close
+	return { start, end, text: line.slice(start, end) }
 }

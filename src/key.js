@@ -59,7 +59,7 @@ export function transposeChordBody(sym, semis, flats) {
 	return out
 }
 
-function transposeToken(tok, semis, flats) {
+export function transposeToken(tok, semis, flats) {
 	const m = T_NOTE.exec(tok)
 	if (!m) return tok
 	const next = m[2].startsWith('[')

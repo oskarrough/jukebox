@@ -5,7 +5,7 @@ import { createEffect, createMemo, createRoot, createSignal, createStore, flush,
 import { BRICKS, addBrick } from '../bricks.js'
 import { EFFECTS, SOURCES, effectState, runChain } from '../effects.js'
 import { inferKey, setSongKey, starter } from '../key.js'
-import { compile, parseKey } from '../score.js'
+import { chordToMidis, compile, noteToMidi, parseKey } from '../score.js'
 import { columnOf, marksFor } from './link.js'
 import { voiceColors } from '../roll.js'
 import { AHEAD, begin, end, feed, synthFor, tune } from '../player.js'
@@ -167,6 +167,7 @@ export const jb = createRoot(() => {
 	const length = (s) => (s ? s.intro.dur + s.loop.dur : 0)
 	// Seconds since the start, folded into the song: past the intro, round the loop.
 	function folded(s, at) {
+		at = Math.max(0, at)
 		if (at < s.intro.dur || !s.loop.dur) return Math.min(at, length(s))
 		return s.intro.dur + ((at - s.intro.dur) % s.loop.dur)
 	}
@@ -273,6 +274,37 @@ export const jb = createRoot(() => {
 		const line = text().split('\n')[w.ln - 1] ?? ''
 		reveal(w.ln, columnOf(line, w.k, e.st, v.drum))
 	}
+	// Plays `token` on voice `name` to hear an edit: a note, a chord, or a drum
+	// step (o, x, X). Through the song if it's playing, else on its own.
+	let preview = null
+	function audition(name, token) {
+		const s = untrack(song)
+		const i = s?.voices.findIndex((v) => v.name === name) ?? -1
+		if (i < 0) return
+		const v = s.voices[i]
+		let ev = { v: i, vel: { o: 0.42, x: 0.8, X: 1.05 }[token] ?? 0.9, d: 0.35 }
+		if (!v.drum) {
+			const body = token.replace(/^~/, '').replace(/[!?-]+$/, '')
+			const m = body.startsWith('[') ? chordToMidis(body.slice(1, -1), v.center) : body.split('+').map(noteToMidi)
+			if (!m?.length || m.some((n) => n == null)) return
+			ev.m = m.map((n) => n + v.trans)
+		}
+		context ??= new AudioContext()
+		synth ??= synthFor(context, context.destination)
+		context.resume()
+		const at = context.currentTime + 0.01
+		if (playing) return playing.session.play(ev, at)
+		if (preview?.song !== s) {
+			if (preview) end(preview, context)
+			preview = begin(synth, context, { kind: 'radio', since: 0 }, s)
+			const { level, wet, cutoff } = runChain(DRY)
+			preview.level.gain.value = level
+			preview.wet.gain.value = wet
+			preview.tone.frequency.value = cutoff
+		}
+		preview.session.play(ev, at)
+	}
+
 	// Looping one pattern starts it from the top; back to the song, playing
 	// goes on from where that pattern first comes.
 	function toggleLoop() {
@@ -431,6 +463,7 @@ export const jb = createRoot(() => {
 		isMuted,
 		mutedSet,
 		toggleVoice,
+		caret,
 		follow,
 		marks,
 		wanted,
@@ -438,6 +471,7 @@ export const jb = createRoot(() => {
 		showNote,
 		looping,
 		toggleLoop,
+		audition,
 		inGame,
 		fx,
 		setFx,

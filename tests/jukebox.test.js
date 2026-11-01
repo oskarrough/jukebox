@@ -6,6 +6,7 @@ import { HEAR, cueAt, join, shape, runChain, effectState, EFFECTS } from '../src
 import { BRICKS, addBrick } from '../src/bricks.js'
 import { paint } from '../src/ui/paint.js'
 import { caretAt, columnOf, marksFor } from '../src/ui/link.js'
+import { nudge, stepsOf, toggleStep } from '../src/ui/nudge.js'
 import { inferKey, keyOf, setSongKey, starter, transposeScore } from '../src/key.js'
 
 const STARTER_ISH = 'voice kick kick\npattern A\nkick | x... x... x... x... |\nloop A'
@@ -294,5 +295,48 @@ loop A B`
 		const one = compile(text, 'B')
 		expect(one.loop.sections.map((s) => s.name)).toEqual(['B'])
 		expect(one.intro.dur).toBe(0)
+	})
+})
+
+describe('nudging', () => {
+	const text = `tempo 112
+voice lead square vol=0.5 pan=-0.1 center=E4
+pattern A
+lead | C4- D#4- [Am7]------------ |
+kick | x... .o.. X... .... |`
+	const drums = new Set(['kick'])
+	const key = parseKey('C')
+	const go = (find, dir, big = false, nth = 0) => {
+		const pos = text.indexOf(find) + nth
+		const r = nudge(text, pos, dir, big, drums, key)
+		return r && text.slice(0, r.start) + r.to + text.slice(r.end)
+	}
+
+	test('notes move by a semitone, or an octave', () => {
+		expect(go('C4-', 1)).toContain('lead | C#4- D#4-')
+		expect(go('D#4-', -1, true)).toContain('C4- D#3-')
+		expect(go('[Am7]', 1)).toContain('[A#m7]---')
+		expect(go('center=E4', 1, false, 8)).toContain('center=F4')
+	})
+
+	test('numbers move by their last digit', () => {
+		expect(go('112', 1)).toContain('tempo 113')
+		expect(go('112', -1, true)).toContain('tempo 102')
+		expect(go('0.5', 1)).toContain('vol=0.6')
+		expect(go('-0.1', 1, false, 1)).toContain('pan=0.0')
+	})
+
+	test('drum steps go . o x X', () => {
+		expect(go('x... .o', 1)).toContain('kick | X...')
+		expect(go('.o..', 1, false, 1)).toContain('.x..')
+		expect(go('X...', 1)).toBeNull()
+	})
+
+	test('pads switch steps, keeping the spacing or writing out % and _', () => {
+		const line = 'kick | x... .... | % | _ |'
+		expect(stepsOf(line, 1, 8)).toEqual([...'x.......'])
+		const r = toggleStep(line, 0, 4, 8)
+		expect(line.slice(0, r.start) + r.to + line.slice(r.end)).toBe('kick | x... x... | % | _ |')
+		expect(toggleStep(line, 2, 0, 8).to).toBe(' x....... ')
 	})
 })
