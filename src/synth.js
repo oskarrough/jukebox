@@ -39,10 +39,14 @@ function adsr(param, t, d, { a = 0.01, dc = 0.1, s = 1, r = 0.1, peak = 1 }) {
 		tOff = Math.max(t + d, tOn + 0.003)
 	param.setValueAtTime(0, t)
 	param.linearRampToValueAtTime(peak, tOn)
-	if (s < 1) param.setTargetAtTime(peak * s, tOn, Math.max(0.002, dc / 3))
-	// Explicitly hold a flat sustain: node-web-audio-api otherwise extrapolates
-	// the attack ramp into the release target and can produce invalid samples.
-	else param.setValueAtTime(peak, tOff)
+	// Pin the level where the release starts: node-web-audio-api otherwise
+	// extrapolates the previous event into the release target and can produce
+	// invalid samples (a flat sustain, or a decay that has long since settled).
+	if (s < 1) {
+		const tau = Math.max(0.002, dc / 3)
+		param.setTargetAtTime(peak * s, tOn, tau)
+		param.setValueAtTime(peak * s + peak * (1 - s) * Math.exp(-(tOff - tOn) / tau), tOff)
+	} else param.setValueAtTime(peak, tOff)
 	param.setTargetAtTime(0, tOff, Math.max(0.002, r / 4))
 	return tOff + r * 1.8 + 0.03
 }
