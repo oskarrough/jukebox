@@ -7,6 +7,8 @@ import { BRICKS, addBrick } from '../src/bricks.js'
 import { paint } from '../src/ui/paint.js'
 import { caretAt, columnOf, marksFor } from '../src/ui/link.js'
 import { nudge, stepsOf, toggleStep } from '../src/ui/nudge.js'
+import { suggest } from '../src/ui/complete.js'
+import { noteOf, octaveAt } from '../src/ui/keyboard.js'
 import { inferKey, keyOf, setSongKey, starter, transposeScore } from '../src/key.js'
 
 const STARTER_ISH = 'voice kick kick\npattern A\nkick | x... x... x... x... |\nloop A'
@@ -338,5 +340,32 @@ kick | x... .o.. X... .... |`
 		const r = toggleStep(line, 0, 4, 8)
 		expect(line.slice(0, r.start) + r.to + line.slice(r.end)).toBe('kick | x... x... | % | _ |')
 		expect(toggleStep(line, 2, 0, 8).to).toBe(' x....... ')
+	})
+})
+
+describe('suggestions and the piano', () => {
+	const text = `tempo 100
+voice lead squ
+voice kick kick vol=0.8 pa
+pattern A
+le
+loop A
+mute ki`
+	const at = (find, extra = 0) => suggest(text, text.indexOf(find) + find.length + extra)
+
+	test('instruments, options, voices and patterns', () => {
+		expect(at('voice lead squ').items[0]).toEqual({ word: 'square', insert: 'square ' })
+		expect(at('vol=0.8 pa').items.map((i) => i.word)).toEqual(['pan'])
+		expect(at('\nle').items[0].insert).toBe('lead | ')
+		expect(at('mute ki').items[0].word).toBe('kick')
+		expect(suggest(text, text.indexOf('tempo') + 3)).toBeNull()
+	})
+
+	test('keys play from C by where they sit', () => {
+		expect(noteOf('KeyA', 4, parseKey('C'))).toBe('C4')
+		expect(noteOf('KeyW', 4, parseKey('F'))).toBe('Db4')
+		expect(noteOf('KeyK', 3, parseKey('C'))).toBe('C4')
+		expect(noteOf('KeyQ', 4, parseKey('C'))).toBeNull()
+		expect(octaveAt('lead | A2- C3 ', 14)).toBe(3)
 	})
 })

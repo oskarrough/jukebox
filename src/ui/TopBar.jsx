@@ -3,7 +3,7 @@
 import { For, createMemo, createSignal } from 'solid-js'
 import { KEY_ROOTS } from '../key.js'
 import { jb } from './state.js'
-import { DownloadIcon, GuideIcon, LoopIcon, SidebarIcon, SpeakerIcon } from './Icons.jsx'
+import { DownloadIcon, GuideIcon, LoopIcon, PianoIcon, SidebarIcon, SpeakerIcon } from './Icons.jsx'
 
 const clock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
@@ -30,6 +30,15 @@ export function TopBar() {
 				onClick={jb.toggleLoop}
 			>
 				<LoopIcon />
+			</button>
+			<button
+				class="icon"
+				type="button"
+				aria-pressed={String(jb.piano())}
+				title={jb.piano() ? 'Type text again (⌘K)' : 'Play and write notes from the keyboard, Z X for octaves (⌘K)'}
+				onClick={jb.togglePiano}
+			>
+				<PianoIcon />
 			</button>
 			<Display />
 			<KeyPicker />

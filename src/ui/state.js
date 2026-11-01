@@ -5,7 +5,7 @@ import { createEffect, createMemo, createRoot, createSignal, createStore, flush,
 import { BRICKS, addBrick } from '../bricks.js'
 import { EFFECTS, SOURCES, effectState, runChain } from '../effects.js'
 import { inferKey, setSongKey, starter } from '../key.js'
-import { chordToMidis, compile, noteToMidi, parseKey } from '../score.js'
+import { chordToMidis, compile, noteToMidi, parse, parseKey } from '../score.js'
 import { columnOf, marksFor } from './link.js'
 import { voiceColors } from '../roll.js'
 import { AHEAD, begin, end, feed, synthFor, tune } from '../player.js'
@@ -275,13 +275,14 @@ export const jb = createRoot(() => {
 		reveal(w.ln, columnOf(line, w.k, e.st, v.drum))
 	}
 	// Plays `token` on voice `name` to hear an edit: a note, a chord, or a drum
-	// step (o, x, X). Through the song if it's playing, else on its own.
+	// step (o, x, X). The voices come from `score`, the text as it is now, so a
+	// voice heard before the song compiles. Through the song if it's playing.
 	let preview = null
-	function audition(name, token) {
-		const s = untrack(song)
-		const i = s?.voices.findIndex((v) => v.name === name) ?? -1
+	function audition(score, name, token) {
+		const voices = parse(score).song.voices
+		const i = voices.findIndex((v) => v.name === name)
 		if (i < 0) return
-		const v = s.voices[i]
+		const v = voices[i]
 		let ev = { v: i, vel: { o: 0.42, x: 0.8, X: 1.05 }[token] ?? 0.9, d: 0.35 }
 		if (!v.drum) {
 			const body = token.replace(/^~/, '').replace(/[!?-]+$/, '')
@@ -293,16 +294,27 @@ export const jb = createRoot(() => {
 		synth ??= synthFor(context, context.destination)
 		context.resume()
 		const at = context.currentTime + 0.01
-		if (playing) return playing.session.play(ev, at)
-		if (preview?.song !== s) {
+		const live = playing?.song.voices[i]
+		if (live?.name === name && live.inst === v.inst) return playing.session.play(ev, at)
+		const id = JSON.stringify(voices)
+		if (preview?.id !== id) {
 			if (preview) end(preview, context)
-			preview = begin(synth, context, { kind: 'radio', since: 0 }, s)
+			const quiet = { events: [], sections: [], dur: 0 }
+			preview = begin(synth, context, { kind: 'radio', since: 0 }, { voices, intro: quiet, loop: quiet })
+			preview.id = id
 			const { level, wet, cutoff } = runChain(DRY)
 			preview.level.gain.value = level
 			preview.wet.gain.value = wet
 			preview.tone.frequency.value = cutoff
 		}
 		preview.session.play(ev, at)
+	}
+
+	// The piano: the computer keyboard plays notes into the score.
+	const [piano, setPiano] = createSignal(false)
+	function togglePiano() {
+		setPiano((on) => !on)
+		document.getElementById('score')?.focus()
 	}
 
 	// Looping one pattern starts it from the top; back to the song, playing
@@ -472,6 +484,8 @@ export const jb = createRoot(() => {
 		looping,
 		toggleLoop,
 		audition,
+		piano,
+		togglePiano,
 		inGame,
 		fx,
 		setFx,

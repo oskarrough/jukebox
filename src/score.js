@@ -101,6 +101,9 @@ function noteToMidi(s) {
 	return 12 * (+m[3] + 1) + PC[m[1].toLowerCase()] + ACC[m[2] || '']
 }
 
+// Every option a voice line takes, as in vol=0.8.
+const OPTIONS = ['vol', 'pan', 'rev', 'oct', 'trans', 'gate', 'glide', 'bright', 'att', 'rel', 'center', 'drive']
+
 const CHORDS = {
 	'': [0, 4, 7],
 	maj: [0, 4, 7],
@@ -732,4 +735,4 @@ function compile(text, only) {
 	}
 }
 
-export { parse, compile, noteToMidi, chordToMidis, MELODIC, DRUMS, CHORDS }
+export { parse, compile, noteToMidi, chordToMidis, MELODIC, DRUMS, CHORDS, OPTIONS }

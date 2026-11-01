@@ -648,6 +648,33 @@ input[type='range']::-moz-range-thumb {
 	background: #2d6cdf33;
 	color: transparent;
 }
+/* suggestions under the caret */
+#suggest {
+	position: absolute;
+	z-index: 2;
+	margin: 2px 0 0 -0.6rem;
+	padding: 3px;
+	list-style: none;
+	font: 12.5px/1.6 var(--mono);
+	background: var(--key);
+	border-radius: 8px;
+	box-shadow:
+		0 4px 14px #0002,
+		0 0 0 1px var(--line);
+}
+#suggest li {
+	padding: 1px 0.5rem;
+	border-radius: 5px;
+	cursor: pointer;
+}
+#suggest li:hover,
+#suggest .on {
+	background: var(--panel);
+}
+.piano #score {
+	caret-color: var(--orange);
+}
+
 /* the steps of the drum bar the caret is in */
 #steps {
 	display: flex;

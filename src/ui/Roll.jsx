@@ -13,7 +13,7 @@ export function Roll() {
 		const draw = () => {
 			frame = requestAnimationFrame(draw)
 			const song = jb.nowPlaying()
-			if (!song) return
+			if (!song) return canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
 			const sounding = drawRoll(canvas, song, jb.elapsed(), jb.mutedSet(), jb.marks())
 			const next = song.voices.map((_, i) => (jb.live() && sounding.has(i) ? 1 : (levels[i] ?? 0) * 0.85))
 			const quiet = (l) => (l < 0.01 ? 0 : l)

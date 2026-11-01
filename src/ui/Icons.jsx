@@ -28,6 +28,12 @@ export const LoopIcon = () => (
 		<path d="M16 10.5V12a2.5 2.5 0 0 1-2.5 2.5H5M7.5 17 5 14.5 7.5 12" />
 	</svg>
 )
+export const PianoIcon = () => (
+	<svg viewBox="0 0 20 20">
+		<rect x="2.5" y="4.5" width="15" height="11" rx="1.5" />
+		<path d="M7.5 4.5v11M12.5 4.5v11M6 4.5v5.5h3V4.5M11 4.5v5.5h3V4.5" />
+	</svg>
+)
 export const PlusIcon = () => (
 	<svg viewBox="0 0 20 20">
 		<path d="M10 4v12M4 10h12" />

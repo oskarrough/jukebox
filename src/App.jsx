@@ -17,8 +17,9 @@ export default function App() {
 	onSettled(() => {
 		const stopBoot = jb.boot()
 		// Space plays and stops, unless you're typing; ⌘↩ plays and stops
-		// anywhere, ⌘L loops the pattern you're writing, ⌘S saves the song.
-		const commands = { s: jb.save, l: jb.toggleLoop, Enter: jb.toggle }
+		// anywhere, ⌘L loops the pattern you're writing, ⌘K plays notes from the
+		// keyboard, ⌘S saves the song.
+		const commands = { s: jb.save, l: jb.toggleLoop, k: jb.togglePiano, Enter: jb.toggle }
 		const keys = (e) => {
 			const command = (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && commands[e.key]
 			if (command) {

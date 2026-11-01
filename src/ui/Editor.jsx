@@ -5,12 +5,17 @@
 // It replays a moment after you stop typing. Where the caret is lights its
 // bar on the roll; a note clicked on the roll puts the caret on it. ⌥↑/↓ or
 // an ⌥-drag nudges the note, number or drum step there; on a drum line, pads
-// under the score switch its steps on and off.
+// under the score switch its steps on and off. While you type, instrument,
+// option, voice and pattern names are suggested. With the piano on, the
+// keyboard plays notes and writes them in.
 import { For, createEffect, createMemo, createSignal, onSettled } from 'solid-js'
 import { jb } from './state.js'
 import { caretAt } from './link.js'
 import { nudge, stepsOf, toggleStep } from './nudge.js'
+import { suggest } from './complete.js'
+import { OCTAVE_KEYS, noteOf, octaveAt } from './keyboard.js'
 import { paint } from './paint.js'
+import { parse } from '../score.js'
 
 export function Editor() {
 	let area
@@ -47,12 +52,80 @@ export function Editor() {
 
 	// Puts `to` in place of start…end the way typing would, so ⌘Z undoes it,
 	// and leaves the caret at `caret`.
+	let writing = false
 	function write(start, end, to, caret) {
 		area.focus({ preventScroll: true })
 		area.setSelectionRange(start, end)
+		writing = true
 		document.execCommand('insertText', false, to)
+		writing = false
 		area.setSelectionRange(caret, caret)
 		moved()
+	}
+
+	// The suggestions open under the caret, and which one is picked.
+	const [menu, setMenu] = createSignal(null)
+	function offer() {
+		const s = suggest(area.value, area.selectionStart)
+		const at = s && pointAt(s.start)
+		setMenu(at ? { ...s, ...at, i: 0 } : null)
+	}
+	function accept(item) {
+		const m = menu()
+		setMenu(null)
+		write(m.start, m.end, item.insert, m.start + item.insert.length)
+	}
+	// Where `pos` in the text is drawn, from the top left of the score.
+	function pointAt(pos) {
+		const before = area.value.slice(0, pos)
+		const line = sheet.querySelectorAll('.line')[before.split('\n').length - 1]
+		if (!line) return null
+		let left = pos - before.lastIndexOf('\n') - 1
+		const walk = document.createTreeWalker(line, NodeFilter.SHOW_TEXT)
+		for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+			if (left > n.length) {
+				left -= n.length
+				continue
+			}
+			const range = document.createRange()
+			range.setStart(n, left)
+			const r = range.getBoundingClientRect()
+			const box = area.parentElement.getBoundingClientRect()
+			return { x: r.left - box.left, y: r.bottom - box.top }
+		}
+		return null
+	}
+
+	// The piano: a key plays its note on the voice the caret is in and, on a
+	// melodic line, writes it in. Z and X move an octave from the line's.
+	let octave = null
+	createEffect(
+		() => jb.piano(),
+		() => {
+			octave = null
+		},
+	)
+	function playKey(e) {
+		const pos = area.selectionStart
+		if (e.code in OCTAVE_KEYS) {
+			octave = Math.max(0, Math.min(8, (octave ?? octaveAt(area.value, pos) ?? 4) + OCTAVE_KEYS[e.code]))
+			return true
+		}
+		const note = noteOf(e.code, octave ?? octaveAt(area.value, pos) ?? 4, jb.key())
+		if (!note) return false
+		if (e.repeat) return true
+		const at = caretAt(area.value, pos)
+		const voices = parse(area.value).song.voices
+		const voice = voices.find((v) => v.name === at.voice) ?? voices.find((v) => !v.drum)
+		if (!voice) return true
+		jb.audition(area.value, voice.name, voice.drum ? 'x' : note)
+		if (voice.drum) return true
+		if (at.voice === voice.name && at.k >= 0) {
+			const gap = /[^\s|]/.test(area.value[pos - 1] ?? ' ') ? ' ' : ''
+			const ins = `${gap}${note} `
+			write(pos, area.selectionEnd, ins, pos + ins.length)
+		}
+		return true
 	}
 
 	// Nudges what's at `pos` by `dir`, and plays it. Whether there was anything to nudge.
@@ -60,7 +133,7 @@ export function Editor() {
 		const r = nudge(area.value, pos, dir, big, drums(), jb.key())
 		if (!r) return false
 		write(r.start, r.end, r.to, Math.min(Math.max(pos, r.start), r.start + r.to.length))
-		if (r.voice) jb.audition(r.voice, r.to)
+		if (r.voice) jb.audition(area.value, r.voice, r.to)
 		return true
 	}
 
@@ -84,6 +157,26 @@ export function Editor() {
 	}
 
 	function keyDown(e) {
+		const m = menu()
+		if (m) {
+			const move = { ArrowDown: 1, ArrowUp: -1 }[e.key]
+			if (move) {
+				e.preventDefault()
+				setMenu({ ...m, i: (m.i + move + m.items.length) % m.items.length })
+				return
+			}
+			if (e.key === 'Tab' || e.key === 'Enter') {
+				e.preventDefault()
+				accept(m.items[m.i])
+				return
+			}
+			setMenu(null)
+			if (e.key === 'Escape') return
+		}
+		if (jb.piano() && !e.metaKey && !e.ctrlKey && !e.altKey && playKey(e)) {
+			e.preventDefault()
+			return
+		}
 		if (!e.altKey || e.metaKey || e.ctrlKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return
 		e.preventDefault()
 		nudgeAt(area.selectionStart, e.key === 'ArrowUp' ? 1 : -1, e.shiftKey)
@@ -133,7 +226,7 @@ export function Editor() {
 				.slice(0, p.ln - 1)
 				.join('\n').length + (p.ln > 1 ? 1 : 0)
 		write(start + r.start, start + r.end, r.to, start + r.start + 1)
-		if (p.hits[i] === '.') jb.audition(p.voice, 'x')
+		if (p.hits[i] === '.') jb.audition(area.value, p.voice, 'x')
 	}
 
 	// The roll asked for a line: put the caret there and scroll it into view.
@@ -163,7 +256,7 @@ export function Editor() {
 
 	return (
 		<section class="editor">
-			<div class="code" style={{ '--w': `${width()}px` }}>
+			<div class={{ code: true, piano: jb.piano() }} style={{ '--w': `${width()}px` }}>
 				<div class="sheet" ref={sheet} aria-hidden="true">
 					<div style={{ transform: `translateY(${-scroll()}px)` }}>
 						<For each={lines()} keyed={false}>
@@ -195,15 +288,38 @@ export function Editor() {
 						const value = e.currentTarget.value
 						setDraft(value)
 						moved()
+						if (!writing) offer()
 						clearTimeout(typing)
 						typing = setTimeout(() => jb.setText(value), 300)
 					}}
 					onScroll={() => setScroll(area.scrollTop)}
 					onKeyUp={moved}
 					onKeyDown={keyDown}
-					onPointerDown={pointerDown}
+					onPointerDown={(e) => {
+						setMenu(null)
+						pointerDown(e)
+					}}
+					onBlur={() => setMenu(null)}
 					onPointerUp={moved}
 				/>
+				{menu() && (
+					<ul id="suggest" style={{ left: `${menu().x}px`, top: `${menu().y}px` }}>
+						<For each={menu().items} keyed={false}>
+							{(item, i) => (
+								<li
+									class={{ on: i === menu().i }}
+									title="Write this here (Tab)"
+									onMouseDown={(e) => {
+										e.preventDefault()
+										accept(item())
+									}}
+								>
+									{item().word}
+								</li>
+							)}
+						</For>
+					</ul>
+				)}
 			</div>
 			{/* Always there, so the score doesn't jump as the caret comes and goes. */}
 			<div id="steps" style={{ '--c': colors()[pads()?.voice] }}>
