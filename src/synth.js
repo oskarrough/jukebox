@@ -1447,7 +1447,7 @@ function createSynth(ctx, dest, opts = {}) {
 	analyser.fftSize = 1024
 	out.connect(analyser)
 
-	const verb = ctx.createConvolver()
+	let verb = ctx.createConvolver()
 	verb.buffer = makeIR(ctx, 2.8, 3.4)
 	const verbIn = F(S, 'highpass', 220, 0.6)
 	const verbRet = G(S, 0.9)
@@ -1460,6 +1460,22 @@ function createSynth(ctx, dest, opts = {}) {
 		analyser,
 		verbIn,
 		verbRet,
+		// Drops the reverb's tail at once, for a hard stop: duck the return,
+		// then swap in a fresh, empty room.
+		cut() {
+			const level = verbRet.gain.value
+			verbRet.gain.setTargetAtTime(0, ctx.currentTime, 0.005)
+			setTimeout(() => {
+				const fresh = ctx.createConvolver()
+				fresh.buffer = verb.buffer
+				verb.disconnect()
+				verbIn.disconnect()
+				verbIn.connect(fresh).connect(verbRet)
+				verb = fresh
+				verbRet.gain.cancelScheduledValues(ctx.currentTime)
+				verbRet.gain.setValueAtTime(level, ctx.currentTime)
+			}, 40)
+		},
 		// a session bus lets "stop" silence everything already scheduled
 		// build plucked-string buffers ahead of time, a few at a time
 		warm(song, budgetMs = 12) {

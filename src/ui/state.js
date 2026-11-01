@@ -200,6 +200,7 @@ export const jb = createRoot(() => {
 	function stop() {
 		from = folded(playing.song, context.currentTime - playing.start)
 		end(playing, context, 0.005)
+		synth.cut()
 		playing = null
 		setLive(false)
 		setPos(from)
