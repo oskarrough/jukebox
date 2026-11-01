@@ -199,7 +199,7 @@ export const jb = createRoot(() => {
 
 	function stop() {
 		from = folded(playing.song, context.currentTime - playing.start)
-		end(playing, context)
+		end(playing, context, 0.005)
 		playing = null
 		setLive(false)
 		setPos(from)

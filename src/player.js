@@ -84,10 +84,11 @@ export function tune(p, { level, wet, cutoff }, pan, now) {
 	p.pan.pan.setTargetAtTime(pan, now, 0.1)
 }
 
-// Fades a source out and lets go of its nodes.
-export function end(p, context) {
-	p.level.gain.setTargetAtTime(0, context.currentTime, 0.3)
-	p.wet.gain.setTargetAtTime(0, context.currentTime, 0.3)
+// Fades a source out and lets go of its nodes. `fade` is the fade's time
+// constant in seconds: 0.3 lets a radio die away, 0.005 just avoids a click.
+export function end(p, context, fade = 0.3) {
+	p.level.gain.setTargetAtTime(0, context.currentTime, fade)
+	p.wet.gain.setTargetAtTime(0, context.currentTime, fade)
 	setTimeout(() => {
 		p.session.stop(0.01)
 		for (const node of [p.level, p.tone, p.pan, p.wet]) node.disconnect()
