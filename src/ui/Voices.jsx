@@ -1,5 +1,5 @@
 // The voices beside the score, each in its roll colour: click to mute, ⌥-click
-// to solo. The left edge lights while the voice plays a note. Below them, the
+// to solo. The square lights while the voice plays a note. Below them, the
 // loop bricks.
 import { For, Show } from 'solid-js'
 import { BRICKS } from '../bricks.js'

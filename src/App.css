@@ -429,25 +429,17 @@ input[type='range']::-moz-range-thumb {
 	position: relative;
 	overflow: hidden;
 }
-#voices button::after {
-	/* how loud it is right now */
-	content: '';
-	position: absolute;
-	left: 0;
-	top: 0;
-	bottom: 0;
-	width: 3px;
-	background: var(--c);
-	opacity: var(--a);
-}
 #voices button:hover {
 	background: #fff;
 }
 #voices i {
+	/* an LED: dim at rest, lit and glowing as loud as the voice is right now */
 	width: 0.75rem;
 	height: 0.75rem;
 	border-radius: 3px;
 	background: var(--c);
+	opacity: calc(0.4 + var(--a) * 0.6);
+	box-shadow: 0 0 calc(var(--a) * 7px) var(--c);
 }
 #voices small {
 	font-weight: 400;
@@ -460,6 +452,7 @@ input[type='range']::-moz-range-thumb {
 }
 #voices button[aria-pressed='false'] i {
 	background: transparent;
+	opacity: 1;
 	box-shadow: inset 0 0 0 1.5px var(--c);
 }
 #voices button.fresh {
