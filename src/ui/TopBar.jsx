@@ -3,7 +3,7 @@
 import { For, createMemo, createSignal } from 'solid-js'
 import { KEY_ROOTS } from '../key.js'
 import { jb } from './state.js'
-import { DownloadIcon, GuideIcon, LoopIcon, PianoIcon, SidebarIcon, SpeakerIcon } from './Icons.jsx'
+import { DownloadIcon, FeedbackIcon, GuideIcon, LoopIcon, PianoIcon, SidebarIcon, SpeakerIcon } from './Icons.jsx'
 
 const clock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
@@ -55,6 +55,9 @@ export function TopBar() {
 			</button>
 			<button class="icon" type="button" popovertarget="guide" title="Open the song format guide">
 				<GuideIcon />
+			</button>
+			<button class="icon" type="button" popovertarget="feedback" title="Send feedback">
+				<FeedbackIcon />
 			</button>
 		</header>
 	)

@@ -34,6 +34,12 @@ export const PianoIcon = () => (
 		<path d="M7.5 4.5v11M12.5 4.5v11M6 4.5v5.5h3V4.5M11 4.5v5.5h3V4.5" />
 	</svg>
 )
+export const FeedbackIcon = () => (
+	<svg viewBox="0 0 20 20">
+		<rect x="3" y="5.5" width="14" height="9" rx="1.5" />
+		<path d="M4 6.5 10 11l6-4.5" />
+	</svg>
+)
 export const PlusIcon = () => (
 	<svg viewBox="0 0 20 20">
 		<path d="M10 4v12M4 10h12" />

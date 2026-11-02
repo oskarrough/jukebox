@@ -6,4 +6,7 @@ export default defineConfig({
 	ignorePatterns: ['dist'],
 	settings: solidV2.settings,
 	rules: solidV2.rules,
+	globals: {
+		__JUKEBOX_VERSION__: 'readonly',
+	},
 })
