@@ -11,6 +11,7 @@ import { Voices } from './ui/Voices.jsx'
 import { Editor } from './ui/Editor.jsx'
 import { GamePanel } from './ui/GamePanel.jsx'
 import { Guide } from './ui/Guide.jsx'
+import { Feedback } from './ui/Feedback.jsx'
 import './App.css'
 
 export default function App() {
@@ -64,6 +65,7 @@ export default function App() {
 			<Editor />
 			<GamePanel />
 			<Guide />
+			<Feedback />
 		</main>
 	)
 }

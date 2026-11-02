@@ -814,6 +814,69 @@ input[type='range']::-moz-range-thumb {
 .toggle input:checked::after {
 	left: calc(100% - 1.25rem + 3px);
 }
+.post {
+	width: min(22rem, calc(100vw - 1rem));
+	display: none;
+	flex-direction: column;
+	gap: 0.55rem;
+}
+.post:popover-open {
+	display: flex;
+}
+.post textarea {
+	width: 100%;
+	min-height: 7.5rem;
+	resize: vertical;
+	border: 0;
+	border-radius: 8px;
+	padding: 0.7rem 0.8rem;
+	background: var(--key);
+	color: var(--ink);
+	font: 0.85rem/1.4 var(--sans);
+	box-shadow: 0 1px 3px #0002 inset;
+}
+.post textarea:focus {
+	outline: none;
+	box-shadow:
+		0 0 0 2px var(--ink),
+		0 1px 3px #0002 inset;
+}
+.post textarea::placeholder {
+	color: var(--dim);
+}
+.post .public {
+	margin: 0;
+	color: var(--dim);
+	font: 500 0.75rem/1.35 var(--sans);
+}
+.post div {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+.post small {
+	color: var(--dim);
+	font: 600 0.75rem var(--sans);
+}
+.post button[type='submit'] {
+	flex: none;
+	min-height: 2.2rem;
+	border: 0;
+	border-radius: 8px;
+	padding: 0.35rem 0.9rem;
+	background: var(--ink);
+	color: #fff;
+	font: 650 0.78rem var(--sans);
+	box-shadow: 0 2px 0 #000;
+}
+.post button[type='submit']:hover {
+	background: #2a2a2a;
+}
+.post button[type='submit']:active {
+	transform: translateY(2px);
+	box-shadow: none;
+}
 .guide {
 	width: min(34rem, calc(100vw - 1rem));
 	max-height: calc(100vh - 4.5rem);
@@ -888,5 +951,13 @@ kbd {
 	}
 	.voices {
 		overflow: visible;
+	}
+	.post {
+		inset: 3.3rem 0.5rem auto 0.5rem;
+		width: auto;
+	}
+	.post textarea {
+		min-height: 8.5rem;
+		font-size: 1rem;
 	}
 }

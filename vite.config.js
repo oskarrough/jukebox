@@ -1,5 +1,16 @@
-import solid from '@solidjs/vite-plugin'
+import { execSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
+import solid from '@solidjs/vite-plugin'
+
+// The git commit the build came from, else the day it was built; sent along with feedback.
+let version = new Date().toISOString().slice(0, 10)
+try {
+	version = execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+		.toString()
+		.trim()
+} catch {
+	// No git in this build: the date will do.
+}
 
 // While composing: the page's ⌘S writes the song straight into music/.
 // POST /__save?name=konvoi with the song's text. Dev server only.
@@ -26,6 +37,7 @@ const saveSongs = {
 // inside src/Document.jsx, and `vite build` writes a static site to dist/client.
 export default {
 	plugins: [solid({ start: true, diagnostics: true }), saveSongs],
+	define: { __JUKEBOX_VERSION__: JSON.stringify(version) },
 	server: { host: true, allowedHosts: ['.ts.net'] },
 	build: { target: 'esnext' },
 }
