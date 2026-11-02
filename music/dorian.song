@@ -1,0 +1,38 @@
+title    Dorian
+about    Just keys and a snap. One chord, Ebm9: the left hand walks Eb F Gb up to Bb, the right hand rests on the chord, then climbs it and turns round and round the F at the top. From a Hooktheory sketch.
+key      Ebm
+tags     nkgta wip
+tempo    88
+beats    4
+steps    4
+swing    0.12
+reverb   0.3
+
+voice rh    rhodes  vol=0.65 pan=0.1 bright=0.6 rev=0.35
+voice lh    rhodes  vol=0.45 pan=-0.1 bright=0.5 rev=0.25
+voice snap  clap    vol=0.5  rev=0.2
+
+# The left hand: Eb F Gb up to a long Bb, every bar the same start, a different
+# answer at the end. All of it lives inside Ebm9: Eb Gb Bb Db F.
+pattern R1
+lh   | Eb3-- F3 Gb3- Bb3------- .. | Eb3-- F3 Gb3- Bb3- F4--- Db4--- | Eb3-- F3 Gb3- Bb3------- Db3- | Eb3-- F3 Gb3- Bb3- Db4--- Db4--- |
+rh   | .. Gb4+Bb4+Db5+F5------------- | % | % | % |
+snap | .... x... .... x... | % | % | % |
+
+pattern R2 from R1
+lh@4 | Eb3-- F3 Gb3- Bb3- Db4--- .... |
+
+# The right hand climbs the chord, Gb Bb Db, to a long F, then Ab Gb F, Ab Gb F,
+# while the left hand holds Eb and drops to Db for two beats.
+pattern L1 from R1
+lh   | Eb2+Bb2--------------- | -------- Db2+Ab2------- | Eb2+Bb2--------------- | % |
+rh   | _ | .... Gb4--- Bb4--- Db5--- | F5--------- Ab5 Gb5 F5--- | Ab5 Gb5 F5--- Ab5 Gb5 F5------- |
+
+pattern L2 from L1
+rh   | F4--------------- | ---- Gb4--- Bb4--- Db5--- | F5--------- Ab5 Gb5 F5--- | Ab5 Gb5 F5--- Ab5 Gb5 F5------- |
+
+pattern intro from R1
+mute snap
+
+play intro
+loop R1 R2 L1 L2

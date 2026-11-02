@@ -1,0 +1,56 @@
+title    Same Hand
+about    Hazy West Coast boom bap after Money Trees and Blow My High. A vocal chop sings over a Rhodes that barely moves, a sliding 808 locked to the kick, ghost notes on the rim and the beat falling out for a bar so it can land again.
+key      Eb
+tags     nkgta study
+tempo    74
+beats    4
+steps    4
+swing    0.2
+reverb   0.4
+
+voice hook    moog    vol=0.4  pan=0.1 glide=0.07 bright=0.7 rev=0.35
+voice keys    rhodes  vol=0.55 pan=-0.2 bright=0.55 rev=0.4
+voice sparkle vibes   vol=0.35 pan=0.35 rev=0.55
+voice bass    808     vol=0.6  glide=0.1
+voice kick    kick    vol=0.8
+voice snare   snare   vol=0.8
+voice rim     rim     vol=0.3  pan=-0.25
+voice hat     hat     vol=0.35 pan=0.25
+voice open    ohat    vol=0.2  pan=0.25
+
+# Ebmaj7, Cm9, Abmaj9, Bb9sus. The hand keeps Eb G Bb on top the whole way;
+# the bass makes the chords. Bb9sus leans back towards Eb without arriving.
+# The keys push: a chord often comes in an eighth early and ties over the bar.
+pattern A
+hook  | .. G5--- ~F5- ~Eb5----- .. | C5----- .. Bb4- C5- Eb5--- | -- .. G5--- ~F5- ~Eb5- F5- ~G5- | F5------- .... .... |
+keys  | Eb3+G3+Bb3+D4----------- .... | .. Eb3+G3+Bb3+D4- .. Eb3+G3+Bb3+D4----- .. Eb3+G3+Bb3+C4- | -- .. Eb3+G3+Bb3+C4- .. Eb3+G3+Bb3+C4----- .. | Eb3+F3+Ab3+C4------- .. Eb3+F3+Ab3+C4- .. Eb3+G3+Bb3+D4- |
+bass  | Eb2--------- Eb2-- ~Bb1-- | C2--------- C2-- ~G1-- | Ab1--------- Ab1-- ~Eb2-- | Bb1--------- ~Ab1-- ~Bb1-- |
+kick  | X... .... ..x. .x.. | % | % | X... .... ..x. .x.x |
+snare | .... X... .... X... | % | % | .... X... .... X..o |
+rim   | ..o. ...o .o.. ..o. | % | % | ..o. ...o .o.o .... |
+hat   | x.x. x.xo x.x. x.xo | % | % | x.x. x.xo xxxx XxXx |
+open  | _ | _ | _ | .... .... .... ..x. |
+
+# The vibes answer the hook in the gaps it leaves.
+pattern B from A
+sparkle | _ | .... .... .... Bb5 G5 Eb5 D5 | _ | .... .... G5- F5- D5- Bb4- |
+
+# The beat falls out for the last bar, then lands on the one.
+pattern drop from B
+kick@4  | _ |
+snare@4 | _ |
+rim@4   | _ |
+hat@4   | _ |
+open@4  | _ |
+bass@4  | Bb1--------------- |
+
+# The drums go; the 808 and the haze stay.
+pattern break from B
+mute kick snare rim hat open
+
+# The hook and the keys alone, the way you'd hear it through a door.
+pattern intro from A
+mute bass kick snare rim hat open
+
+play intro
+loop A B A drop break B A drop
