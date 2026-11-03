@@ -1,15 +1,18 @@
 // A scrolling piano roll of the song, after the score view in Simon Willison's
 // Scrimshaw Jukebox (https://tools.simonwillison.net/scrimshaw-jukebox, Apache
 // License 2.0, see LICENSE here). Notes slide left past the yellow line as they
-// play; drums tick along the bottom; muted voices fade out.
+// play; each drum voice has a lane of step blocks along the bottom (the whole
+// screen when there's no melody); muted voices fade out.
 
 const COLORS = ['#ffd96b', '#5fd1a6', '#ff8a70', '#8fc8ff', '#c9a2ff', '#f2c48d', '#b4e67a', '#ff9fcf', '#7fe0e0', '#e6e08a']
-const DRUM_COLOR = '#8a84b8'
+// the drums' own warm to violet family, more saturated than the melody's
+const DRUM_COLORS = ['#ff4d4d', '#ff9a1f', '#e0b020', '#ff5ea8', '#d466f2', '#8f7cff', '#b8745a', '#e9cfa6']
 
-// One colour per voice, melodic voices cycling through COLORS, drums all grey-blue.
+// One colour per voice, each kind cycling through its own palette.
 export function voiceColors(song) {
 	let k = 0
-	return song.voices.map((v) => (v.drum ? DRUM_COLOR : COLORS[k++ % COLORS.length]))
+	let d = 0
+	return song.voices.map((v) => (v.drum ? DRUM_COLORS[d++ % DRUM_COLORS.length] : COLORS[k++ % COLORS.length]))
 }
 
 const ranges = new WeakMap()
@@ -21,9 +24,10 @@ function range(song) {
 		let hi = 0
 		for (const tl of [song.intro, song.loop])
 			for (const e of tl.events) if (e.m) for (const m of e.m) [lo, hi] = [Math.min(lo, m), Math.max(hi, m)]
-		if (lo > hi) [lo, hi] = [48, 72]
+		const melodic = lo <= hi
+		if (!melodic) [lo, hi] = [48, 72]
 		const drums = song.voices.flatMap((v, i) => (v.drum ? [i] : []))
-		ranges.set(song, { lo: Math.floor(lo) - 2, hi: Math.ceil(hi) + 2, drums, colors: voiceColors(song) })
+		ranges.set(song, { lo: Math.floor(lo) - 2, hi: Math.ceil(hi) + 2, melodic, drums, colors: voiceColors(song) })
 	}
 	return ranges.get(song)
 }
@@ -31,14 +35,21 @@ function range(song) {
 // Where everything goes on a `W`×`H` roll of `song` at `at` seconds from its
 // start (past its length means it has looped).
 function layout(song, at, W, H) {
-	const { lo, hi, drums, colors } = range(song)
+	const { lo, hi, melodic, drums, colors } = range(song)
 	const span = W < 500 ? 4.5 : 7 // seconds across
 	const pre = span * 0.22 // of them already played
 	const pps = W / span
 	const x0 = W * 0.22
-	const drumH = drums.length ? Math.min(5, 44 / drums.length) : 0
-	const drumTop = H - drums.length * drumH - 6
-	const noteH = Math.max(3, (drumTop - 12) / (hi - lo + 1))
+	// a lane per drum voice: the whole screen below the pattern names without
+	// melody, otherwise up to two fifths of it at the bottom
+	const top = melodic ? 6 : 22
+	const laneH = !drums.length
+		? 0
+		: melodic
+			? Math.max(5, Math.min(14, (H * 0.4) / drums.length))
+			: Math.min(72, (H - top - 6) / drums.length)
+	const drumTop = melodic ? H - 6 - drums.length * laneH : top
+	const noteH = Math.max(3, (drumTop - 12 - (drums.length ? 4 : 0)) / (hi - lo + 1))
 	// the intro once, then as many turns of the loop as are on screen
 	const a = at - pre
 	const z = at + span - pre
@@ -52,6 +63,7 @@ function layout(song, at, W, H) {
 	return {
 		lo,
 		hi,
+		melodic,
 		drums,
 		colors,
 		pps,
@@ -59,7 +71,7 @@ function layout(song, at, W, H) {
 		a,
 		z,
 		windows,
-		drumH,
+		laneH,
 		drumTop,
 		noteH,
 		xOf: (t) => x0 + (t - at) * pps,
@@ -79,9 +91,9 @@ export function hitRoll(canvas, song, at, x, y) {
 		if (s && y < 20 && near(off + s.start, 40)) return { t, section: s }
 		for (const e of tl.events) {
 			const v = song.voices[e.v]
-			const top = v.drum ? L.drumTop + L.drums.indexOf(e.v) * L.drumH : null
-			const hit = v.drum ? y >= top - 2 && y <= top + L.drumH + 2 : e.m.some((m) => y >= L.yOf(m) - 2 && y <= L.yOf(m) + L.noteH + 2)
-			if (hit && near(off + e.t, v.drum ? 3 : e.d * L.pps)) return { t, event: e, section: tl.sections[e.s] }
+			const top = v.drum ? L.drumTop + L.drums.indexOf(e.v) * L.laneH : null
+			const hit = v.drum ? y >= top && y <= top + L.laneH : e.m.some((m) => y >= L.yOf(m) - 2 && y <= L.yOf(m) + L.noteH + 2)
+			if (hit && near(off + e.t, e.d * L.pps)) return { t, event: e, section: tl.sections[e.s] }
 		}
 	}
 	return { t }
@@ -102,11 +114,14 @@ export function drawRoll(canvas, song, at, muted, marks) {
 	g.setTransform(dpr, 0, 0, dpr, 0, 0)
 	g.fillStyle = '#0b0b0b'
 	g.fillRect(0, 0, W, H)
-	const { lo, hi, drums, colors, pps, x0, a, z, windows, drumH, drumTop, noteH, yOf } = layout(song, at, W, H)
+	const { lo, hi, melodic, drums, colors, pps, x0, a, z, windows, laneH, drumTop, noteH, yOf } = layout(song, at, W, H)
 
 	// a faint line at every C
 	g.fillStyle = '#262626'
-	for (let m = Math.ceil(lo / 12) * 12; m <= hi; m += 12) g.fillRect(0, Math.round(yOf(m)), W, 1)
+	if (melodic) for (let m = Math.ceil(lo / 12) * 12; m <= hi; m += 12) g.fillRect(0, Math.round(yOf(m)), W, 1)
+	// a lane for every drum voice
+	g.fillStyle = '#141414'
+	for (let i = 0; i < drums.length; i++) g.fillRect(0, Math.round(drumTop + i * laneH), W, Math.round(laneH) - 1)
 
 	g.font = '11px ui-monospace, monospace'
 	const sounding = new Set()
@@ -134,12 +149,23 @@ export function drawRoll(canvas, song, at, muted, marks) {
 			const v = song.voices[e.v]
 			const dim = muted.has(v.name)
 			const x = x0 + (t - at) * pps
-			const on = at >= t && at < t + (e.d || 0.08)
-			if ((on || (v.drum && at >= t && at < t + 0.12)) && !dim) sounding.add(e.v)
+			const on = at >= t && at < t + (v.drum ? Math.max(e.d, 0.12) : e.d || 0.08)
+			if (on && !dim) sounding.add(e.v)
 			g.fillStyle = colors[e.v]
 			if (v.drum) {
-				g.globalAlpha = dim ? 0.2 : on || (at >= t && at < t + 0.12) ? 1 : 0.7
-				g.fillRect(Math.round(x), Math.round(drumTop + drums.indexOf(e.v) * drumH), 3, Math.max(1, drumH - 1))
+				// a block per hit like the step pads: a ghost note is faint, an accent has an edge
+				const pad = laneH > 10 ? 2 : 1
+				const bx = Math.round(x)
+				const by = Math.round(drumTop + drums.indexOf(e.v) * laneH) + pad
+				const bw = Math.max(2, Math.round(e.d * pps - 1))
+				const bh = Math.max(1, Math.round(laneH) - 1 - 2 * pad)
+				g.globalAlpha = (dim ? 0.2 : on ? 1 : t > at ? 0.85 : 0.4) * (e.vel < 0.6 ? 0.5 : 1)
+				g.fillRect(bx, by, bw, bh)
+				if (e.vel >= 1 && bw > 6 && bh > 6) {
+					g.strokeStyle = '#0008'
+					g.lineWidth = 2
+					g.strokeRect(bx + 1, by + 1, bw - 2, bh - 2)
+				}
 				continue
 			}
 			const w = Math.round(Math.max(2, e.d * pps - 1))
