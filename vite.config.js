@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process'
-import { rmSync, writeFileSync } from 'node:fs'
+import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import solid from '@solidjs/vite-plugin'
 
@@ -30,6 +30,13 @@ const saveSongs = {
 		return [...(this.environment.moduleGraph.getModulesByFile(fileURLToPath(new URL('./src/songs.js', import.meta.url))) ?? [])]
 	},
 	configureServer(server) {
+		// Serve the standalone tool before Solid's page handler takes the URL.
+		server.middlewares.use((req, res, next) => {
+			if (!['GET', 'HEAD'].includes(req.method) || new URL(req.url, 'http://x').pathname !== '/tools/vein.html') return next()
+			const page = readFileSync(new URL('./tools/vein.html', import.meta.url))
+			res.setHeader('Content-Type', 'text/html; charset=utf-8')
+			res.end(req.method === 'HEAD' ? undefined : page)
+		})
 		server.middlewares.use('/__delete', (req, res) => {
 			const name = songName(req)
 			if (!name) {
