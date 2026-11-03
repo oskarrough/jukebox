@@ -58,14 +58,28 @@
 	--c-white: lab(98.6917 0.0397944 0.116489);
 	--c-b-black: lab(11.9702 1.31062 -1.58183);
 	--c-black: lab(9.38758 0.879477 -0.339045);
-	/* roles: the frame is black, white and french grey; vermilion is what's live */
-	--body: color-mix(in lab, var(--c-french-grey) 22%, var(--c-snow-white));
-	--panel: color-mix(in lab, var(--c-french-grey) 34%, var(--c-snow-white));
-	--key: var(--c-snow-white);
+	/* roles: a warm grey machine on a dark desk, black screens; vermilion is what's live */
+	--grey: color-mix(in lab, var(--c-raw-umber) 45%, var(--c-french-grey));
+	--desk: color-mix(in lab, var(--c-sepia) 30%, var(--c-black));
+	--body: color-mix(in lab, var(--grey) 14%, color-mix(in lab, var(--c-naples-yellow) 6%, var(--c-snow-white)));
+	--panel: color-mix(in lab, var(--grey) 26%, var(--c-snow-white));
+	--key: color-mix(in lab, var(--c-naples-yellow) 3%, var(--c-snow-white));
 	--ink: var(--c-b-black);
-	--dim: color-mix(in lab, var(--c-french-grey) 55%, var(--c-black));
-	--line: color-mix(in lab, var(--c-french-grey) 60%, var(--c-snow-white));
+	--dim: color-mix(in lab, var(--grey) 75%, var(--c-black));
+	--line: color-mix(in lab, var(--grey) 42%, var(--c-snow-white));
+	--faint: color-mix(in lab, var(--grey) 75%, var(--c-snow-white));
 	--screen: var(--c-black);
+	/* materials: every key has a lit top lip, an edge below it as deep as its travel,
+	   and a soft drop on the case; pressed, it moves down by its travel */
+	--edge: color-mix(in lab, var(--grey) 62%, var(--c-snow-white));
+	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 85%, transparent);
+	--drop: 0 3px 4px -2px color-mix(in lab, var(--c-sepia) 35%, transparent);
+	--sheen: linear-gradient(color-mix(in lab, var(--c-white) 16%, transparent), transparent 55%);
+	--well: inset 0 1px 3px color-mix(in lab, var(--c-sepia) 22%, transparent), 0 1px 0 color-mix(in lab, var(--c-white) 80%, transparent);
+	--bezel:
+		inset 0 2px 6px color-mix(in lab, var(--c-black) 80%, transparent), inset 0 0 0 1px color-mix(in lab, var(--c-black) 60%, transparent),
+		0 -1px 0 color-mix(in lab, var(--c-sepia) 30%, transparent), 0 1px 0 color-mix(in lab, var(--c-white) 90%, transparent);
+	--travel: 2px;
 	--orange: var(--c-vermilion);
 	--lit: var(--c-orange);
 	--blue: var(--c-ultramarine);
@@ -86,8 +100,11 @@ body {
 	margin: 0;
 	height: 100%;
 }
+/* the desk, dotted */
 body {
-	background: linear-gradient(color-mix(in lab, var(--c-french-grey) 12%, var(--c-snow-white)), var(--body));
+	--gutter: clamp(0.5rem, 1vw, 1rem);
+	padding: var(--gutter);
+	background: var(--desk) radial-gradient(color-mix(in lab, var(--c-white) 7%, transparent) 1px, transparent 1px) 0 0 / 18px 18px;
 	color: var(--ink);
 	font: 0.8rem var(--sans);
 }
@@ -111,10 +128,20 @@ svg {
 	stroke-linejoin: round;
 }
 
-/* the machine */
+/* the machine: one moulded case, lit along its top edge, shadowed on the desk */
 .app {
-	height: 100vh;
-	height: 100dvh;
+	height: calc(100vh - 2 * var(--gutter));
+	height: calc(100dvh - 2 * var(--gutter));
+	border-radius: 18px;
+	background: linear-gradient(
+		color-mix(in lab, var(--c-white) 55%, var(--body)),
+		var(--body) 12rem,
+		color-mix(in lab, var(--grey) 8%, var(--body))
+	);
+	box-shadow:
+		inset 0 1px 0 var(--c-white),
+		inset 0 -3px 0 color-mix(in lab, var(--grey) 35%, var(--body)),
+		0 30px 60px -20px color-mix(in lab, var(--c-black) 85%, transparent);
 	display: grid;
 	grid-template-columns: var(--side) var(--side) minmax(0, 1fr);
 	grid-template-rows: auto auto minmax(0, 1fr);
@@ -161,23 +188,56 @@ svg {
 	border: 0;
 	border-radius: 8px;
 	background: var(--key);
-	box-shadow: 0 2px 0 var(--c-french-grey);
 	color: var(--ink);
+}
+/* the keys' one material: lip, edge, drop; down by their travel when pressed,
+   halfway down while latched */
+.icon,
+.key-picker,
+#play,
+.pad,
+.brick,
+#voices .voice,
+#instruments button,
+.views button[aria-pressed='true'],
+.post button[type='submit'],
+.chord-pad button {
+	box-shadow:
+		var(--hi),
+		0 var(--travel) 0 var(--edge),
+		var(--drop);
+	transition:
+		transform 50ms,
+		box-shadow 50ms;
+}
+.icon:active,
+.key-picker:active,
+#play:active,
+.pad:active,
+.brick:active,
+#voices .voice:active,
+#instruments button:active,
+.post button[type='submit']:active,
+.chord-pad button:active {
+	transform: translateY(var(--travel));
+	box-shadow:
+		var(--hi),
+		0 0 0 var(--edge);
 }
 .icon:hover {
 	background: var(--c-white);
 }
-.icon:active,
-.pad:active,
-.brick:active {
-	transform: translateY(2px);
-	box-shadow: none;
-}
 .icon[aria-pressed='true'],
 .icon[aria-expanded='true'] {
-	background: var(--ink);
+	--edge: var(--c-black);
+	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 18%, transparent);
+	background: var(--sheen) var(--ink);
 	color: var(--c-white);
-	box-shadow: 0 2px 0 var(--c-black);
+	transform: translateY(1px);
+	box-shadow:
+		var(--hi),
+		0 1px 0 var(--edge),
+		var(--drop);
 }
 .icon.add {
 	width: 100%;
@@ -214,11 +274,12 @@ svg {
 	height: 2.6rem;
 	border: 0;
 	border-radius: 50%;
-	background: var(--orange);
+	--edge: color-mix(in lab, var(--c-vermilion) 65%, var(--c-black));
+	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 35%, transparent);
+	--drop: 0 4px 10px color-mix(in lab, var(--c-vermilion) 33%, transparent);
+	--travel: 3px;
+	background: radial-gradient(circle at 50% 30%, color-mix(in lab, var(--c-white) 18%, transparent), transparent 65%) var(--orange);
 	position: relative;
-	box-shadow:
-		0 2px 0 color-mix(in lab, var(--c-vermilion) 70%, var(--c-black)),
-		0 4px 10px color-mix(in lab, var(--c-vermilion) 33%, transparent);
 }
 #play::before {
 	content: '';
@@ -240,10 +301,6 @@ svg {
 	border-radius: 2px;
 	transform: none;
 }
-#play:active {
-	transform: translateY(2px);
-	box-shadow: none;
-}
 .lcd {
 	flex: 1;
 	min-width: 0;
@@ -257,9 +314,7 @@ svg {
 	border-radius: 10px;
 	padding: 0 0.9rem;
 	font: 0.78rem var(--mono);
-	box-shadow:
-		0 2px 0 var(--c-white),
-		0 2px 6px color-mix(in lab, var(--c-black) 67%, transparent) inset;
+	box-shadow: var(--bezel);
 }
 .lcd .title {
 	min-width: 0;
@@ -299,11 +354,17 @@ svg {
 	border: 0;
 	border-right: 2px solid var(--screen);
 	border-radius: 4px;
-	background: color-mix(in lab, var(--c-white) 7%, transparent);
+	background: var(--sheen) color-mix(in lab, var(--c-white) 7%, transparent);
 	color: var(--c-french-grey);
 	font: 0.7rem var(--mono);
 	overflow: hidden;
 	cursor: grab;
+	/* a block lit along its top on the black glass, and its own inset marks over that */
+	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 10%, transparent);
+	box-shadow: var(--hi);
+}
+.section:active {
+	background-image: none;
 }
 .section span {
 	flex: 1;
@@ -328,7 +389,9 @@ svg {
 	color: var(--c-white);
 }
 .section.loop {
-	box-shadow: inset 2px 0 var(--lit);
+	box-shadow:
+		inset 2px 0 var(--lit),
+		var(--hi);
 }
 .section.moved {
 	background: color-mix(in lab, var(--lit) 25%, transparent);
@@ -350,7 +413,9 @@ svg {
 	opacity: 0.25;
 }
 .section.over {
-	box-shadow: inset 0 0 0 1.5px var(--lit);
+	box-shadow:
+		inset 0 0 0 1.5px var(--lit),
+		var(--hi);
 }
 .sections.holding .section {
 	cursor: grabbing;
@@ -380,9 +445,9 @@ svg {
 }
 .key-picker {
 	display: flex;
-	gap: 2px;
+	gap: 1px;
 	border-radius: 8px;
-	box-shadow: 0 2px 0 var(--c-french-grey);
+	background: var(--edge);
 	overflow: hidden;
 }
 .key-picker select {
@@ -397,10 +462,11 @@ svg {
 .key-picker select:hover {
 	background: var(--c-white);
 }
-#gameToggle.on {
-	background: var(--orange);
+.game-toggle.on {
+	--edge: color-mix(in lab, var(--c-vermilion) 65%, var(--c-black));
+	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 30%, transparent);
+	background: var(--sheen) var(--orange);
 	color: var(--c-white);
-	box-shadow: 0 2px 0 color-mix(in lab, var(--c-vermilion) 70%, var(--c-black));
 }
 
 /* the key, download, guide and feedback: behind ⋯ on a phone, in the bar otherwise,
@@ -477,6 +543,7 @@ input[type='range']::-moz-range-thumb {
 	border-radius: 1rem;
 	padding: 0.2rem 0.55rem;
 	background: var(--panel);
+	box-shadow: var(--well);
 	font: 600 0.7rem var(--sans);
 	color: var(--dim);
 }
@@ -484,6 +551,7 @@ input[type='range']::-moz-range-thumb {
 	color: var(--ink);
 }
 .tags button[aria-pressed='true'] {
+	box-shadow: inset 0 1px 2px color-mix(in lab, var(--c-black) 60%, transparent);
 	background: var(--ink);
 	color: var(--c-white);
 }
@@ -604,12 +672,20 @@ input[type='range']::-moz-range-thumb {
 
 /* the screen */
 .screen {
+	position: relative;
 	background: var(--screen);
 	border-radius: var(--r);
 	padding: 0.4rem;
-	box-shadow:
-		0 2px 0 var(--c-white),
-		0 3px 10px color-mix(in lab, var(--c-black) 73%, transparent) inset;
+	box-shadow: var(--bezel);
+}
+/* glass over the screen */
+.screen::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	background: linear-gradient(170deg, color-mix(in lab, var(--c-white) 6%, transparent), transparent 35%);
+	pointer-events: none;
 }
 #roll {
 	display: block;
@@ -635,6 +711,9 @@ input[type='range']::-moz-range-thumb {
 	gap: 4px;
 }
 .chord-pad button {
+	--edge: var(--c-black);
+	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 12%, transparent);
+	--drop: 0 0 0 transparent;
 	min-width: 0;
 	border: 0;
 	border-radius: 8px;
@@ -643,16 +722,12 @@ input[type='range']::-moz-range-thumb {
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
-.chord-pad button:active {
-	transform: translateY(1px);
-}
 .chord-key {
 	--m: 40%;
 	min-height: 2.9rem;
-	background: color-mix(in lab, var(--p) var(--m), var(--c-black));
+	background: var(--sheen) color-mix(in lab, var(--p) var(--m), var(--c-black));
 	color: color-mix(in lab, var(--p) 25%, var(--c-white));
 	font: 650 1rem var(--score);
-	box-shadow: 0 1px 0 color-mix(in lab, var(--c-white) 8%, transparent) inset;
 }
 .chord-key.minor {
 	--m: 34%;
@@ -677,21 +752,21 @@ input[type='range']::-moz-range-thumb {
 	--m: 55%;
 }
 .chord-key.home {
-	box-shadow: inset 0 0 0 1.5px color-mix(in lab, var(--p) 40%, var(--c-white));
+	--hi: inset 0 0 0 1.5px color-mix(in lab, var(--p) 40%, var(--c-white));
 }
 .chord-key.on {
 	--m: 100%;
 	color: var(--c-white);
 }
 .offer {
+	--hi: inset 0 0 0 1.5px color-mix(in lab, var(--lit) 40%, transparent);
 	padding: 0 0.6rem !important;
 	background: none;
 	color: var(--lit);
-	box-shadow: inset 0 0 0 1.5px color-mix(in lab, var(--lit) 40%, transparent);
 	font: 650 0.8rem var(--score);
 }
 .offer:hover {
-	box-shadow: inset 0 0 0 1.5px var(--lit);
+	--hi: inset 0 0 0 1.5px var(--lit);
 }
 .mods {
 	display: grid;
@@ -700,7 +775,7 @@ input[type='range']::-moz-range-thumb {
 	width: 5.6rem;
 }
 .mods button {
-	background: color-mix(in lab, var(--c-french-grey) 10%, var(--c-black));
+	background: var(--sheen) color-mix(in lab, var(--c-french-grey) 10%, var(--c-black));
 	color: var(--c-french-grey);
 	font: 650 0.75rem var(--score);
 }
@@ -708,8 +783,14 @@ input[type='range']::-moz-range-thumb {
 	color: color-mix(in lab, var(--c-french-grey) 25%, var(--c-white));
 }
 .mods button[aria-pressed='true'] {
-	background: var(--c-chrome-yellow);
+	--edge: color-mix(in lab, var(--c-chrome-yellow) 55%, var(--c-black));
+	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 45%, transparent);
+	background: var(--sheen) var(--c-chrome-yellow);
 	color: var(--c-b-black);
+	transform: translateY(1px);
+	box-shadow:
+		var(--hi),
+		0 1px 0 var(--edge);
 }
 
 /* voices */
@@ -729,9 +810,9 @@ input[type='range']::-moz-range-thumb {
 	--c: var(--c-french-grey);
 	--a: 0;
 	display: flex;
+	--travel: 1px;
 	border-radius: 6px;
 	background: var(--key);
-	box-shadow: 0 1px 0 var(--c-french-grey);
 	font: 650 0.78rem var(--sans);
 	position: relative;
 	overflow: hidden;
@@ -765,7 +846,9 @@ input[type='range']::-moz-range-thumb {
 	border-radius: 3px;
 	background: var(--c);
 	opacity: calc(0.4 + var(--a) * 0.6);
-	box-shadow: 0 0 calc(var(--a) * 7px) var(--c);
+	box-shadow:
+		inset 0 1px 1px color-mix(in lab, var(--c-white) 45%, transparent),
+		0 0 calc(var(--a) * 7px) var(--c);
 }
 #voices .inst {
 	flex: none;
@@ -808,15 +891,15 @@ input[type='range']::-moz-range-thumb {
 }
 .brick {
 	--c: var(--orange);
-	--d: color-mix(in lab, var(--c) 65%, var(--c-black));
 	flex: 1 1 5.5rem;
 	border: 0;
+	--edge: color-mix(in lab, var(--c) 60%, var(--c-black));
+	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 30%, transparent);
 	border-radius: 6px;
 	padding: 0.35rem 0.5rem 0.4rem;
-	background: linear-gradient(color-mix(in lab, var(--c-white) 12%, transparent), transparent 50%) var(--c);
+	background: var(--sheen) var(--c);
 	color: var(--c-white);
 	font: 750 0.7rem var(--sans);
-	box-shadow: 0 2px 0 var(--d);
 	cursor: grab;
 	display: grid;
 	gap: 0.25rem;
@@ -868,15 +951,15 @@ input[type='range']::-moz-range-thumb {
 	flex: 1;
 	min-height: 0;
 	position: relative;
-	background: linear-gradient(90deg, color-mix(in lab, var(--c-french-grey) 12%, var(--c-snow-white)) var(--gut), var(--key) var(--gut));
+	background: linear-gradient(90deg, color-mix(in lab, var(--grey) 10%, var(--c-snow-white)) var(--gut), var(--key) var(--gut));
 	border-radius: var(--r);
-	box-shadow: 0 1px 3px color-mix(in lab, var(--c-black) 13%, transparent) inset;
+	box-shadow: var(--well);
 	overflow: hidden;
 }
 .code:focus-within {
 	box-shadow:
 		0 0 0 2px var(--ink),
-		0 1px 3px color-mix(in lab, var(--c-black) 13%, transparent) inset;
+		var(--well);
 }
 .sheet,
 #score {
@@ -904,7 +987,7 @@ input[type='range']::-moz-range-thumb {
 .row > :first-child {
 	justify-self: end;
 	margin-right: 0.6rem;
-	color: var(--c-french-grey);
+	color: var(--faint);
 }
 .row > b {
 	color: var(--c-white) !important;
@@ -938,11 +1021,11 @@ input[type='range']::-moz-range-thumb {
 	color: var(--dim);
 }
 .line .bar {
-	color: var(--c-french-grey);
+	color: var(--faint);
 }
 .line .rest,
 .line .space {
-	color: var(--c-french-grey);
+	color: var(--faint);
 }
 .line .same {
 	color: var(--blue);
@@ -952,7 +1035,7 @@ input[type='range']::-moz-range-thumb {
 }
 /* the beat ruler in the bar being written */
 .line .tick {
-	box-shadow: inset 2px 0 0 var(--c-french-grey);
+	box-shadow: inset 2px 0 0 var(--faint);
 }
 .line .long {
 	background: color-mix(in lab, var(--c-vermilion) 13%, transparent);
@@ -1006,7 +1089,7 @@ input[type='range']::-moz-range-thumb {
 /* the rest of the likeliest suggestion, after the caret */
 .line .ghost {
 	position: absolute;
-	color: var(--c-french-grey);
+	color: var(--faint);
 	white-space: pre;
 	pointer-events: none;
 }
@@ -1151,7 +1234,7 @@ input[type='range']::-moz-range-thumb {
 	border: 0;
 	border-radius: var(--r);
 	padding: 0.7rem;
-	background: var(--body);
+	background: linear-gradient(color-mix(in lab, var(--c-white) 55%, var(--body)), var(--body) 4rem);
 	color: var(--ink);
 	box-shadow:
 		0 1px 0 var(--c-white) inset,
@@ -1198,10 +1281,10 @@ input[type='range']::-moz-range-thumb {
 }
 #instruments button {
 	border: 0;
+	--travel: 1px;
 	border-radius: 6px;
 	padding: 0.35rem 0.5rem;
 	background: var(--key);
-	box-shadow: 0 1px 0 var(--c-french-grey);
 	font: 0.75rem var(--sans);
 }
 #instruments button:focus {
@@ -1210,9 +1293,10 @@ input[type='range']::-moz-range-thumb {
 	background: var(--c-white);
 }
 #instruments button[aria-pressed='true'] {
-	background: var(--ink);
+	--edge: var(--c-black);
+	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 18%, transparent);
+	background: var(--sheen) var(--ink);
 	color: var(--c-white);
-	box-shadow: 0 1px 0 var(--c-black);
 }
 .pads {
 	display: grid;
@@ -1224,7 +1308,6 @@ input[type='range']::-moz-range-thumb {
 	border: 0;
 	border-radius: 8px;
 	background: var(--key);
-	box-shadow: 0 2px 0 var(--c-french-grey);
 	font: 650 0.75rem/1 var(--sans);
 	padding: 0.35rem 0.2rem;
 }
@@ -1232,9 +1315,15 @@ input[type='range']::-moz-range-thumb {
 	background: var(--c-white);
 }
 .pad.on {
-	background: var(--orange);
+	--edge: color-mix(in lab, var(--c-vermilion) 65%, var(--c-black));
+	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 30%, transparent);
+	background: var(--sheen) var(--orange);
 	color: var(--c-white);
-	box-shadow: 0 2px 0 color-mix(in lab, var(--c-vermilion) 70%, var(--c-black));
+	transform: translateY(1px);
+	box-shadow:
+		var(--hi),
+		0 1px 0 var(--edge),
+		var(--drop);
 }
 #game:not(.on) .fader,
 #game:not(.on) .toggle {
@@ -1275,7 +1364,8 @@ input[type='range']::-moz-range-thumb {
 	width: 2.2rem;
 	height: 1.25rem;
 	border-radius: 1rem;
-	background: color-mix(in lab, var(--c-french-grey) 55%, var(--c-snow-white));
+	background: color-mix(in lab, var(--grey) 55%, var(--c-snow-white));
+	box-shadow: inset 0 1px 2px color-mix(in lab, var(--c-sepia) 35%, transparent);
 	position: relative;
 	cursor: pointer;
 	margin: 0;
@@ -1289,6 +1379,7 @@ input[type='range']::-moz-range-thumb {
 	height: calc(1.25rem - 6px);
 	border-radius: 50%;
 	background: var(--c-white);
+	box-shadow: 0 1px 2px color-mix(in lab, var(--c-sepia) 45%, transparent);
 	transition: left 0.15s;
 }
 .toggle input:checked {
@@ -1316,13 +1407,13 @@ input[type='range']::-moz-range-thumb {
 	background: var(--key);
 	color: var(--ink);
 	font: 0.85rem/1.4 var(--sans);
-	box-shadow: 0 1px 3px color-mix(in lab, var(--c-black) 13%, transparent) inset;
+	box-shadow: var(--well);
 }
 .post textarea:focus {
 	outline: none;
 	box-shadow:
 		0 0 0 2px var(--ink),
-		0 1px 3px color-mix(in lab, var(--c-black) 13%, transparent) inset;
+		var(--well);
 }
 .post textarea::placeholder {
 	color: var(--dim);
@@ -1348,17 +1439,14 @@ input[type='range']::-moz-range-thumb {
 	border: 0;
 	border-radius: 8px;
 	padding: 0.35rem 0.9rem;
-	background: var(--ink);
+	--edge: var(--c-black);
+	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 18%, transparent);
+	background: var(--sheen) var(--ink);
 	color: var(--c-white);
 	font: 650 0.78rem var(--sans);
-	box-shadow: 0 2px 0 var(--c-black);
 }
 .post button[type='submit']:hover {
 	background: color-mix(in lab, var(--c-french-grey) 16%, var(--c-black));
-}
-.post button[type='submit']:active {
-	transform: translateY(2px);
-	box-shadow: none;
 }
 .guide {
 	width: min(34rem, calc(100vw - 1rem));
@@ -1448,7 +1536,7 @@ kbd {
 	.app,
 	.app:not(.songs-open) {
 		height: auto;
-		min-height: 100dvh;
+		min-height: calc(100dvh - 2 * var(--gutter));
 	}
 	.voices,
 	.editor {
@@ -1507,6 +1595,13 @@ kbd {
 @media (max-width: 720px) {
 	:root {
 		--dock: 4.5rem;
+	}
+	/* the phone is the case */
+	body {
+		--gutter: 0px;
+	}
+	.app {
+		border-radius: 0;
 	}
 	.app,
 	.app:not(.songs-open) {
@@ -1617,6 +1712,7 @@ kbd {
 		padding: 2px;
 		border-radius: 10px;
 		background: var(--panel);
+		box-shadow: var(--well);
 	}
 	.views button {
 		min-height: 2.5rem;
@@ -1627,9 +1723,9 @@ kbd {
 		font: 650 0.85rem var(--sans);
 	}
 	.views button[aria-pressed='true'] {
+		--travel: 1px;
 		background: var(--key);
 		color: var(--ink);
-		box-shadow: 0 1px 0 var(--c-french-grey);
 	}
 	.voices,
 	.editor {
