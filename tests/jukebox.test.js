@@ -389,11 +389,22 @@ mute ki`
 	const at = (find, extra = 0) => suggest(text, text.indexOf(find) + find.length + extra)
 
 	test('instruments, options, voices and patterns', () => {
-		expect(at('voice lead squ').items[0]).toEqual({ word: 'square', insert: 'square ' })
+		expect(at('voice lead squ').items[0]).toMatchObject({ word: 'square', insert: 'square ' })
 		expect(at('vol=0.8 pa').items.map((i) => i.word)).toEqual(['pan'])
 		expect(at('\nle').items[0].insert).toBe('lead | ')
 		expect(at('mute ki').items[0].word).toBe('kick')
 		expect(suggest(text, text.indexOf('tempo') + 3)).toBeNull()
+	})
+
+	test('every line start, and a ghost of what comes next', () => {
+		const next = (t) => suggest(t, t.length, parseKey('C'))
+		expect(next('tempo 100\nt').items.map((i) => i.word)).toEqual(['title', 'tags'])
+		expect(next('tempo 100\n')).toMatchObject({ quiet: true, items: [{ insert: 'voice ' }] })
+		expect(next('voice kick kick\n\n').items[0].insert).toBe('pattern ')
+		expect(next('voice kick kick\npattern A\n').items[0].insert).toBe('kick | ')
+		expect(next('voice kick kick\npattern A\nkick | ').items[0].insert).toBe('x... x... x... x... |')
+		expect(next('voice lead square\npattern A\nlead | ').items[0].insert).toBe('C4--- E4--- G4--- E4--- |')
+		expect(next('pattern A\npattern B\n\nloop A ').items[0].insert).toBe('B')
 	})
 
 	test('keys play from C by where they sit', () => {

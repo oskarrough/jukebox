@@ -101,6 +101,11 @@ function noteToMidi(s) {
 	return 12 * (+m[3] + 1) + PC[m[1].toLowerCase()] + ACC[m[2] || '']
 }
 
+// Every setting the head takes, as in tempo 120; tempo, beats, steps and
+// swing also work inside a pattern, and on its line as tempo=90.
+const SETTINGS = ['title', 'key', 'tempo', 'beats', 'steps', 'swing', 'reverb', 'tags', 'about', 'composer', 'by', 'game', 'street', 'at']
+const PATTERN_OPTIONS = ['tempo', 'beats', 'steps', 'swing']
+
 // Every option a voice line takes, as in vol=0.8.
 const OPTIONS = ['vol', 'pan', 'rev', 'oct', 'trans', 'gate', 'glide', 'bright', 'att', 'rel', 'center', 'drive']
 
@@ -184,7 +189,8 @@ function num(s, lo, hi, def) {
 /* ------------------------------------------------------------------ parse */
 function parse(text) {
 	const errors = []
-	const err = (ln, msg) => errors.push({ line: ln, msg })
+	// `bar`, when there is one, is which bar on the line is wrong, from 0.
+	const err = (ln, msg, bar) => errors.push(bar == null ? { line: ln, msg } : { line: ln, msg, bar })
 	const song = {
 		title: 'Untitled',
 		composer: '',
@@ -224,7 +230,7 @@ function parse(text) {
 			while (parts.length && parts[parts.length - 1] === '') parts.pop()
 			const bars = []
 			parts.forEach((b, k) => {
-				if (b === '') err(ln, `Empty bar ${k + 1} in "${pm[1]}". Use _ for a silent bar.`)
+				if (b === '') err(ln, `Empty bar ${k + 1} in "${pm[1]}". Use _ for a silent bar.`, k)
 				else bars.push(b)
 			})
 			const at = pm[2] ? +pm[2] : 0
@@ -539,7 +545,7 @@ function parseDrumBars(bars, barSteps, voice, ctx) {
 // With `only`, the song loops that one pattern.
 function compile(text, only) {
 	const { song, errors } = parse(text)
-	const err = (ln, msg) => errors.push({ line: ln, msg })
+	const err = (ln, msg, bar) => errors.push(bar == null ? { line: ln, msg } : { line: ln, msg, bar })
 
 	const resolved = {}
 	function resolve(name, stack) {
@@ -619,8 +625,9 @@ function compile(text, only) {
 			let barLine = []
 			lines.forEach((l) => l.bars.forEach(() => barLine.push(l.ln)))
 			ctx.err = (m) => {
-				const bm = /bar (\d+)/.exec(m)
-				err(bm ? barLine[+bm[1] - 1] || lines[0].ln : lines[0].ln, m)
+				const bm = /bar (\d+)/i.exec(m)
+				const w = bm && where[vName][+bm[1] - 1]
+				err(w ? barLine[+bm[1] - 1] : lines[0].ln, m, w?.k)
 			}
 			perVoice[vName] = voice.drum ? parseDrumBars(bars, barSteps, voice, ctx) : parseMelodicBars(bars, barSteps, voice, ctx)
 			nBars = Math.max(nBars, bars.length)
@@ -735,4 +742,4 @@ function compile(text, only) {
 	}
 }
 
-export { parse, compile, noteToMidi, chordToMidis, MELODIC, DRUMS, CHORDS, OPTIONS }
+export { parse, compile, noteToMidi, chordToMidis, MELODIC, DRUMS, CHORDS, OPTIONS, SETTINGS, PATTERN_OPTIONS }

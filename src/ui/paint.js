@@ -1,8 +1,9 @@
 // Colours for the score: splits a line of a .song into pieces, each with a
 // kind the page paints, and the voice it belongs to when it has one. The
 // pieces always join back into the line, character for character.
+import { SETTINGS } from '../score.js'
 
-const HEAD = /^(title|about|composer|by|key|tempo|beats|steps|swing|reverb|tags|game|street|at)\b/i
+const HEAD = new RegExp(`^(${SETTINGS.join('|')})\\b`, 'i')
 
 // [kind, text, voice?] for each piece of `line`, with `voices` the names in
 // the song.
@@ -55,5 +56,31 @@ export function paint(line, voices) {
 		push('value', body.slice(m[0].length))
 	} else push('value', body)
 	push('comment', comment)
+	return out
+}
+
+// The pieces again as [kind, text, voice, marks, col], cut where `marks`
+// start and end so each piece names the marks it lies in. A mark with `text`
+// isn't over the line but put into it at `start`, with no col.
+export function mark(pieces, marks) {
+	const out = []
+	const cuts = [...new Set(marks.flatMap((m) => [m.start, m.end ?? m.start]))].sort((a, b) => a - b)
+	const over = (a, b) => marks.filter((m) => m.text == null && m.start <= a && b <= m.end).map((m) => m.cls)
+	const put = (col) => {
+		for (const m of marks) if (m.text != null && m.start === col) out.push([m.cls, m.text, null, [], null])
+	}
+	let col = 0
+	for (const [kind, text, voice] of pieces) {
+		let from = 0
+		for (const c of cuts) {
+			if (c < col + from || c > col + text.length) continue
+			if (c > col + from) out.push([kind, text.slice(from, c - col), voice, over(col + from, c), col + from])
+			from = c - col
+			if (c < col + text.length) put(c)
+		}
+		if (from < text.length) out.push([kind, text.slice(from), voice, over(col + from, col + text.length), col + from])
+		col += text.length
+	}
+	put(col)
 	return out
 }

@@ -579,12 +579,14 @@ input[type='range']::-moz-range-thumb {
 .sheet {
 	position: absolute;
 	inset: 0;
-	padding-top: 0.7rem;
+	padding: 0.7rem 0;
 	overflow: hidden;
 	pointer-events: none;
 	user-select: none;
 }
 .row {
+	position: relative;
+	anchor-scope: --end;
 	display: grid;
 	grid-template-columns: var(--gut) calc(var(--w) + 0.7rem);
 	align-items: start;
@@ -642,6 +644,50 @@ input[type='range']::-moz-range-thumb {
 	color: #9c988f;
 	font-style: italic;
 }
+/* what's wrong, and a note of it at the end of the line */
+.line .bad {
+	text-decoration: underline wavy var(--red);
+	text-decoration-skip-ink: none;
+	text-underline-offset: 3px;
+}
+.line .end {
+	anchor-name: --end;
+}
+.msg {
+	position: absolute;
+	position-anchor: --end;
+	left: anchor(right);
+	right: 0.7rem;
+	align-self: anchor-center;
+	margin-left: 3ch;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	color: var(--red);
+	font: 0.72rem var(--sans);
+}
+.msg ins {
+	margin-left: 0.4rem;
+	padding: 0 0.3rem;
+	border-radius: 3px;
+	text-decoration: none;
+	color: #fff;
+	background: var(--red);
+	font: 11.5px var(--mono);
+}
+.msg.hot ins {
+	background: var(--ink);
+}
+.pointing #score {
+	cursor: pointer;
+}
+/* the rest of the likeliest suggestion, after the caret */
+.line .ghost {
+	position: absolute;
+	color: #b7b3aa;
+	white-space: pre;
+	pointer-events: none;
+}
 #score {
 	position: absolute;
 	top: 0;
@@ -663,14 +709,24 @@ input[type='range']::-moz-range-thumb {
 	background: #2d6cdf33;
 	color: transparent;
 }
-/* suggestions under the caret */
+/* suggestions under the word being written, or over it near the bottom */
+.line .at {
+	anchor-name: --at;
+}
 #suggest {
-	position: absolute;
-	z-index: 2;
+	position-anchor: --at;
+	position-try-fallbacks: flip-block;
+	position-visibility: anchors-visible;
+	inset: auto;
+	top: anchor(bottom);
+	left: anchor(left);
 	margin: 2px 0 0 -0.6rem;
 	padding: 3px;
+	border: 0;
+	overflow: visible;
 	list-style: none;
 	font: 12.5px/1.6 var(--mono);
+	color: var(--ink);
 	background: var(--key);
 	border-radius: 8px;
 	box-shadow:
@@ -720,14 +776,26 @@ input[type='range']::-moz-range-thumb {
 	background: var(--c);
 	box-shadow: inset 0 0 0 2px #0006;
 }
-#errors {
-	margin: 0;
-	color: var(--red);
-	font: 0.75rem var(--sans);
-	white-space: pre-wrap;
+/* a few words on what the pointer is over */
+.hot {
+	anchor-name: --hot;
 }
-#errors:empty {
-	display: none;
+#tip {
+	position-anchor: --hot;
+	position-try-fallbacks: flip-block;
+	position-visibility: anchors-visible;
+	inset: auto;
+	bottom: anchor(top);
+	left: anchor(left);
+	margin: 0 0 3px -0.3rem;
+	max-width: 22rem;
+	padding: 2px 0.45rem;
+	border: 0;
+	border-radius: 5px;
+	color: var(--key);
+	background: var(--ink);
+	font: 0.72rem/1.4 var(--sans);
+	pointer-events: none;
 }
 
 /* popovers */
