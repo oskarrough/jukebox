@@ -2,10 +2,10 @@
 // its text as you edit it, what's muted, how the game would place it, and
 // the audio playing it. Components read the signals and call the actions.
 import { createEffect, createMemo, createRoot, createSignal, createStore, flush, untrack } from 'solid-js'
-import { BRICKS, addBrick } from '../bricks.js'
+import { BRICKS, addBrick, brickBar } from '../bricks.js'
 import { EFFECTS, SOURCES, effectState, runChain } from '../effects.js'
-import { inferKey, setSongKey, starter } from '../key.js'
-import { chordToMidis, compile, noteToMidi, parse, parseKey } from '../score.js'
+import { inferKey, setSongKey, starter, transposeBrick } from '../key.js'
+import { DRUMS, chordToMidis, compile, noteToMidi, parse, parseKey } from '../score.js'
 import { columnOf, marksFor } from './link.js'
 import { slug } from './slug.js'
 import { voiceColors } from '../roll.js'
@@ -300,6 +300,100 @@ export const jb = createRoot(() => {
 		preview.session.play(ev, at)
 	}
 
+	// A short phrase on one voice, to hear an instrument or a brick before
+	// choosing it: quieter over the song if it's playing. A new one cuts the last.
+	let sampling = null
+	function sample(voice, events) {
+		context ??= new AudioContext()
+		synth ??= synthFor(context, context.destination)
+		context.resume()
+		stopSample()
+		const notes = { events, sections: [], dur: 0 }
+		const quiet = { events: [], sections: [], dur: 0 }
+		sampling = begin(
+			synth,
+			context,
+			{ kind: 'radio', since: 0 },
+			{ voices: [voice], intro: notes, loop: quiet, reverb: nowPlaying()?.reverb },
+		)
+		const { level, wet, cutoff } = runChain(DRY)
+		const down = playing ? 0.4 : 0.6
+		sampling.level.gain.value = level * down
+		sampling.wet.gain.value = wet * down
+		sampling.tone.frequency.value = cutoff
+		const at = context.currentTime + 0.02
+		for (const e of events) sampling.session.play({ ...e, v: 0 }, at + e.t)
+	}
+	function stopSample() {
+		if (sampling) end(sampling, context, 0.02)
+		sampling = null
+	}
+
+	// Plays voice `name` as `inst`: a few notes up the song's key, where the
+	// voice plays, or a few hits on a drum.
+	function hearInstrument(name, inst) {
+		const s = song()
+		const i = s?.voices.findIndex((v) => v.name === name) ?? -1
+		if (i < 0) return
+		const voice = { ...s.voices[i], inst, drum: DRUMS.includes(inst) }
+		const step = 60 / s.tempo / s.steps
+		if (voice.drum) {
+			const hits = [
+				[0, 1.05],
+				[2, 0.42],
+				[3, 0.6],
+				[4, 0.8],
+			]
+			return sample(
+				voice,
+				hits.map(([n, vel]) => ({ t: n * step, d: step, vel })),
+			)
+		}
+		const ms = [...s.intro.events, ...s.loop.events].filter((e) => e.v === i).flatMap((e) => e.m)
+		const mid = ms.length ? Math.round(ms.reduce((a, b) => a + b, 0) / ms.length) : 60
+		const { pc, minor } = key()
+		const root = mid - 6 + ((((pc - mid + 6) % 12) + 12) % 12)
+		const up = [0, minor ? 3 : 4, 7, 12]
+		sample(
+			voice,
+			up.map((n, k) => ({ t: k * 2 * step, d: (k === 3 ? 6 : 2) * step * voice.gate, vel: 0.8, m: [root + n] })),
+		)
+	}
+
+	// Plays loop brick `id` once, in the song's key and tempo.
+	function hearBrick(id) {
+		const brick = BRICKS.find((b) => b.id === id)
+		const s = song()
+		if (!brick) return
+		const b = transposeBrick(brick, key())
+		const [tempo, beats, steps] = [s?.tempo ?? 120, s?.beats ?? 4, s?.steps ?? 4]
+		const one = compileText(
+			`tempo ${tempo}\nbeats ${beats}\nsteps ${steps}\nvoice ${b.voice} ${b.inst} vol=${b.vol}\npattern A\n${b.voice} | ${brickBar(b, beats * steps)} |\nloop A`,
+		)
+		if (one.voices[0]) sample(one.voices[0], one.loop.events)
+	}
+
+	// Gives voice `name` the instrument `inst`, keeping its options; written
+	// into the score the way typing would, so ⌘Z undoes it.
+	function swap(name, inst) {
+		const area = document.getElementById('score')
+		const t = area?.value ?? text()
+		const v = parse(t).song.voiceMap[name]
+		if (!v) return
+		const lines = t.split('\n')
+		const m = /^(\s*voice\s+\S+\s+)(\S+)/i.exec(lines[v.ln - 1])
+		if (!m) return
+		const start = lines.slice(0, v.ln - 1).reduce((n, l) => n + l.length + 1, 0) + m[1].length
+		const stop = start + m[2].length
+		if (area) {
+			area.focus({ preventScroll: true })
+			area.setSelectionRange(start, stop)
+			document.execCommand('insertText', false, inst)
+			area.blur()
+		}
+		setText(t.slice(0, start) + inst + t.slice(stop))
+	}
+
 	// The piano: the computer keyboard plays notes into the score.
 	const [piano, setPiano] = createSignal(false)
 	function togglePiano() {
@@ -348,6 +442,7 @@ export const jb = createRoot(() => {
 	function drop(id) {
 		const brick = BRICKS.find((b) => b.id === id)
 		if (!brick) return
+		stopSample()
 		const { text: next, voice } = addBrick(text(), brick)
 		setText(next)
 		setFresh(voice)
@@ -476,6 +571,10 @@ export const jb = createRoot(() => {
 		looping,
 		toggleLoop,
 		audition,
+		hearInstrument,
+		hearBrick,
+		stopSample,
+		swap,
 		piano,
 		togglePiano,
 		inGame,
