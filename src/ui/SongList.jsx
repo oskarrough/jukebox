@@ -111,7 +111,7 @@ export function SongList() {
 				}}
 			>
 				<button type="button" class="icon" title="Start a blank song (Enter)" onClick={() => make('')}>
-					<PlusIcon />
+					Blank
 				</button>
 				<For each={STARTERS}>
 					{(s) => (

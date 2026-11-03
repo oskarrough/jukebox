@@ -6,35 +6,33 @@
 // row has its chords along the top, under the pattern names.
 
 // Caran d'Ache pigments (see --c-* in App.css), spelled out because roll.js has no CSS.
+// Widely separated pigments first, so small ensembles differ most clearly.
 const COLORS = [
-	'lab(78.1128 32.6792 82.6376)',
-	'lab(59.2648 -49.2568 3.41769)',
-	'lab(63.0034 54.6564 26.0879)',
-	'lab(58.0569 -10.4415 -45.1862)',
-	'lab(67.5775 68.3862 -12.7348)',
-	'lab(68.1739 14.7461 54.8651)',
-	'lab(61.5296 -58.6363 39.9921)',
-	'lab(63.0659 1.23221 -44.4879)',
-	'lab(71.1376 -44.6808 10.8983)',
-	'lab(70.855 -36.4744 -14.9111)',
-]
-// the drums' own warm to violet family, more saturated than the melody's
-const DRUM_COLORS = [
-	'lab(51.0916 62.7477 41.8985)',
-	'lab(85.3906 10.2282 92.7778)',
-	'lab(50.227 76.0093 -8.98042)',
-	'lab(65.1177 53.6556 66.5807)',
-	'lab(59.173 20.487 -39.7255)',
-	'lab(44.9946 68.9684 -6.21602)',
-	'lab(84.6744 6.12866 46.9872)',
-	'lab(43.7626 33.3261 27.7532)',
+	'lab(51.0916 62.7477 41.8985)', // vermilion
+	'lab(44.5032 -23.5638 -46.1849)', // cerulean blue
+	'lab(72.5603 -41.5438 62.4397)', // chrome green 1
+	'lab(34.7926 53.7108 -27.3196)', // violet pale
+	'lab(85.3861 16.208 93.4389)', // chrome yellow
+	'lab(41.2198 3.80537 23.9634)', // raw umber
+	'lab(59.2648 -49.2568 3.41769)', // cobalt green
+	'lab(30.2304 28.9849 -71.6502)', // cobalt blue
+	'lab(84.6744 6.12866 46.9872)', // naples yellow
+	'lab(70.024 -1.25023 -9.22515)', // french grey
+	'lab(59.173 20.487 -39.7255)', // heliotrope
+	'lab(67.5775 68.3862 -12.7348)', // pink
+	'lab(30.5325 -23.1375 -0.1884)', // chrome green 3
+	'lab(35.14 42.75 14.27)', // purple lake
+	'lab(52.2011 -37.329 34.1102)', // sap green
+	'lab(65.1177 53.6556 66.5807)', // marigold
+	'lab(98.6917 0.0397944 0.116489)', // white
+	'lab(51.212 67.8799 10.8645)', // opera
+	'lab(43.3265 -45.1403 -17.333)', // turkey green
+	'lab(65.9893 -26.7224 -32.2677)', // light blue
 ]
 
-// One colour per voice, each kind cycling through its own palette.
+// Drums and melody share the sequence: no independently reused colours.
 export function voiceColors(song) {
-	let k = 0
-	let d = 0
-	return song.voices.map((v) => (v.drum ? DRUM_COLORS[d++ % DRUM_COLORS.length] : COLORS[k++ % COLORS.length]))
+	return song.voices.map((_, i) => COLORS[i % COLORS.length])
 }
 
 const ranges = new WeakMap()

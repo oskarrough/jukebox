@@ -361,13 +361,25 @@ svg {
 	background-image: none;
 }
 .section span {
+	container-type: inline-size;
 	flex: 1;
 	min-width: 0;
-	padding: 0 0.3rem;
 	line-height: 1.7rem;
 	text-align: left;
 	white-space: nowrap;
 	overflow: hidden;
+}
+.section b {
+	display: block;
+	padding: 0 0.2rem;
+	font-size: min(0.7rem, calc((100cqi - 0.4rem) / var(--letters)));
+	font-weight: inherit;
+}
+/* Below readable size, keep the whole name in the section's tooltip. */
+@container (width < 1.75rem) {
+	.section b {
+		visibility: hidden;
+	}
 }
 .section span + span {
 	box-shadow: inset 1px 0 color-mix(in lab, var(--c-white) 10%, transparent);
@@ -684,6 +696,7 @@ input[type='range']::-moz-range-thumb {
 #styles .icon {
 	width: auto;
 	height: 2.6rem;
+	font: 750 0.75rem var(--sans);
 }
 .style {
 	--c: var(--orange);

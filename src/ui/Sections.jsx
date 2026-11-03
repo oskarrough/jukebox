@@ -106,7 +106,8 @@ export function Sections() {
 								over: over() === s().i,
 							}}
 							style={{ left: `${s().left}%`, width: `${s().width}%` }}
-							title={fixed() ? 'Play from here' : 'Play from here; drag to move, ⌥-drag to copy, drag off to remove'}
+							aria-label={label(s())}
+							title={fixed() ? `Play ${label(s())}` : `Play ${label(s())}; drag to move, ⌥-drag to copy, drag off to remove`}
 							onPointerDown={(e) => press(e, s())}
 							onClick={() => {
 								if (!dragged) jb.playSection(s())
@@ -127,9 +128,15 @@ export function Sections() {
 								jb.drop(e.dataTransfer.getData('application/x-brick'), s().name)
 							}}
 						>
-							<For each={Array.from({ length: s().times })}>{() => <span>{label(s())}</span>}</For>
+							<For each={Array.from({ length: s().times })}>
+								{() => (
+									<span style={{ '--letters': label(s()).length * 0.62 }}>
+										<b>{label(s())}</b>
+									</span>
+								)}
+							</For>
 							<Show when={!fixed()}>
-								<i class="edge" title="Drag to play this pattern more times in a row" />
+								<i class="edge" title={`Drag to repeat ${label(s())}`} />
 							</Show>
 						</button>
 					)}
