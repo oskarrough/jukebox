@@ -1417,6 +1417,47 @@ function makeIR(ctx, seconds, decayPow) {
 	return buf
 }
 
+// An echo for one voice: repeats `steps` steps apart, each `tail` as loud as
+// the one before and a little darker, bouncing between left and right around
+// `pan`. Feeds `out` (the mix) and `send` (the reverb send). Only built for a
+// voice that has an echo.
+function echo(S, input, out, send, { tail, pan }) {
+	const lead = G(S, tail)
+	const dark = F(S, 'lowpass', 3200, 0.5)
+	const left = S.ctx.createDelay(4)
+	const right = S.ctx.createDelay(4)
+	const back = (a, b) =>
+		a
+			.connect(F(S, 'lowpass', 3200, 0.5))
+			.connect(G(S, tail))
+			.connect(b)
+	const side = (delay, x) => {
+		const p = S.ctx.createStereoPanner()
+		p.pan.value = clamp(pan + x, -1, 1)
+		delay.connect(p).connect(out)
+		delay.connect(send)
+	}
+	const first = pan < 0 ? 0.55 : -0.55
+	input.connect(lead).connect(dark).connect(left)
+	back(left, right)
+	back(right, left)
+	side(left, first)
+	side(right, -first)
+	let sd = 0
+	return {
+		// The step length at `t`: a tempo change moves the repeats.
+		at(steps, stepDur, t) {
+			if (stepDur === sd) return
+			sd = stepDur
+			for (const d of [left, right]) d.delayTime.setValueAtTime(clamp(steps * stepDur, 0.001, 4), t)
+		},
+		// Lets go of everything, tails included.
+		end() {
+			for (const n of [lead, dark, left, right]) n.disconnect()
+		},
+	}
+}
+
 function createSynth(ctx, dest, opts = {}) {
 	const S = { ctx, nyq: ctx.sampleRate / 2, waves: {}, ks: {} }
 	const nlen = ctx.sampleRate * 3
@@ -1528,7 +1569,7 @@ function createSynth(ctx, dest, opts = {}) {
 				} else input.connect(bus)
 				const send = G(S, v.rev != null ? v.rev : def.rev)
 				input.connect(send).connect(sendBus)
-				return { v, def, input }
+				return { v, def, input, echo: v.echo > 0 ? echo(S, input, bus, send, v) : null }
 			})
 			return {
 				bus,
@@ -1538,6 +1579,7 @@ function createSynth(ctx, dest, opts = {}) {
 					const c = ch[ev.v]
 					if (!c) return
 					try {
+						if (c.echo && ev.sd) c.echo.at(c.v.echo, ev.sd, t)
 						if (c.v.drum) {
 							c.def.hit(S, c.input, t, ev.vel)
 							return
@@ -1564,6 +1606,7 @@ function createSynth(ctx, dest, opts = {}) {
 						try {
 							bus.disconnect()
 							sendBus.disconnect()
+							for (const c of ch) c.echo?.end()
 						} catch (e) {}
 					}, 1500)
 				},

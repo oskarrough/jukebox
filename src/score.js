@@ -107,7 +107,7 @@ const SETTINGS = ['title', 'key', 'tempo', 'beats', 'steps', 'swing', 'reverb', 
 const PATTERN_OPTIONS = ['tempo', 'beats', 'steps', 'swing']
 
 // Every option a voice line takes, as in vol=0.8.
-const OPTIONS = ['vol', 'pan', 'rev', 'oct', 'trans', 'gate', 'glide', 'bright', 'att', 'rel', 'center', 'drive']
+const OPTIONS = ['vol', 'pan', 'rev', 'oct', 'trans', 'gate', 'glide', 'bright', 'att', 'rel', 'center', 'drive', 'echo', 'tail']
 
 const CHORDS = {
 	'': [0, 4, 7],
@@ -197,6 +197,13 @@ function parse(text) {
 	// Each error says what kind it is and, when it can, the `word` it's about
 	// and which `bar` on the line, from 0, so the page can point at it and fix it.
 	const err = (ln, msg, about) => errors.push({ line: ln, msg, ...about })
+	// An option that errors rather than clamps when it's out of range.
+	const inRange = (ln, name, val, lo, hi, def, what) => {
+		const n = Number(val)
+		if (val !== '' && isFinite(n) && n >= lo && n <= hi) return n
+		err(ln, `${name} takes ${what}`, { kind: 'value', word: val })
+		return def
+	}
 	const song = {
 		title: 'Untitled',
 		composer: '',
@@ -389,6 +396,8 @@ function parse(text) {
 			att: null,
 			rel: null,
 			drive: 0,
+			echo: 0,
+			tail: 0.5,
 			ln,
 		}
 		for (let i = 2; i < w.length; i++) {
@@ -436,6 +445,12 @@ function parse(text) {
 					break
 				case 'drive':
 					v.drive = num(val, 0, 4, 0)
+					break
+				case 'echo':
+					v.echo = inRange(ln, k, val, 0, 16, 0, '0 to 16 steps, like echo=3')
+					break
+				case 'tail':
+					v.tail = inRange(ln, k, val, 0, 0.9, 0.5, '0 to 0.9, how much of each echo comes back')
 					break
 				case 'center': {
 					const m = noteToMidi(val)
@@ -695,6 +710,7 @@ function compile(text, only) {
 						let d = timeOf(Math.min(total, e.step + e.len)) - t0
 						// b and st: the bar in the pattern, and the step in it
 						const ev = { t: t + t0, d, v: vi, vel: e.vel, s: sIdx, b: Math.floor(e.step / p.barSteps), st: e.step % p.barSteps }
+						if (voice.echo) ev.sd = stepDur
 						if (!voice.drum) {
 							ev.m = e.notes.map((n) => n + voice.trans + ref.trans)
 							ev.d = Math.max(0.02, d * voice.gate)

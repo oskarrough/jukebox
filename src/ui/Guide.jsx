@@ -56,7 +56,8 @@ export function Guide() {
 				octaves, <code>trans=-2</code> semitones; <code>gate</code> how much of each note sounds, 0.05 to 1 (0.5 is staccato);
 				<code>glide</code> seconds a <code>~</code> slide takes (0.07); <code>bright</code> 0.1 dark to 4 bright (1); <code>att</code> and
 				<code>rel</code> attack and release in seconds; <code>center=E4</code> where chords are voiced; <code>drive</code> 0 to 4, dirt for
-				<code>808</code>, <code>logdrum</code> and <code>drive</code>.
+				<code>808</code>, <code>logdrum</code> and <code>drive</code>. <code>echo=3</code> repeats the sound every 3 steps, in time with the
+				song; <code>tail</code> 0 to 0.9 (0.5) is how much of each repeat comes back.
 			</p>
 			<h3>Patterns and the loop</h3>
 			<p>

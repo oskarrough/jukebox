@@ -17,6 +17,8 @@ export const HINTS = {
 	rel: 'Release in seconds',
 	center: 'Where chords are voiced',
 	drive: '0 to 4, dirt for 808, logdrum and drive',
+	echo: 'Steps between echoes, 0 to 16 (off)',
+	tail: 'How much of each echo comes back, 0 to 0.9 (0.5)',
 	// settings, in the head or on a pattern
 	tempo: 'Beats a minute',
 	beats: 'Beats to a bar',

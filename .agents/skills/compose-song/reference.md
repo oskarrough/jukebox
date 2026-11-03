@@ -38,6 +38,8 @@ One setting a line, before the first pattern.
 | `rel`    | 0.005 to 6       | release in seconds; each instrument has its own default                            |
 | `center` | a note, D4       | where `[chords]` are voiced                                                        |
 | `drive`  | 0 to 4, 0        | dirt, only on `808`, `logdrum` and `drive`                                         |
+| `echo`   | 0 to 16, 0       | repeats the sound every so many steps, in time with the song                       |
+| `tail`   | 0 to 0.9, 0.5    | how much of each echo comes back; repeats get darker and bounce left and right     |
 
 Drum instruments (the Drums group) take drum lanes; every other instrument takes notes.
 
@@ -65,4 +67,4 @@ One character a step: `x` a hit, `X` an accent, `o` a soft hit, `.` a rest. Spac
 - One shared room reverb. `reverb` in the head sets how loud it is; each voice's `rev=` sets how much it sends.
 - Per voice: `bright=` darkens or opens the tone, `drive=` dirties `808`, `logdrum` and `drive`, `att=` and `rel=` shape each note, `gate=` shortens it.
 - The whole mix then runs through a gentle bass lift, a slight top cut, a compressor and a limiter. Nothing to set.
-- There is no delay or echo. Write an echo as more voices: the same notes a step or two later, quieter, darker, panned apart and wetter, as `music/hermannstrasse-um-drei.song` does.
+- `echo=3` on a voice repeats it every 3 steps, in time with the song; `tail=` sets how much of each repeat comes back. `music/hermannstrasse-um-drei.song` uses it on its stab.
