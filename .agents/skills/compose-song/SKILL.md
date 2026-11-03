@@ -5,9 +5,7 @@ description: Write or compose a song for the jukebox, NK GTA (nkgta) or Dodgethi
 
 # Compose a song
 
-Songs live in `music/<name>.song`, one per file; the page and `bun test` find new ones on their own. Read two or three existing songs near your genre first: they are the best reference for how much goes in a bar.
-
-## The format
+Songs live in `music/<name>.song`, one per file; the page and `bun test` find new ones on their own. Everything the format can say is in [reference.md](reference.md); every instrument, with a line on how it sounds, is in `src/instruments.js`. Then read one or two of the examples below, nearest your style first: they show how much goes in a bar.
 
 ```
 title    Weserstraße bei Nacht
@@ -40,19 +38,25 @@ play intro
 loop A B A B*2
 ```
 
-- Each word is one step; dashes hold a note (`D4-` is 2 steps, `D4---` 4), dots rest. Every bar must add up to beats × steps (16 by default). Drum lanes are one character a step: `x` hit, `X` accent, `o` soft, `.` rest.
-- Alone in a bar: `%` repeats the last bar, `_` is silence, `=` holds the last note through. `[Am7]` and `C4+E4+G4` are chords, `~D4` slides from the previous note, `D4!` and `D4?` are louder and softer, `Eq4` is a quarter tone flat.
-- `pattern B from A` copies A. A voice line in B replaces A's line; `lead@3 | … |` replaces bar 3 on and keeps the rest; `mute` drops voices.
-- `play intro` plays once, `loop A B*2 C+5` repeats forever (`*2` twice, `+5` up five semitones).
+Use the real instrument. If your style needs one that isn't there, say so rather than faking it with square waves.
 
-Every instrument and voice option (`vol pan rev oct trans gate glide bright att rel center drive`) is in the page's Guide, `src/ui/Guide.jsx`; `src/synth.js` comments how each instrument sounds. Use the real instrument: if your genre needs one that's missing, add it to `src/synth.js` and `src/score.js` rather than faking it with square waves.
+## Examples by style
 
-## Placing it in a game
+| Style                              | Read                                          |
+| ---------------------------------- | --------------------------------------------- |
+| Techno, dub, anything kick and sub | `hermannstrasse-um-drei`, `wriezener-bahnhof` |
+| Trap, phonk                        | `tempo-30`                                    |
+| Amapiano                           | `schiller-amapiano`                           |
+| Cumbia, reggaeton                  | `doble-fila`                                  |
+| Boom bap                           | `same-hand`                                   |
+| Maqam: Turkish, Arabic             | `maybachufer`, `karl-marx-strasse`            |
+| Jazz-funk, samba                   | `overthrow`, `flagfall`, `dodgethis-theme`    |
+| Arcade pop                         | `close-shave`                                 |
+| Orchestral                         | `tempelhofer-feld`, `luftbruecke`             |
+| Folk, acoustic                     | `altamesa`, `buschkrugallee`                  |
+| Rock                               | `grenzallee`, `a100`                          |
 
-- No `game` line means NK GTA; `game dodgethis` is for Dodgethis.
-- `tags nkgta` or `tags dodgethis`: any words, to find the song by in the jukebox's list. Every song has one.
-- `street Sonnenallee`: Spätis, bars, windows and cars on that street usually play it.
-- `at spaeti bar doener imbiss cafe feld autoradio`: kinds of place. `autoradio` is your own car radio, `feld` an open field like Tempelhof. Words the game doesn't know yet, like `markt`, wait harmlessly.
+Some older songs came before the advice below: `a100`, `buschkrugallee`, `grenzallee`, `karl-marx-strasse`, `richardstr` and `weichselplatz` have no intro; `hasenheide`, `hermannplatz`, `konvoi`, `ringbahn`, `sonnenallee`, `sonnenallee-bei-nacht` and `weserstrasse` loop in about 30 seconds. Learn their bars, not their shape.
 
 ## What makes a good game loop
 
@@ -62,14 +66,41 @@ Every instrument and voice option (`vol pan rev oct trans gate glide bright att 
 - One to two minutes of loop: bars × beats × 60 / tempo seconds.
 - Heard through distance and walls, a clear bass and a clear tune beat a dense middle.
 
+## Balance
+
+Read the energy shares and solo RMS from `bun run render <name> --voices`.
+
+- With a kick and a sub (techno, trap, amapiano, reggaeton), bass and kick take the biggest shares. In Hermannstraße um drei the bass is about half and the kick a fifth. That's the style; leave it.
+- The tune still has to carry through a wall. A starting point: the hook voice 4 to 6 dB under the bass in solo RMS. Earlier composers settled on that without ears, so treat it as a guess.
+- The finished mixes here sit around −14 to −18 dBFS RMS with no clipping. A song far off that jumps out of the radio next to the others.
+
+## Placing it in NK GTA
+
+- No `game` line means NK GTA. `tags nkgta`: every song has a tag, to find it by in the list.
+- `street Sonnenallee`: Spätis, bars, windows and cars on that street usually play it.
+- `at spaeti bar doener imbiss cafe feld autoradio`: kinds of place. `autoradio` is your own car radio, `feld` an open field like Tempelhof. Words the game doesn't know yet, like `markt`, wait harmlessly.
+
+## A song for Dodgethis
+
+- `game dodgethis` and `tags dodgethis`.
+- The game plays one song per scene and starts it from the top, so its intro is heard: `dodgethis-theme` on the splash and in the lobby, and each map's own song during a match. A new song only plays once Dodgethis names it, so say in `about` which scene or map it's for.
+- It plays quietly under the sound effects, and fights duck it: in a match, sound is information. Keep the tune and groove clear and leave hits, casts and rising swooshes to the game.
+- The sound, from Dodgethis's `docs/sound.md`: warm and analog with toy sparkle, after Azymuth and Yellow Magic Orchestra (Rhodes, fretless, moog, real-feeling drums, chip arpeggios, vibes). Anticipation, not tension. Never cheap-cute. Lobby about 112 BPM, match about 120, clutch about 138.
+- The four in the game have an intro of 7 to 17 seconds and a loop of 70 to 85 from four to six patterns (`loop A A2 B A2 C`); the map songs bring the main theme back in their break.
+- Clutch, victory and defeat have no songs yet; the game still plays its old built-in tunes there. Victory and defeat want stings under 10 seconds; nothing more is decided.
+
 ## Check it
 
-- `bun test`: every song compiles without errors and loops.
-- `bun run render <name>`: render the intro and one loop to `music/renders/<name>.wav` (gitignored), and read the levels. Use `--seconds 20` for a short check; it repeats the loop as needed. Node 22+ is required; no audio device is needed.
-- Check the overall peak/RMS and clipping, each voice's peak/RMS and energy share, intro vs loop RMS, and the loudness strip (one character per bar). Voice measurements are solo, roughly K-weighted and before shared compression; overall measurements are the finished mix. Shares estimate balance, not exact contributions to the compressed mix. Lower `vol=` for a voice that dominates or clips; render again. A short check may not reach the loop or may cover only part of it; use the default render for the full comparison.
+- `bun test`: every song compiles without errors and loops; a failure names its song file.
+- `bun run render <name>`: render the intro and one loop to `music/renders/<name>.wav` (gitignored), and read the levels as they arrive. Use `--seconds 20` for a short check; it repeats the loop as needed. Add `--from drop` to start at the first played `drop`, without earlier notes or reverb tails; it continues in play order, and combines with `--seconds`. Add `--voices` for the slower per-voice solo measurements; otherwise only the mix is rendered. Node 22+ is required; no audio device is needed.
+- Check the overall peak/RMS and clipping, each pattern's RMS in play order, intro vs loop RMS, and the loudness strip (one character per bar). With `--voices`, also check each voice's peak/RMS and energy share. Voice measurements are solo, roughly K-weighted and before shared compression; overall measurements are the finished mix. Shares estimate balance, not exact contributions to the compressed mix. Lower `vol=` for a voice that dominates or clips; render again. A short check labels partial patterns and may not reach the loop or may cover only part of it; `--from` skips the intro comparison when starting later. Use the default render for the full comparison.
 - `bun run dev`, then `http://localhost:5173/?song=<name>`: errors show under the score, their line numbers in red. Add `&kind=radio&d=10` to hear it the way a game places it. Stop the dev server when you're done.
 - Watch the piano roll: it shows the shape of the hook, voices crowding one register, a bar left empty by mistake.
 
 ## You can't hear it
 
-Render it and use the numbers to check levels between voices. Describe the song from the score and measurements, honestly: which instruments, rhythms and harmony are there, not that it "slaps" or "sits well in the mix". RMS isn't a listening judgment: tone, masking and musical feel still need ears. The commit message is the song's title and one line of what it is, as in `git log`. Land it the way AGENTS.md says.
+Render it and use the numbers to check levels between voices. Describe the song from the score and measurements, honestly: which instruments, rhythms and harmony are there, not that it "slaps" or "sits well in the mix". RMS isn't a listening judgment: tone, masking and musical feel still need ears.
+
+To look at it in the page, use `agent-browser --session <your-name>`: the default session is shared with other agents. The page waits for a click on Play before it makes a sound.
+
+The commit message is the song's title and one line of what it is, as in `git log`. Landing is in AGENTS.md.

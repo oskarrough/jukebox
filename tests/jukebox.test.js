@@ -4,6 +4,7 @@ import { compile, noteToMidi, parseKey, MELODIC, DRUMS } from '../src/score.js'
 import { mtof } from '../src/synth.js'
 import { HEAR, cueAt, join, shape, runChain, effectState, EFFECTS } from '../src/player.js'
 import { BRICKS, addBrick, brickInto } from '../src/bricks.js'
+import { INSTRUMENTS } from '../src/instruments.js'
 import { addSection, moveSection, removeSection, repeatSection, sectionsOf } from '../src/ui/arrange.js'
 import { paint } from '../src/ui/paint.js'
 import { caretAt, columnOf, marksFor } from '../src/ui/link.js'
@@ -23,7 +24,7 @@ const score = (name) => compile(readFileSync(new URL(`${name}.song`, dir), 'utf8
 describe('scores', () => {
 	test('there are songs', () => expect(SCORES.length).toBeGreaterThan(0))
 	for (const name of SCORES) {
-		test(`${name} plays without errors and loops`, () => {
+		test(`music/${name}.song plays without errors and loops`, () => {
 			const song = score(name)
 			expect(song.errors).toEqual([])
 			expect(song.loop.dur).toBeGreaterThan(10)
@@ -51,8 +52,11 @@ oud | D4- Eq4- F4- ~Eq4- D4------- |`)
 	test('the Sonnenallee songs are in a maqam with quarter tones', () => {
 		for (const name of ['sonnenallee', 'sonnenallee-bei-nacht']) {
 			const song = score(name)
-			expect(song.street).toBe('Sonnenallee')
-			expect(song.loop.events.some((e) => e.m?.some((m) => m % 1))).toBe(true)
+			expect(song.street, `music/${name}.song`).toBe('Sonnenallee')
+			expect(
+				song.loop.events.some((e) => e.m?.some((m) => m % 1)),
+				`music/${name}.song`,
+			).toBe(true)
 		}
 	})
 })
@@ -61,11 +65,12 @@ describe('songs say where they belong', () => {
 	test('street and at in the head', () => {
 		expect(score('konvoi').at).toEqual([])
 		expect(score('hasenheide').at).toEqual(['cafe'])
-		for (const name of ['tempelhofer-feld', 'luftbruecke']) expect(score(name).at).toEqual(['feld'])
+		for (const name of ['tempelhofer-feld', 'luftbruecke']) expect(score(name).at, `music/${name}.song`).toEqual(['feld'])
 		expect(compile('at Doener  cafe\nvoice a sine\npattern A\na | C4 |').at).toEqual(['doener', 'cafe'])
 	})
 	test("game names the game a song is for; without it a song is NK GTA's", () => {
-		for (const name of ['dodgethis-theme', 'altamesa', 'overthrow', 'flagfall']) expect(score(name).game).toBe('dodgethis')
+		for (const name of ['dodgethis-theme', 'altamesa', 'overthrow', 'flagfall'])
+			expect(score(name).game, `music/${name}.song`).toBe('dodgethis')
 		expect(score('konvoi').game).toBe('')
 	})
 })
@@ -105,15 +110,16 @@ describe('playing from a distance', () => {
 })
 
 describe('loop bricks', () => {
-	test('every brick drops into every song and plays', () => {
-		for (const name of SCORES) {
-			const text = readFileSync(new URL(`${name}.song`, dir), 'utf8')
-			for (const brick of BRICKS) {
-				const { text: next, voice } = addBrick(text, brick)
-				const song = compile(next)
-				expect(song.errors).toEqual([])
-				expect(song.voices.map((v) => v.name)).toContain(voice)
-			}
+	test.each(SCORES)('music/%s.song: every brick drops in and plays', (name) => {
+		const text = readFileSync(new URL(`${name}.song`, dir), 'utf8')
+		for (const brick of BRICKS) {
+			const { text: next, voice } = addBrick(text, brick)
+			const song = compile(next)
+			expect(song.errors, `music/${name}.song, brick ${brick.id}`).toEqual([])
+			expect(
+				song.voices.map((v) => v.name),
+				`music/${name}.song, brick ${brick.id}`,
+			).toContain(voice)
 		}
 	})
 
@@ -203,31 +209,38 @@ describe('effects rack', () => {
 })
 
 describe('song key', () => {
-	test('key in the head is parsed, and songs in music/ still play without one', () => {
+	test('key in the head is parsed', () => {
 		expect(parseKey('C').pc).toBe(0)
 		expect(parseKey('Dm')).toEqual({ letter: 'D', acc: '', minor: true, pc: 2, name: 'Dm' })
 		expect(parseKey('F#').name).toBe('F#')
 		expect(compile('key G\nvoice a sine\npattern A\na | G4 |\nloop A').key.name).toBe('G')
-		for (const name of SCORES) {
-			const text = readFileSync(new URL(`${name}.song`, dir), 'utf8')
-			if (!/^key\s/m.test(text)) expect(compile(text).key).toBeNull()
-		}
 	})
 
-	test('the painted score is the score, character for character, and a sharp is not a comment', () => {
-		for (const name of SCORES)
-			for (const line of readFileSync(new URL(`${name}.song`, dir), 'utf8').split('\n'))
-				expect(
-					paint(line, [])
-						.map((p) => p[1])
-						.join(''),
-				).toBe(line)
+	test.each(SCORES)('music/%s.song: a missing key stays unset', (name) => {
+		const text = readFileSync(new URL(`${name}.song`, dir), 'utf8')
+		if (!/^key\s/m.test(text)) expect(compile(text).key, `music/${name}.song`).toBeNull()
+	})
+
+	test.each(SCORES)('music/%s.song: painting preserves every character', (name) => {
+		for (const line of readFileSync(new URL(`${name}.song`, dir), 'utf8').split('\n'))
+			expect(
+				paint(line, [])
+					.map((p) => p[1])
+					.join(''),
+				`music/${name}.song`,
+			).toBe(line)
+	})
+
+	test('a sharp is not a comment', () => {
 		expect(paint('a | C#4 # x |', ['a']).find((p) => p[0] === 'comment')[1]).toBe('# x |')
 	})
 
-	test('every song is tagged, and tags are any words', () => {
+	test('tags are any words', () => {
 		expect(compile('title X\ntags NKGTA wip\nvoice a sine\npattern A\na | C4 |\nloop A').tags).toEqual(['nkgta', 'wip'])
-		for (const name of SCORES) expect(compile(readFileSync(new URL(`${name}.song`, dir), 'utf8')).tags.length).toBeGreaterThan(0)
+	})
+
+	test.each(SCORES)('music/%s.song: has tags', (name) => {
+		expect(compile(readFileSync(new URL(`${name}.song`, dir), 'utf8')).tags.length, `music/${name}.song`).toBeGreaterThan(0)
 	})
 
 	test('new songs and bricks follow the key, instead of always landing in C', () => {
@@ -273,12 +286,14 @@ describe('patching bars with from', () => {
 	})
 })
 
-describe('the Guide', () => {
-	test('names every instrument', () => {
-		const html = readFileSync(new URL('../src/ui/Guide.jsx', import.meta.url), 'utf8')
-		const guide = html.slice(html.indexOf('id="guide"'))
-		const missing = [...MELODIC, ...DRUMS].filter((name) => !guide.includes(`<code>${name}</code>`))
-		expect(missing).toEqual([])
+describe('the instruments', () => {
+	test('each has a group and a line, drums in Drums', () => {
+		const listed = INSTRUMENTS.map((i) => i.name)
+		expect(listed.toSorted()).toEqual([...MELODIC, ...DRUMS].toSorted())
+		for (const i of INSTRUMENTS) {
+			expect(i.sound).toBeTruthy()
+			expect(i.drum).toBe(DRUMS.includes(i.name))
+		}
 	})
 })
 
@@ -489,11 +504,35 @@ describe('arranging sections', () => {
 		expect(heard(brickInto(clar, { ...brick('arp'), voice: 'clar' }, 'A2').text).A2).toContain('clar')
 	})
 
-	test('every brick drops into every section of every song', () => {
-		for (const name of ['konvoi', 'maybachufer', 'buschkrugallee']) {
-			const text = readFileSync(new URL(`${name}.song`, dir), 'utf8')
-			for (const s of sectionsOf(text, compile(text)).all)
-				for (const b of BRICKS) expect(compile(brickInto(text, b, s.name).text).errors).toEqual([])
-		}
+	test.each(['konvoi', 'maybachufer', 'buschkrugallee'])('music/%s.song: every brick drops into every section', (name) => {
+		const text = readFileSync(new URL(`${name}.song`, dir), 'utf8')
+		for (const s of sectionsOf(text, compile(text)).all)
+			for (const b of BRICKS)
+				expect(compile(brickInto(text, b, s.name).text).errors, `music/${name}.song, pattern ${s.name}, brick ${b.id}`).toEqual([])
+	})
+})
+
+import { newTitle } from '../src/key.js'
+
+describe('new songs start right', () => {
+	test('a new song is NK GTA unless a tag says otherwise', () => {
+		expect(compile(starter('C')).tags).toEqual(['nkgta'])
+		expect(compile(starter('C')).game).toBe('')
+		const tagged = compile(starter('C', { tag: 'wip' }))
+		expect(tagged.tags).toEqual(['wip'])
+		expect(tagged.game).toBe('')
+		const game = compile(starter('C', { tag: 'dodgethis', game: 'dodgethis' }))
+		expect(game.tags).toEqual(['dodgethis'])
+		expect(game.game).toBe('dodgethis')
+	})
+
+	test('a new song gets its own title, never one a song has', () => {
+		const a = newTitle([], () => 0)
+		expect(a.split(' ')).toHaveLength(2)
+		expect(newTitle([a], () => 0)).not.toBe(a)
+		expect(compile(starter('C', { title: a })).title).toBe(a)
+		const taken = []
+		for (let i = 0; i < 200; i++) taken.push(newTitle(taken))
+		expect(new Set(taken.map((t) => t.toLowerCase())).size).toBe(200)
 	})
 })

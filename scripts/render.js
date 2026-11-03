@@ -9,26 +9,32 @@ const SAMPLE_RATE = 44100
 
 // Schedule directly: the live player's lookahead guard deliberately limits work
 // per frame, whereas an offline context needs every note before rendering.
-export async function render(song, seconds, voice = null) {
+export async function render(song, seconds, voice = null, from = 0, progress = null) {
 	const context = new OfflineAudioContext(2, Math.ceil(seconds * SAMPLE_RATE), SAMPLE_RATE)
 	const synth = createSynth(context, context.destination, { raw: voice != null, strict: true })
 	synth.out.gain.value = 0.6 // same output level as the jukebox player
 	const session = synth.session(song)
 	function schedule(timeline, offset) {
 		for (const event of timeline.events) {
-			const time = offset + event.t
+			const time = offset + event.t - from
 			if (time >= seconds) break
-			if (voice == null || event.v === voice) session.play(event, time)
+			if (time >= 0 && (voice == null || event.v === voice)) session.play(event, time)
 		}
 	}
+	// A pattern start is a fresh start, without earlier notes or reverb tails.
 	schedule(song.intro, 0)
-	if (song.loop.dur > 0) for (let offset = song.intro.dur; offset < seconds; offset += song.loop.dur) schedule(song.loop, offset)
-	const buffer = await context.startRendering()
-	return Array.from({ length: 2 }, (_, channel) => {
-		const samples = new Float32Array(buffer.length)
-		buffer.copyFromChannel(samples, channel)
-		return samples
-	})
+	if (song.loop.dur > 0) for (let offset = song.intro.dur; offset < from + seconds; offset += song.loop.dur) schedule(song.loop, offset)
+	const timer = progress && setInterval(() => progress(Math.min(100, (100 * context.currentTime) / seconds)), 2000)
+	try {
+		const buffer = await context.startRendering()
+		return Array.from({ length: 2 }, (_, channel) => {
+			const samples = new Float32Array(buffer.length)
+			buffer.copyFromChannel(samples, channel)
+			return samples
+		})
+	} finally {
+		if (timer) clearInterval(timer)
+	}
 }
 
 export function measure(channels, start = 0, end = channels[0].length) {
@@ -78,51 +84,83 @@ export function wav(channels) {
 	return buffer
 }
 
-export function bars(song, seconds) {
+export function sections(song, seconds, from = 0) {
 	const result = []
+	const frames = Math.round(seconds * SAMPLE_RATE)
 	function append(timeline, offset) {
-		for (const section of timeline.sections)
-			for (let bar = 0; bar < section.bars; bar++) {
-				const start = offset + section.start + bar * section.barDur
-				if (start >= seconds) return
-				result.push([start, Math.min(seconds, start + section.barDur)])
-			}
+		for (const section of timeline.sections) {
+			const start = offset + section.start - from
+			const end = start + section.dur
+			const first = Math.round(start * SAMPLE_RATE)
+			const last = Math.round(end * SAMPLE_RATE)
+			// Adjacent sections can disagree by a fraction of a sample after subtraction.
+			if (first >= frames) break
+			if (last > 0) result.push({ ...section, start: Math.max(0, start), end: Math.min(seconds, end), partial: first < 0 || last > frames })
+		}
 	}
 	append(song.intro, 0)
-	if (song.loop.dur > 0) for (let offset = song.intro.dur; offset < seconds; offset += song.loop.dur) append(song.loop, offset)
+	if (song.loop.dur > 0) for (let offset = song.intro.dur; offset < from + seconds; offset += song.loop.dur) append(song.loop, offset)
 	return result
 }
 
+export function bars(song, seconds, from = 0) {
+	return sections(song, seconds, from).flatMap((section) =>
+		Array.from({ length: Math.min(section.bars, Math.ceil((section.end - section.start) / section.barDur)) }, (_, bar) => {
+			const start = section.start + bar * section.barDur
+			return [start, Math.min(section.end, start + section.barDur)]
+		}),
+	)
+}
+
 async function main(args) {
-	const [name, flag, duration] = args
-	if (!name || (args.length !== 1 && (args.length !== 3 || flag !== '--seconds'))) {
-		throw new Error('Usage: bun run render <song or path.song> [--seconds 20]')
+	const [name, ...flags] = args
+	const usage = 'Usage: bun run render <song or path.song> [--from pattern] [--seconds 20] [--voices]'
+	if (!name || name.startsWith('--')) throw new Error(usage)
+	let duration,
+		pattern,
+		solos = false
+	const seen = new Set()
+	for (let i = 0; i < flags.length; i++) {
+		const flag = flags[i]
+		if (seen.has(flag)) throw new Error(usage)
+		seen.add(flag)
+		if (flag === '--voices') solos = true
+		else if ((flag === '--seconds' || flag === '--from') && flags[i + 1] && !flags[i + 1].startsWith('--')) {
+			if (flag === '--seconds') duration = flags[++i]
+			else pattern = flags[++i]
+		} else throw new Error(usage)
 	}
 	const file = resolve(name.endsWith('.song') || name.includes('/') ? name : join('music', `${name}.song`))
 	const song = compile(await readFile(file, 'utf8'))
 	if (song.errors.length) throw new Error(song.errors.map((error) => `Line ${error.line}: ${error.msg}`).join('\n'))
-	const seconds = duration === undefined ? song.intro.dur + song.loop.dur : Number(duration)
+	let from = 0
+	if (pattern !== undefined) {
+		const section = sections(song, song.intro.dur + song.loop.dur).find((section) => section.name === pattern)
+		if (!section) throw new Error(`No played pattern called ${pattern}`)
+		from = section.start
+	}
+	const seconds = duration === undefined ? song.intro.dur + song.loop.dur - from : Number(duration)
 	if (!Number.isFinite(seconds) || seconds <= 0 || seconds > 600)
 		throw new Error('Render length must be more than 0 and at most 600 seconds')
-	const mix = await render(song, seconds)
-	const overall = measure(mix)
-	const voices = []
-	for (let voice = 0; voice < song.voices.length; voice++) voices.push(measure(await render(song, seconds, voice)))
-	const totalEnergy = voices.reduce((sum, voice) => sum + voice.energy, 0)
+	async function renderPart(label, voice = null) {
+		const started = performance.now()
+		console.log(`Rendering ${label}: ${seconds.toFixed(2)}s${pattern === undefined ? '' : ` from ${pattern}`}…`)
+		const audio = await render(song, seconds, voice, from, (percent) => {
+			console.log(`Rendering ${label}: ${percent.toFixed(0)}% (${((performance.now() - started) / 1000).toFixed(1)}s elapsed)`)
+		})
+		console.log(`Rendered ${label} in ${((performance.now() - started) / 1000).toFixed(2)}s`)
+		return audio
+	}
+	const mix = await renderPart('mix')
+	console.log(`Overall (finished mix): ${levels(measure(mix))}`)
 	const folder = join(dirname(file), 'renders')
 	const output = join(folder, `${basename(file, extname(file))}.wav`)
 	await mkdir(folder, { recursive: true })
 	await writeFile(output, wav(mix))
 	console.log(`WAV: ${output} (${seconds.toFixed(2)}s, stereo 44.1 kHz, no normalization)`)
-	console.log(`Overall (finished mix): ${levels(overall)}`)
-	console.log('Voices (solo, weighted, before shared compression; share = solo energy / total solo energy):')
-	voices.forEach((stats, index) => {
-		console.log(
-			`  ${song.voices[index].name}: ${levels(stats)}, share ${totalEnergy ? ((100 * stats.energy) / totalEnergy).toFixed(1) : '0.0'}%`,
-		)
-	})
-	const boundary = song.intro.dur
-	if (!boundary) console.log('Intro vs loop: no intro')
+	const boundary = song.intro.dur - from
+	if (from > 0) console.log('Intro vs loop: skipped; render from the start to compare')
+	else if (!boundary) console.log('Intro vs loop: no intro')
 	else if (seconds <= boundary) console.log('Intro vs loop: loop not reached; render longer to compare')
 	else if (!song.loop.dur) console.log('Intro vs loop: no loop')
 	else {
@@ -134,7 +172,14 @@ async function main(args) {
 			`Intro vs loop RMS: ${db(intro.rms)} / ${db(loop.rms)}; ${difference}${seconds < boundary + song.loop.dur ? '; partial loop' : ''}`,
 		)
 	}
-	const strip = bars(song, seconds)
+	console.log('RMS by pattern (finished mix, in play order):')
+	for (const section of sections(song, seconds, from)) {
+		const rms = measure(mix, section.start * SAMPLE_RATE, section.end * SAMPLE_RATE).rms
+		console.log(
+			`  ${section.name}: RMS ${db(rms)} (${section.start.toFixed(2)}–${section.end.toFixed(2)}s${section.partial ? '; partial' : ''})`,
+		)
+	}
+	const strip = bars(song, seconds, from)
 		.map(([start, end]) => {
 			const rms = measure(mix, start * SAMPLE_RATE, end * SAMPLE_RATE).rms
 			if (!rms) return '_'
@@ -142,6 +187,21 @@ async function main(args) {
 		})
 		.join('')
 	console.log(`RMS by bar: ${strip} (_ silent; 1 < -42, 2 -42…-36, …, 9 >= 0 dBFS; last bar may be partial)`)
+	if (solos) {
+		const voices = []
+		for (let voice = 0; voice < song.voices.length; voice++) {
+			const stats = measure(await renderPart(`voice ${voice + 1}/${song.voices.length} (${song.voices[voice].name})`, voice))
+			voices.push(stats)
+			console.log(`  ${song.voices[voice].name}: ${levels(stats)}`)
+		}
+		const totalEnergy = voices.reduce((sum, voice) => sum + voice.energy, 0)
+		console.log('Voices (solo, weighted, before shared compression; share = solo energy / total solo energy):')
+		voices.forEach((stats, index) => {
+			console.log(
+				`  ${song.voices[index].name}: ${levels(stats)}, share ${totalEnergy ? ((100 * stats.energy) / totalEnergy).toFixed(1) : '0.0'}%`,
+			)
+		})
+	}
 	console.log('Adjust voice vol= for balance; reduce levels if clipping. RMS is a level guide, not a listening judgment.')
 }
 
