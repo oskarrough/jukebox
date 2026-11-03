@@ -102,7 +102,9 @@ describe('a pad to play them', () => {
 		expect(harmonyVoice(t)).toBeNull()
 		const out = addPad(t)
 		expect(out.voice).toBe('pad')
-		expect(out.text).toContain('voice pad pad vol=0.4 rev=0.6 bright=0.8\n\npattern A\nchords | Am | F | C | G |\npad | x--------------- | % | % | % |\n')
+		expect(out.text).toContain(
+			'voice pad pad vol=0.4 rev=0.6 bright=0.8\n\npattern A\nchords | Am | F | C | G |\npad | x--------------- | % | % | % |\n',
+		)
 		expect(compile(out.text).errors).toEqual([])
 		expect(harmonyVoice(out.text)).toBe('pad')
 	})

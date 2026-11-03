@@ -3,14 +3,12 @@
 // scale from its keynote, so nothing played there is out of key; the row
 // above plays the notes in between, W between A and S and so on, where the
 // scale leaves a gap. Z and X an octave down and up.
-import { prefersFlats, transposeNoteName } from '../key.js'
+import { prefersFlats, scaleSteps, transposeNoteName } from '../key.js'
 import { noteToMidi } from '../score.js'
 
 export const HOME = ['KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyJ', 'KeyK', 'KeyL', 'Semicolon', 'Quote']
 // Each sits between HOME[i] and HOME[i + 1].
 export const ABOVE = ['KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyY', 'KeyU', 'KeyI', 'KeyO', 'KeyP', 'BracketLeft']
-const MAJOR = [0, 2, 4, 5, 7, 9, 11]
-const MINOR = [0, 2, 3, 5, 7, 8, 10]
 export const OCTAVE_KEYS = { KeyZ: -1, KeyX: 1 }
 export const keyLabel = (code) => ({ Semicolon: ';', Quote: "'", BracketLeft: '[' })[code] ?? code.replace('Key', '')
 
@@ -23,7 +21,7 @@ export function pianoKeys(octave, key) {
 }
 
 // Semitones above the keynote of the scale's `i`th note, from 0.
-const degree = (i, minor) => (minor ? MINOR : MAJOR)[i % 7] + 12 * Math.floor(i / 7)
+const degree = (i, minor) => scaleSteps({ minor })[i % 7] + 12 * Math.floor(i / 7)
 
 // The note key `code` plays in `key` (C major without one), its keynote in
 // `octave`; or null.

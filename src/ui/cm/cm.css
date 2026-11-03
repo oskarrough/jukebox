@@ -27,7 +27,8 @@
 	background: color-mix(in lab, var(--c-ultramarine) 20%, transparent);
 }
 .cm .cm-line.line {
-	padding: 0 0.7rem;
+	position: relative;
+	padding: 0 0.7rem 0 1.9rem;
 }
 /* a line with a mistake: a red edge */
 .cm .cm-line.wrong {
@@ -221,7 +222,7 @@
 	cursor: pointer;
 }
 .cm .inherited .line {
-	padding: 0 0.7rem;
+	padding: 0 0.7rem 0 1.9rem;
 	min-height: 1.6em;
 	white-space: pre-wrap;
 }
@@ -246,4 +247,34 @@
 }
 .cm .look-toggle > button {
 	font: 600 0.75rem var(--score);
+}
+
+/* a die before a voice's line in a pattern, a small key in the margin: there
+   while you point at the line or write in it */
+.cm .die {
+	--face: 1.25rem;
+	position: absolute;
+	left: 0.2rem;
+	top: 50%;
+	translate: 0 -50%;
+	padding: 2px;
+	border-radius: 8px;
+	opacity: 0;
+}
+.cm .die > button {
+	border-radius: 6px;
+}
+.cm .die svg {
+	width: 0.95rem;
+	height: 0.95rem;
+}
+.cm .line:hover .die,
+.cm .line.here .die {
+	opacity: 1;
+}
+@media (pointer: coarse) {
+	.cm .die {
+		--face: 1.6rem;
+		left: 0;
+	}
 }

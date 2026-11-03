@@ -138,6 +138,14 @@ export function Editor() {
 		return true
 	}
 
+	// ⌘D rolls the die on the voice of the line the caret is on.
+	function rollHere(v) {
+		const at = caretAt(v.state.doc.toString(), v.state.selection.main.head)
+		if (!at.voice || at.voice === 'chords' || !at.pattern) return false
+		jb.rollVoice(at.pattern, at.voice)
+		return true
+	}
+
 	// The song's mistakes, a moment after you stop typing.
 	const lint = linter(
 		(v) => {
@@ -182,9 +190,11 @@ export function Editor() {
 		},
 	)
 
-	// Words on what the pointer rests on.
+	// Words on what the pointer rests on; a die has its own.
+	let onDie = false
 	const hovers = hoverTooltip(
 		(v, pos) => {
+			if (onDie) return null
 			const line = v.state.doc.lineAt(pos)
 			const { names, drums, insts, muted } = v.state.field(info)
 			const h = hintAt(line.text, pos - line.from, names, drums, { insts, muted })
@@ -207,6 +217,7 @@ export function Editor() {
 	let resting = null
 	let waiting = 0
 	function rest(v, e) {
+		onDie = !!e.target.closest?.('.die')
 		const pos = v.posAtCoords({ x: e.clientX, y: e.clientY })
 		const line = pos == null ? null : v.state.doc.lineAt(pos)
 		const { names, drums, insts, muted } = v.state.field(info)
@@ -334,6 +345,14 @@ export function Editor() {
 	}
 
 	function pointerDown(e, v) {
+		const die = e.target.closest?.('.die')
+		if (die) {
+			if (e.button) return false
+			e.preventDefault()
+			const at = caretAt(text(), v.posAtDOM(die))
+			if (at.pattern) jb.rollVoice(at.pattern, die.dataset.voice)
+			return true
+		}
 		const chip = e.target.closest?.('.chip')
 		if (chip) return channel(v, e, chip)
 		const faded = e.target.closest?.('.inherited .line')
@@ -444,6 +463,7 @@ export function Editor() {
 				keymap.of([
 					{ key: 'Tab', run: tab },
 					{ key: 'Ctrl-Space', run: ask },
+					{ key: 'Mod-d', run: rollHere, preventDefault: true },
 					{ key: 'Alt-ArrowUp', run: nudging(1, false), shift: nudging(1, true) },
 					{ key: 'Alt-ArrowDown', run: nudging(-1, false), shift: nudging(-1, true) },
 				]),

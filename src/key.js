@@ -8,6 +8,12 @@ const MAJOR_NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb',
 const MINOR_NAMES = ['Cm', 'C#m', 'Dm', 'Ebm', 'Em', 'Fm', 'F#m', 'Gm', 'Abm', 'Am', 'Bbm', 'Bm']
 const NOTE = '[A-Ga-g](?:##|bb|#|b|q)?[0-8]'
 const T_NOTE = new RegExp(`^(~?)(\\[([^\\]]+)\\]|${NOTE}(?:\\+${NOTE})*)([!?]*)(-*)([!?]*)$`)
+// The steps of a key's scale, in semitones above its keynote.
+const MAJOR = [0, 2, 4, 5, 7, 9, 11]
+const MINOR = [0, 2, 3, 5, 7, 8, 10]
+export const scaleSteps = (key) => (key?.minor ? MINOR : MAJOR)
+// The pitch classes of `key`'s scale (C major without one), as a Set.
+export const scaleOf = (key) => new Set(scaleSteps(key).map((d) => (d + (key?.pc ?? 0)) % 12))
 const PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }
 const ACC = { '': 0, '#': 1, '##': 2, b: -1, bb: -2 }
 
@@ -30,11 +36,12 @@ function pcOf(letter, acc) {
 	return (PC[letter.toUpperCase()] + (ACC[acc || ''] || 0) + 12) % 12
 }
 
-function spellPc(pc, flats) {
+export function spellPc(pc, flats) {
 	return (flats ? FLAT : SHARP)[((pc % 12) + 12) % 12]
 }
 
-function fromMidi(midi, flats) {
+// Midi number `midi` as the score writes it, in sharps or flats.
+export function fromMidi(midi, flats) {
 	const frac = ((midi % 1) + 1) % 1
 	const quarter = frac > 0.25 && frac < 0.75
 	const base = quarter ? Math.round(midi + 0.5) : Math.round(midi)

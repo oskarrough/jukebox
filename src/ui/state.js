@@ -10,6 +10,7 @@ import { addSection as addPattern, moveSection, removeSection, repeatSection, se
 import { fate, neighbour, reinsert } from './discard.js'
 import { columnOf, marksFor } from './link.js'
 import { addPad, barsIn, harmonyVoice, writeChord } from './pad.js'
+import { roll } from './dice.js'
 import { slug } from './slug.js'
 import { voiceColors } from '../roll.js'
 import { AHEAD, begin, end, feed, synthFor, tune } from '../player.js'
@@ -394,6 +395,13 @@ export const jb = createRoot(() => {
 		reveal(ln, col)
 	}
 
+	// Rolls the die on `voice` in pattern `pattern`: its bars there written
+	// again, a take of their own, as one edit; playing, it plays on.
+	function rollVoice(pattern, voice) {
+		const out = roll(score(), pattern, voice, (Math.random() * 2 ** 32) >>> 0)
+		if (out) draw(out.text, out.ln, out.col)
+	}
+
 	// Plays the song from section `s` (from sections), its pattern where the
 	// caret is; looping, it loops that one instead.
 	function playSection(s) {
@@ -759,6 +767,7 @@ export const jb = createRoot(() => {
 		toggleLoop,
 		audition,
 		draw,
+		rollVoice,
 		hearBrick,
 		stopSample,
 		piano,

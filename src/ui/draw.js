@@ -5,7 +5,7 @@
 // takes from the one it's built on gets a `voice@N` line of its own, so the
 // other pattern stays as it was. Where that can't be done, the edit is null.
 import { compile, noteToMidi, parse } from '../score.js'
-import { prefersFlats, transposeToken } from '../key.js'
+import { prefersFlats, scaleOf, spellPc, transposeToken } from '../key.js'
 import { barAt, columnOf } from './link.js'
 
 const T_HOLD = /^-+$/
@@ -13,9 +13,6 @@ const T_REST = /^(\.+)(-*)$/
 const NOTE = '[A-Ga-g](?:##|bb|#|b|q)?[0-8]'
 const T_NOTE = new RegExp(`^(~?)(\\[[^\\]]+\\]|${NOTE}(?:\\+${NOTE})*)([!?]*)(-*)([!?]*)$`)
 const NAME = new RegExp(`(?<![\\w#])(${NOTE.slice(0, -5)})([0-8])(?![\\w#])`, 'g')
-const SCALE = { major: [0, 2, 4, 5, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10] }
-const SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-const FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
 const pcOf = (m) => ((m % 12) + 12) % 12
 
 let last = { text: null, song: null }
@@ -67,7 +64,7 @@ export function timeAt(text, song, place, st = place.st) {
 // in the song's `key`, or one this section already plays, quarter tones too.
 export function snap(song, place, m, key) {
 	const sec = sectionOf(song, place)
-	const allowed = new Set(SCALE[key?.minor ? 'minor' : 'major'].map((d) => (d + (key?.pc ?? 0)) % 12))
+	const allowed = scaleOf(key)
 	for (const e of song[place.tl].events) {
 		const v = song.voices[e.v]
 		if (e.s === place.i && e.m) for (const p of e.m) allowed.add(pcOf(p - v.trans - sec.trans))
@@ -99,7 +96,7 @@ export function nameOf(text, m, key) {
 		}
 	}
 	const seen = counts.get(pcOf(m))
-	const name = seen ? [...seen].sort((a, b) => b[1] - a[1])[0][0] : (prefersFlats(key) ? FLAT : SHARP)[pcOf(Math.round(m))]
+	const name = seen ? [...seen].sort((a, b) => b[1] - a[1])[0][0] : spellPc(Math.round(m), prefersFlats(key))
 	for (let o = Math.floor(m / 12) - 2; o <= Math.floor(m / 12) + 1; o++) if (o >= 0 && o <= 8 && noteToMidi(name + o) === m) return name + o
 	return null
 }
@@ -188,13 +185,15 @@ function writeBar(src, old, next, n) {
 	return lead + out.join(' ') + trail
 }
 
-// A drum bar as its steps, `.` `o` `x` `X`, or null if it isn't `n` of them.
-function readDrums(src, n) {
+// A bar written in steps as its steps, `.` `o` `x` `X`, or null if it isn't
+// `n` of them: a drum bar, or with `holds` a bar on the chord row, keeping its `-`.
+function readDrums(src, n, holds) {
 	const s = src.replace(/\s+/g, '')
 	if (s === '_') return Array(n).fill('.')
 	if (s.length !== n || /[^.oxX-]/.test(s)) return null
-	return [...s.replace(/-/g, '.')]
+	return [...(holds ? s : s.replace(/-/g, '.'))]
 }
+const STEPS = /^[xXo.\-\s]*[xXo][xXo.\-\s]*$/
 function writeDrums(src, hits, beat) {
 	const s = src.replace(/\s+/g, '')
 	let i = 0
@@ -230,7 +229,7 @@ function mutedIn(patterns, name, voice, seen = new Set()) {
 }
 
 // The lines of the pattern starting on line `ln` (from 1): [first, last].
-function blockOf(lines, ln) {
+export function blockOf(lines, ln) {
 	let z = ln
 	while (z < lines.length && !/^\s*(pattern|play|loop)\b/i.test(lines[z])) z++
 	return [ln, z]
@@ -245,9 +244,10 @@ export function blocked(text, song, place, voice) {
 }
 
 // Changes bar `place.b` of `voice` in the place's section with `change`,
-// which gets the bar (readBar's, or a drum bar's steps) and returns it
-// changed, or null. Returns { text, ln, col } with the caret on step `st`.
-function editBar(text, song, place, voice, change, st) {
+// which gets the bar (readBar's, or a drum bar's steps; with `follow`, a bar
+// on the chord row's steps too) and returns it changed, or null. Returns
+// { text, ln, col } with the caret on step `st`.
+export function editBar(text, song, place, voice, change, st, follow = false) {
 	const sec = sectionOf(song, place)
 	const v = song.voices.find((w) => w.name === voice)
 	if (!sec || !v || place.b >= sec.bars) return null
@@ -268,11 +268,12 @@ function editBar(text, song, place, voice, change, st) {
 		const end = where.at(-1)
 		to = end && mine(end.ln) ? { extend: end.ln, pad: b - where.length } : where.length ? { patch: true } : { add: true }
 	}
-	const old = v.drum ? readDrums(src, n) : readBar(src, n)
+	const steps = v.drum || (follow && STEPS.test(src))
+	const old = steps ? readDrums(src, n, !v.drum) : readBar(src, n)
 	if (!old) return null
-	const next = change(v.drum ? [...old] : { tie: old.tie, notes: old.notes.map((nt) => ({ ...nt })) }, n)
+	const next = change(steps ? [...old] : { tie: old.tie, notes: old.notes.map((nt) => ({ ...nt })) }, n)
 	if (!next) return null
-	const bar = v.drum ? writeDrums(src, next, sec.steps) : writeBar(src, old, next, n)
+	const bar = steps ? writeDrums(src, next, sec.steps) : writeBar(src, old, next, n)
 	// The new bar into its line, or a line of its own.
 	let ln
 	let k

@@ -41,8 +41,38 @@ function markOf(cls, c, hit, voice, i, w) {
 	}
 	return m
 }
+// A die before a voice's line in a pattern: a click rolls it (Editor.jsx).
+class Die extends WidgetType {
+	constructor(voice) {
+		super()
+		this.voice = voice
+	}
+	eq(o) {
+		return o.voice === this.voice
+	}
+	toDOM() {
+		const el = document.createElement('span')
+		el.className = 'k die'
+		el.innerHTML = `<button type="button" tabindex="-1"><svg viewBox="0 0 20 20"><rect x="3.5" y="3.5" width="13" height="13" rx="3" /><circle cx="7.3" cy="7.3" r="1.1" fill="currentColor" stroke="none" /><circle cx="10" cy="10" r="1.1" fill="currentColor" stroke="none" /><circle cx="12.7" cy="12.7" r="1.1" fill="currentColor" stroke="none" /></svg></button>`
+		el.firstChild.title = `Roll a new take of ${this.voice} (⌘D)`
+		el.dataset.voice = this.voice
+		return el
+	}
+	ignoreEvent() {
+		return false
+	}
+}
+const dies = new Map()
+const dieOf = (voice) => dies.get(voice) ?? dies.set(voice, Decoration.widget({ widget: new Die(voice), side: -1 })).get(voice)
+
 const LINE = Decoration.line({ class: 'line' })
 const HERE = Decoration.line({ class: 'line here' })
+
+// Whether line `ln` (from 1) is in a pattern, not before the first.
+function inPattern(state, ln) {
+	for (let i = ln - 1; i >= 1; i--) if (/^\s*pattern\s/i.test(state.doc.line(i).text)) return true
+	return false
+}
 
 // The painted lines in view.
 function paintView(view) {
@@ -69,6 +99,7 @@ function paintView(view) {
 				if (drum && col > line.text.indexOf('|') && (kind === 'note' || kind === 'rest')) {
 					for (let i = 0; i < text.length; i++) out.push(markOf(`${kind} step`, c, text[i]).range(at + col + i, at + col + i + 1))
 				} else if (kind === 'name' && c) {
+					if (!line.text.slice(0, col).trim() && inPattern(state, line.number)) out.push(dieOf(voice).range(at))
 					const cls = `name chip${muted.has(voice) ? ' off' : ''}${fresh === voice ? ' fresh' : ''}`
 					out.push(markOf(`${cls} wide`, c, null, voice, names.indexOf(voice), w).range(at + col, at + col + text.length))
 				} else if (kind === 'word' && text === 'chords' && col === line.text.indexOf('chords')) {
