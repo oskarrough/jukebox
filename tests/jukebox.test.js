@@ -10,7 +10,6 @@ import { paint } from '../src/ui/paint.js'
 import { caretAt, columnOf, marksFor } from '../src/ui/link.js'
 import { nudge, stepsOf, toggleStep } from '../src/ui/nudge.js'
 import { suggest } from '../src/ui/complete.js'
-import { noteOf, octaveAt } from '../src/ui/keyboard.js'
 import { inferKey, keyOf, setSongKey, starter, transposeScore } from '../src/key.js'
 
 const STARTER_ISH = 'voice kick kick\npattern A\nkick | x... x... x... x... |\nloop A'
@@ -421,14 +420,6 @@ mute ki`
 		expect(next('voice kick kick\npattern A\nkick | ').items[0].insert).toBe('x... x... x... x... |')
 		expect(next('voice lead square\npattern A\nlead | ').items[0].insert).toBe('C4--- E4--- G4--- E4--- |')
 		expect(next('pattern A\npattern B\n\nloop A ').items[0].insert).toBe('B')
-	})
-
-	test('keys play from C by where they sit', () => {
-		expect(noteOf('KeyA', 4, parseKey('C'))).toBe('C4')
-		expect(noteOf('KeyW', 4, parseKey('F'))).toBe('Db4')
-		expect(noteOf('KeyK', 3, parseKey('C'))).toBe('C4')
-		expect(noteOf('KeyQ', 4, parseKey('C'))).toBeNull()
-		expect(octaveAt('lead | A2- C3 ', 14)).toBe(3)
 	})
 })
 

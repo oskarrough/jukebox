@@ -1,38 +1,41 @@
 // The computer keyboard as a piano, by where the keys are rather than what's
-// printed on them: A W S E D F T G Y H U J K O L P ; from C up, Z and X an
-// octave down and up.
+// printed on them. The home row, A S D F G H J K L ; ', plays the song's
+// scale from its keynote, so nothing played there is out of key; the row
+// above plays the notes in between, W between A and S and so on, where the
+// scale leaves a gap. Z and X an octave down and up.
 import { prefersFlats, transposeNoteName } from '../key.js'
+import { noteToMidi } from '../score.js'
 
-const KEYS = [
-	'KeyA',
-	'KeyW',
-	'KeyS',
-	'KeyE',
-	'KeyD',
-	'KeyF',
-	'KeyT',
-	'KeyG',
-	'KeyY',
-	'KeyH',
-	'KeyU',
-	'KeyJ',
-	'KeyK',
-	'KeyO',
-	'KeyL',
-	'KeyP',
-	'Semicolon',
-]
+const HOME = ['KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyJ', 'KeyK', 'KeyL', 'Semicolon', 'Quote']
+// Each sits between HOME[i] and HOME[i + 1].
+const ABOVE = ['KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyY', 'KeyU', 'KeyI', 'KeyO', 'KeyP', 'BracketLeft']
+const MAJOR = [0, 2, 4, 5, 7, 9, 11]
+const MINOR = [0, 2, 3, 5, 7, 8, 10]
 export const OCTAVE_KEYS = { KeyZ: -1, KeyX: 1 }
 
-// The note key `code` plays from C in `octave`, spelled for `key`; or null.
+// Semitones above the keynote of the scale's `i`th note, from 0.
+const degree = (i, minor) => (minor ? MINOR : MAJOR)[i % 7] + 12 * Math.floor(i / 7)
+
+// The note key `code` plays in `key` (C major without one), its keynote in
+// `octave`; or null.
 export function noteOf(code, octave, key) {
-	const i = KEYS.indexOf(code)
-	return i < 0 ? null : transposeNoteName(`C${octave}`, i, prefersFlats(key))
+	let semis = null
+	const i = HOME.indexOf(code)
+	const j = ABOVE.indexOf(code)
+	if (i >= 0) semis = degree(i, key?.minor)
+	else if (j >= 0 && degree(j + 1, key?.minor) - degree(j, key?.minor) > 1) semis = degree(j, key?.minor) + 1
+	return semis == null ? null : transposeNoteName(`C${octave}`, (key?.pc ?? 0) + semis, prefersFlats(key))
 }
 
-// The octave of the last note written before `pos` on its line, or null.
-export function octaveAt(text, pos) {
-	const line = text.slice(text.lastIndexOf('\n', pos - 1) + 1, pos)
-	const notes = [...line.matchAll(/[A-G](?:##|bb|#|b|q)?(\d)/g)]
-	return notes.length ? Number(notes.at(-1)[1]) : null
+// The octave to play the line at `pos` in: where the keynote of `key` sits at
+// or below the line's lowest note, so playing doesn't creep up the line; or null.
+export function octaveAt(text, pos, key) {
+	const start = text.lastIndexOf('\n', pos - 1) + 1
+	const end = text.indexOf('\n', pos)
+	const line = text
+		.slice(start, end < 0 ? text.length : end)
+		.replace(/^\s*\S+/, '')
+		.replace(/(^|\s)#.*$/, '')
+	const notes = [...line.matchAll(/[A-G](?:##|bb|#|b|q)?\d/g)].map((m) => noteToMidi(m[0])).filter((m) => m != null)
+	return notes.length ? Math.floor((Math.min(...notes) - (key?.pc ?? 0)) / 12) - 1 : null
 }

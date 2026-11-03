@@ -16,8 +16,9 @@ export function Guide() {
 				number by its last digit, a drum step from <code>.</code> to <code>o</code> <code>x</code> <code>X</code>. On a drum line, the pads
 				under the score switch its steps. Click the roll to find a note in the score; <kbd>⌘L</kbd> loops the pattern you're in,{' '}
 				<kbd>⌘↩</kbd> plays and stops, <kbd>⌘S</kbd> saves. Instruments, options, voices and patterns are suggested as you type:{' '}
-				<kbd>Tab</kbd> takes one. <kbd>⌘K</kbd> makes the keyboard a piano: <kbd>A</kbd> is C, <kbd>W</kbd> C#, on along the row,{' '}
-				<kbd>Z</kbd> <kbd>X</kbd> an octave down and up, and on a voice's line each note is written in.
+				<kbd>Tab</kbd> takes one. <kbd>⌘K</kbd> makes the keyboard a piano in the song's key: the row from <kbd>A</kbd> plays its scale, the
+				row above the notes between, <kbd>Z</kbd> <kbd>X</kbd> an octave down and up. On a voice's line, while the song plays, what you play
+				is recorded in time; stopped, each note is written at the caret.
 			</p>
 			<h3>Head</h3>
 			<p>

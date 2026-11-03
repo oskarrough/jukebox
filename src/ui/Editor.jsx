@@ -9,8 +9,9 @@
 // on and off. While you type, what could come next is suggested, the likeliest
 // faint after the caret; pointing at an instrument plays it, at an option says
 // what it does. In a bar, a tick shows where each beat starts and the bar's
-// closing | turns warm when it holds too few or too many steps. With the piano on, the keyboard plays notes and writes them in.
-import { For, createEffect, createMemo, createSignal, onSettled } from 'solid-js'
+// closing | turns warm when it holds too few or too many steps. With the piano on, the keyboard plays notes and writes them in:
+// in time while the song plays, else at the caret.
+import { For, createEffect, createMemo, createSignal, flush, onSettled } from 'solid-js'
 import { jb } from './state.js'
 import { barAt, caretAt } from './link.js'
 import { nudge, stepsOf, toggleStep } from './nudge.js'
@@ -18,6 +19,7 @@ import { sample, suggest } from './complete.js'
 import { mistakes } from './lint.js'
 import { DRUM_STEPS, HINTS } from './hints.js'
 import { OCTAVE_KEYS, noteOf, octaveAt } from './keyboard.js'
+import { moment, record, sizeOf, stepNote } from './record.js'
 import { mark, paint } from './paint.js'
 import { ruler } from './ruler.js'
 import { parse } from '../score.js'
@@ -219,22 +221,48 @@ export function Editor() {
 		(on) => shown(tip, on),
 	)
 
-	// The piano: a key plays its note on the voice the caret is in and, on a
-	// melodic line, writes it in. Z and X move an octave from the line's.
+	// Puts `next` in place of the score as one edit, and the caret at `caret`.
+	function put(next, caret) {
+		const t = area.value
+		let a = 0
+		while (a < t.length && t[a] === next[a]) a++
+		let z = 0
+		while (z < t.length - a && z < next.length - a && t[t.length - 1 - z] === next[next.length - 1 - z]) z++
+		write(a, t.length - z, next.slice(a, next.length - z), caret)
+	}
+
+	// The piano: a key plays its note on the voice the caret is in. On a
+	// melodic voice's line, while the song plays, what you play is recorded
+	// in time when you let go; stopped, it's written in at the caret. Z and X
+	// move an octave from the line's.
 	let octave = null
+	// Keys held down, by code: the note, its voice, and when in the song.
+	const held = new Map()
+	// The take being recorded: the score before it, as it was last written,
+	// and the last note's moment, for a chord. Undone as one.
+	let take = null
 	createEffect(
 		() => jb.piano(),
 		() => {
 			octave = null
+			take = null
+		},
+	)
+	createEffect(
+		() => jb.live(),
+		(on) => {
+			if (on) return
+			for (const code of [...held.keys()]) release(code)
+			take = null
 		},
 	)
 	function playKey(e) {
 		const pos = area.selectionStart
 		if (e.code in OCTAVE_KEYS) {
-			octave = Math.max(0, Math.min(8, (octave ?? octaveAt(area.value, pos) ?? 4) + OCTAVE_KEYS[e.code]))
+			octave = Math.max(0, Math.min(8, (octave ?? octaveAt(area.value, pos, jb.key()) ?? 4) + OCTAVE_KEYS[e.code]))
 			return true
 		}
-		const note = noteOf(e.code, octave ?? octaveAt(area.value, pos) ?? 4, jb.key())
+		const note = noteOf(e.code, octave ?? octaveAt(area.value, pos, jb.key()) ?? 4, jb.key())
 		if (!note) return false
 		if (e.repeat) return true
 		const at = caretAt(area.value, pos)
@@ -242,13 +270,45 @@ export function Editor() {
 		const voice = voices.find((v) => v.name === at.voice) ?? voices.find((v) => !v.drum)
 		if (!voice) return true
 		jb.audition(area.value, voice.name, voice.drum ? 'x' : note)
-		if (voice.drum) return true
-		if (at.voice === voice.name && at.k >= 0) {
-			const gap = /[^\s|]/.test(area.value[pos - 1] ?? ' ') ? ' ' : ''
-			const ins = `${gap}${note} `
-			write(pos, area.selectionEnd, ins, pos + ins.length)
+		if (voice.drum || at.voice !== voice.name) return true
+		if (jb.live()) {
+			held.set(e.code, { note, voice: voice.name, from: jb.elapsed() })
+			return true
 		}
+		const song = jb.whole() ?? jb.song()
+		const r = stepNote(area.value, pos, note, song ? sizeOf(song, at.pattern) : { beats: 4, steps: 4 })
+		if (r) put(r.text, r.caret)
 		return true
+	}
+	// Writes the held key `code` into the take, as long as it was held.
+	function release(code) {
+		const h = held.get(code)
+		held.delete(code)
+		const song = jb.nowPlaying()
+		const m = h && song && moment(song, h.from)
+		if (!m) return
+		const to = jb.live() ? jb.elapsed() : h.from
+		const id = `${m.s.name}:${m.s.start}:${m.step}`
+		const chord = take?.id === id && Math.abs(h.from - take.from) < m.stepDur
+		const r = record(area.value, song, { voice: h.voice, from: h.from, to, note: h.note, chord })
+		if (!r) return
+		// The caret stays where it was, a line down if one went in above it.
+		const before = area.value.slice(0, area.selectionStart).split('\n')
+		const ln = before.length + (r.added && r.added <= before.length ? 1 : 0)
+		const lines = r.text.split('\n')
+		const caret = lines.slice(0, ln - 1).join('\n').length + (ln > 1 ? 1 : 0) + Math.min(before.at(-1).length, lines[ln - 1].length)
+		// The take so far comes out and goes back in with this note, so ⌘Z undoes it whole.
+		if (take?.last === area.value) {
+			writing = true
+			document.execCommand('undo')
+			writing = false
+		}
+		if (take?.base !== area.value) take = { base: area.value }
+		put(r.text, caret)
+		Object.assign(take, { last: area.value, id, from: h.from })
+		clearTimeout(typing)
+		jb.setText(area.value)
+		flush()
 	}
 
 	// Nudges what's at `pos` by `dir`, and plays it. Whether there was anything to nudge.
@@ -433,6 +493,7 @@ export function Editor() {
 						unrest()
 						moved()
 						if (!writing) {
+							take = null
 							typed(caretAt(value, e.currentTarget.selectionStart).ln)
 							offer(true)
 						}
@@ -443,7 +504,10 @@ export function Editor() {
 						sheet.scrollTop = area.scrollTop
 						unrest()
 					}}
-					onKeyUp={moved}
+					onKeyUp={(e) => {
+						if (held.has(e.code)) release(e.code)
+						moved()
+					}}
 					onKeyDown={keyDown}
 					onPointerDown={(e) => {
 						setHint(null)
@@ -463,6 +527,7 @@ export function Editor() {
 					onPointerLeave={unrest}
 					onFocus={() => setTimeout(() => document.activeElement === area && offer(false))}
 					onBlur={() => {
+						for (const code of [...held.keys()]) release(code)
 						setHint(null)
 						setCaretLn(0)
 						setCaretPos(-1)
