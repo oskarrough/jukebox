@@ -1,0 +1,81 @@
+title    Hermannstraße um drei
+about    Dub techno for Hermannstraße at three in the morning, out of bar doors and Späti radios. A dark Dm9 stab that echoes left and right, a round sub, a Rhodes that sings five notes and goes quiet, the street hissing underneath.
+key      Dm
+tags     nkgta
+street   Hermannstraße
+at       bar spaeti
+tempo    118
+beats    4
+steps    4
+reverb   0.45
+
+# The stab and its echo: the synth has no delay, so the echo is two more
+# copies of the stab, three and six steps late, darker and further out.
+voice stab   pad     vol=0.85 att=0.004 rel=0.3  bright=0.7  rev=0.35
+voice echo1  pad     vol=0.48 att=0.004 rel=0.3  bright=0.45 rev=0.55 pan=-0.55
+voice echo2  pad     vol=0.28 att=0.004 rel=0.35 bright=0.3  rev=0.7  pan=0.55
+voice keys   rhodes  vol=0.75 pan=0.15 rev=0.6
+voice bass   808     vol=0.55 drive=0.2
+voice kick   kick    vol=0.9
+voice hat    hat     vol=0.4  pan=0.2
+voice ohat   ohat    vol=0.22 pan=-0.2
+voice shake  shaker  vol=0.25 pan=0.35
+voice rim    rim     vol=0.3  pan=-0.3 rev=0.5
+voice hiss   surf    vol=0.7
+
+# Dm9, Dm9, Dm9, Bbmaj9, voiced without roots: the bass has them.
+# Dm9 F3+A3+C4+E4, Bbmaj9 D3+F3+A3+C4.
+pattern A
+stab  | .. F3+A3+C4+E4 .... F3+A3+C4+E4 .. F3+A3+C4+E4 ..... | .. F3+A3+C4+E4 ....... F3+A3+C4+E4 .. F3+A3+C4+E4 .. | .. F3+A3+C4+E4 .... F3+A3+C4+E4 .. F3+A3+C4+E4 ..... | .. D3+F3+A3+C4 ....... D3+F3+A3+C4 .. D3+F3+A3+C4 .. |
+echo1 | D3+F3+A3+C4 .... F3+A3+C4+E4 .... F3+A3+C4+E4 .. F3+A3+C4+E4 .. | ..... F3+A3+C4+E4 ....... F3+A3+C4+E4 .. | F3+A3+C4+E4 .... F3+A3+C4+E4 .... F3+A3+C4+E4 .. F3+A3+C4+E4 .. | ..... D3+F3+A3+C4 ....... D3+F3+A3+C4 .. |
+echo2 | D3+F3+A3+C4 .. D3+F3+A3+C4 .... F3+A3+C4+E4 .... F3+A3+C4+E4 .. | F3+A3+C4+E4 ....... F3+A3+C4+E4 ....... | F3+A3+C4+E4 .. F3+A3+C4+E4 .... F3+A3+C4+E4 .... F3+A3+C4+E4 .. | F3+A3+C4+E4 ....... D3+F3+A3+C4 ....... |
+bass  | D2----- .. D2--- . C2-- | D2----- .. D2--- . F2-- | D2----- .. D2--- . C2-- | Bb1----- .. Bb1--- . C2-- |
+kick  | X... x... x... x... | % | % | % |
+hat   | ..x. ..x. ..x. ..x. | % | % | % |
+rim   | .... .... ..o. .... | .... ...o .... ..x. | .... .... ..o. .... | .... ...o .... ..x. |
+
+# The shaker comes in and the Rhodes calls once.
+pattern A2 from A
+shake | .ooo .oox .ooo .oox | % | % | % |
+keys  | .... .. A4- C5- D5----- | .. E5- D5- C5----- .... | _ | _ |
+
+# Gm9, Gm9, Bbmaj9, C6/9: Gm9 F3+A3+Bb3+D4, C6/9 E3+G3+A3+D4.
+pattern B from A2
+stab  | .. F3+A3+Bb3+D4 .... F3+A3+Bb3+D4 .. F3+A3+Bb3+D4 ..... | .. F3+A3+Bb3+D4 ....... F3+A3+Bb3+D4 .. F3+A3+Bb3+D4 .. | .. D3+F3+A3+C4 .... D3+F3+A3+C4 .. D3+F3+A3+C4 ..... | .. E3+G3+A3+D4 ....... E3+G3+A3+D4 .. E3+G3+A3+D4 .. |
+echo1 | D3+F3+A3+C4 .... F3+A3+Bb3+D4 .... F3+A3+Bb3+D4 .. F3+A3+Bb3+D4 .. | ..... F3+A3+Bb3+D4 ....... F3+A3+Bb3+D4 .. | F3+A3+Bb3+D4 .... D3+F3+A3+C4 .... D3+F3+A3+C4 .. D3+F3+A3+C4 .. | ..... E3+G3+A3+D4 ....... E3+G3+A3+D4 .. |
+echo2 | D3+F3+A3+C4 .. D3+F3+A3+C4 .... F3+A3+Bb3+D4 .... F3+A3+Bb3+D4 .. | F3+A3+Bb3+D4 ....... F3+A3+Bb3+D4 ....... | F3+A3+Bb3+D4 .. F3+A3+Bb3+D4 .... D3+F3+A3+C4 .... D3+F3+A3+C4 .. | D3+F3+A3+C4 ....... E3+G3+A3+D4 ....... |
+bass  | G1----- .. G1--- . A1-- | G1----- .. G1--- . D2-- | Bb1----- .. Bb1--- . C2-- | C2----- .. C2--- . A1-- |
+keys  | .... .. A4- Bb4- D5----- | .. F5- D5- C5----- .... | .... .. A4- C5- F5--- .. | E5- D5- E5--------- .. |
+ohat  | .... .... .... ..x. | % | % | .... ..x. .... ..x. |
+
+# Back on Dm9 with the whole tune; the echoes still carry the C6/9 in.
+pattern C from A2
+echo1@1 | E3+G3+A3+D4 .... F3+A3+C4+E4 .... F3+A3+C4+E4 .. F3+A3+C4+E4 .. |
+echo2@1 | E3+G3+A3+D4 .. E3+G3+A3+D4 .... F3+A3+C4+E4 .... F3+A3+C4+E4 .. |
+keys  | .... .. A4- C5- D5----- | .. E5- D5- C5----- .... | .... .. A4- C5- F5--- .. | E5- D5- A4--------- .. |
+ohat  | .... .... .... ..x. | % | % | .... ..x. .... ..x. |
+bass@4 | Bb1----- .. Bb1- C2- ~D2-- . |
+
+# The kit and the bass go, the street comes up; the bass is back for bar 3, the hat for bar 4.
+pattern drop from A
+mute kick rim
+hat   | _ | _ | _ | ..x. ..x. ..x. ..xx |
+hiss  | x... .... .... .... | _ | _ | _ |
+bass@1 | _ | _ |
+keys  | _ | .. E5- D5- C5----- .... | _ | E5- D5- A4--------- .. |
+
+# Gm section with the Rhodes out and the open hat in its place.
+pattern B2 from B
+mute keys
+ohat  | ..x. ..x. ..x. ..x. | % | % | % |
+
+# Only the stab, its echo and the street.
+pattern intro from A
+mute kick hat rim bass
+hiss  | X... .... .... .... | _ | _ | _ |
+
+pattern intro2 from A
+mute kick rim
+
+play intro intro2
+loop A A2 B C drop A2 B2 C A B
