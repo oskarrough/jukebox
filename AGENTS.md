@@ -16,5 +16,5 @@ See README.md for what the jukebox is and where the code lives.
 1. `git fetch && git rebase origin/main`.
 2. `bun test` and `bun run check` pass; `bun run format` fixes formatting.
 3. `git push origin HEAD:main`. No PR unless asked.
-4. Deploys are manual: run `bun run deploy` after pushing to main.
+4. Deploys are manual: run `bun run build` then `bun run deploy` after pushing to main (`deploy` alone fails in a fresh worktree: no `dist/client` yet).
 5. Stop any dev server you started.
