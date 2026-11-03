@@ -47,6 +47,11 @@ function store(key, value) {
 	} catch {}
 }
 
+// The score's editor when it isn't the textarea (?editor=cm): { value(),
+// replace(from, to, insert) as one edit ⌘Z undoes, focus(atEnd) }.
+let editor = null
+export const useEditor = (e) => (editor = e)
+
 export const jb = createRoot(() => {
 	// What's in music/, as last saved; the page's edits are drafts on top.
 	const [files, setFiles] = createSignal({ ...SONGS })
@@ -384,19 +389,24 @@ export const jb = createRoot(() => {
 	}
 
 	// The score as it stands in the editor, a keystroke ahead of `text`.
-	const score = () => document.getElementById('score')?.value ?? text()
+	const score = () => editor?.value() ?? document.getElementById('score')?.value ?? text()
 	// Writes `next` over the score the way typing would, as one edit, so ⌘Z
 	// undoes it.
 	function rewrite(next) {
 		const area = document.getElementById('score')
 		const t = score()
 		if (next === t) return
-		if (area) {
+		if (editor || area) {
 			let a = 0
 			while (a < t.length && t[a] === next[a]) a++
 			let z = 0
 			while (z < t.length - a && z < next.length - a && t[t.length - 1 - z] === next[next.length - 1 - z]) z++
 			const mid = next.slice(a, next.length - z)
+			if (editor) {
+				editor.replace(a, t.length - z, mid)
+				setText(next)
+				return
+			}
 			area.focus({ preventScroll: true })
 			area.setSelectionRange(a, t.length - z)
 			if (mid) document.execCommand('insertText', false, mid)
@@ -533,7 +543,8 @@ export const jb = createRoot(() => {
 	const [piano, setPiano] = createSignal(false)
 	function togglePiano() {
 		setPiano((on) => !on)
-		document.getElementById('score')?.focus()
+		if (editor) editor.focus()
+		else document.getElementById('score')?.focus()
 	}
 
 	// Looping one pattern starts it from the top; back to the song, playing
@@ -569,6 +580,7 @@ export const jb = createRoot(() => {
 		setBricksOpen(true)
 		pick(n)
 		requestAnimationFrame(() => {
+			if (editor) return editor.focus(true)
 			const score = document.getElementById('score')
 			score?.focus()
 			score?.setSelectionRange(score.value.length, score.value.length)

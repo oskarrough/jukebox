@@ -25,10 +25,24 @@ import { moment, record, sizeOf, stepNote } from './record.js'
 import { mark, paint } from './paint.js'
 import { ruler } from './ruler.js'
 import { compile, parse } from '../score.js'
+import { Score } from './cm/Score.jsx'
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 
+// ?editor=cm puts the score in CodeMirror instead, to try it side by side,
+// and it stays so until ?editor=text.
+const CM = (() => {
+	if (typeof location === 'undefined') return false
+	const asked = new URLSearchParams(location.search).get('editor')
+	if (asked) localStorage.setItem('jukebox-editor', asked)
+	return localStorage.getItem('jukebox-editor') === 'cm'
+})()
+
 export function Editor() {
+	return CM ? <Score /> : <Textarea />
+}
+
+function Textarea() {
 	let area
 	let sheet
 	let list

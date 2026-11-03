@@ -1,0 +1,173 @@
+/* the score in CodeMirror (?editor=cm): App.css paints the pieces, under .line */
+.code.cm {
+	display: flex;
+}
+.cm .cm-editor {
+	flex: 1;
+	min-width: 0;
+	height: 100%;
+	outline: none;
+}
+.cm .cm-scroller {
+	font: 14px/1.6 var(--score);
+	tab-size: 4;
+}
+.cm .cm-content {
+	padding: 0.7rem 0;
+	caret-color: var(--ink);
+}
+.cm.piano .cm-content {
+	caret-color: var(--orange);
+}
+.cm .cm-cursor {
+	border-left-color: var(--ink);
+}
+.cm.piano .cm-cursor {
+	border-left-color: var(--orange);
+}
+.cm .cm-selectionBackground,
+.cm .cm-focused .cm-selectionBackground {
+	background: #2d6cdf33;
+}
+.cm .cm-gutters {
+	width: var(--gut);
+	background: transparent;
+	border: 0;
+	color: #b7b3aa;
+}
+.cm .cm-lineNumbers {
+	flex: 1;
+}
+.cm .cm-lineNumbers .cm-gutterElement {
+	padding: 0 0.6rem 0 0;
+}
+.cm .cm-line.line {
+	padding: 0 0.7rem;
+}
+
+/* a mistake's note at the end of its line */
+.cm .note-end {
+	margin-left: 3ch;
+	color: var(--red);
+	font: 0.72rem var(--sans);
+	white-space: nowrap;
+}
+.cm .note-end ins {
+	margin-left: 0.4rem;
+	padding: 0 0.3rem;
+	border-radius: 3px;
+	text-decoration: none;
+	color: #fff;
+	background: var(--red);
+	font: 11.5px var(--mono);
+	cursor: pointer;
+}
+.cm .note-end ins:hover {
+	background: var(--ink);
+}
+.cm .cm-lintRange-error {
+	background: none;
+	text-decoration: underline wavy var(--red);
+	text-decoration-skip-ink: none;
+	text-underline-offset: 3px;
+}
+
+/* live controls: numbers to drag, instruments and chords to click, drum steps as pads */
+.cm .num {
+	cursor: ew-resize;
+	border-bottom: 1px dotted var(--dim);
+}
+.scrubbing,
+.scrubbing * {
+	cursor: ew-resize !important;
+	user-select: none;
+}
+.cm .inst {
+	cursor: pointer;
+}
+.cm .chord {
+	cursor: pointer;
+}
+.cm .line .pad {
+	margin: 0 1px;
+	padding: 0.15em 2px;
+	border-radius: 3px;
+	background: var(--panel);
+	color: transparent;
+	cursor: pointer;
+}
+.cm .line .pad[data-hit='o'] {
+	background: color-mix(in srgb, var(--c) 45%, var(--panel));
+}
+.cm .line .pad[data-hit='x'] {
+	background: var(--c);
+}
+.cm .line .pad[data-hit='X'] {
+	background: var(--c);
+	box-shadow: inset 0 0 0 2px #0006;
+}
+.cm .line.here .pad {
+	color: var(--ink);
+}
+.cm .line .pad:hover {
+	filter: brightness(0.92);
+}
+
+/* suggestions and tips, as the textarea's */
+.cm-tooltip.cm-tooltip-autocomplete {
+	padding: 3px;
+	border: 0;
+	background: var(--key);
+	border-radius: 8px;
+	box-shadow:
+		0 4px 14px #0002,
+		0 0 0 1px var(--line);
+}
+.cm-tooltip.cm-tooltip-autocomplete > ul {
+	max-height: calc(8 * 1.6em + 6px);
+	font: 14px/1.6 var(--score);
+	color: var(--ink);
+}
+.cm-tooltip.cm-tooltip-autocomplete > ul > li {
+	padding: 1px 0.5rem;
+	border-radius: 5px;
+}
+.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected],
+.cm-tooltip.cm-tooltip-autocomplete > ul > li:hover {
+	background: var(--panel);
+	color: var(--ink);
+}
+.cm-tooltip-autocomplete .cm-completionDetail {
+	margin-left: 0.8rem;
+	font: 0.72rem var(--sans);
+	font-style: normal;
+	color: var(--dim);
+}
+.cm-tooltip-autocomplete completion-section {
+	padding: 0.35rem 0.5rem 0;
+	border: 0;
+	font: 650 0.68rem/1.6 var(--sans);
+	color: var(--dim);
+	opacity: 1;
+}
+.cm-tooltip.cm-tooltip-hover,
+.cm-tooltip.cm-tooltip-lint {
+	border: 0;
+	background: none;
+}
+.cm-tip,
+.cm-tooltip-lint .cm-diagnostic {
+	max-width: 22rem;
+	padding: 2px 0.45rem;
+	border-radius: 5px;
+	color: var(--key);
+	background: var(--ink);
+	font: 0.72rem/1.4 var(--sans);
+}
+.cm-tooltip-lint .cm-diagnostic-error {
+	border-left: 3px solid var(--red);
+}
+.cm-diagnosticAction {
+	background: var(--red);
+	font: 11.5px var(--mono);
+}
