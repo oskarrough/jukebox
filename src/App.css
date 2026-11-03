@@ -730,6 +730,18 @@ input[type='range']::-moz-range-thumb {
 .line .chord {
 	font-weight: 700;
 }
+/* the beat ruler in the bar being written */
+.line .tick {
+	box-shadow: inset 2px 0 0 #bdb8ac;
+}
+.line .long {
+	background: #ff5a1f22;
+}
+.line .bar.long,
+.line .bar.short {
+	color: var(--orange);
+	font-weight: 700;
+}
 .line .comment {
 	color: #9c988f;
 	font-style: italic;

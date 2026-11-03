@@ -8,7 +8,8 @@
 // or drum step there; on a drum line, pads under the score switch its steps
 // on and off. While you type, what could come next is suggested, the likeliest
 // faint after the caret; pointing at an instrument plays it, at an option says
-// what it does. With the piano on, the keyboard plays notes and writes them in.
+// what it does. In a bar, a tick shows where each beat starts and the bar's
+// closing | turns warm when it holds too few or too many steps. With the piano on, the keyboard plays notes and writes them in.
 import { For, createEffect, createMemo, createSignal, onSettled } from 'solid-js'
 import { jb } from './state.js'
 import { barAt, caretAt } from './link.js'
@@ -18,6 +19,7 @@ import { mistakes } from './lint.js'
 import { DRUM_STEPS, HINTS } from './hints.js'
 import { OCTAVE_KEYS, noteOf, octaveAt } from './keyboard.js'
 import { mark, paint } from './paint.js'
+import { ruler } from './ruler.js'
 import { parse } from '../score.js'
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
@@ -37,6 +39,9 @@ export function Editor() {
 	// there waits until you leave it or stop for a while.
 	const [caretLn, setCaretLn] = createSignal(0)
 	const [typingLn, setTypingLn] = createSignal(0)
+	// Where the caret is in the box, for the beat ruler.
+	const [caretPos, setCaretPos] = createSignal(-1)
+	const ruled = createMemo(() => (caretPos() < 0 ? null : ruler(draft(), caretPos())))
 	let typingAt = 0
 	let idle = 0
 	const typed = (ln) => {
@@ -74,6 +79,7 @@ export function Editor() {
 	const moved = () => {
 		const at = caretAt(area.value, area.selectionStart)
 		setCaretLn(at.ln)
+		setCaretPos(area.selectionStart)
 		if (at.ln !== typingAt) typed(0)
 		jb.follow(at, true)
 		if (!open()) offer(false)
@@ -380,6 +386,7 @@ export function Editor() {
 									const out = (errs() ?? []).map((m) => ({ start: m.start, end: m.end, cls: 'bad' }))
 									if (open() && hint().ln === ln) out.push({ start: hint().col, cls: 'at', text: '' })
 									if (ghost()?.ln === ln) out.push({ start: ghost().col, cls: 'ghost', text: ghost().text })
+									if (ruled()?.ln === ln) out.push(...ruled().marks)
 									if (hover()?.ln === ln && !hover().note) out.push({ start: hover().start, cls: 'hot', text: '' })
 									return out
 								},
@@ -458,6 +465,7 @@ export function Editor() {
 					onBlur={() => {
 						setHint(null)
 						setCaretLn(0)
+						setCaretPos(-1)
 						typed(0)
 					}}
 					onPointerUp={moved}
