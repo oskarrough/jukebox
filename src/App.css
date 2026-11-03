@@ -41,6 +41,7 @@ select {
 	font: inherit;
 	color: inherit;
 	cursor: pointer;
+	touch-action: manipulation;
 }
 svg {
 	width: 1.15rem;
@@ -55,6 +56,7 @@ svg {
 /* the machine */
 .app {
 	height: 100vh;
+	height: 100dvh;
 	display: grid;
 	grid-template-columns: var(--side) var(--side) minmax(0, 1fr);
 	grid-template-rows: auto auto minmax(0, 1fr);
@@ -222,6 +224,7 @@ svg {
 }
 #time {
 	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
 }
 /* the sections, each as long as it plays, where the position bar was */
 .sections {
@@ -340,6 +343,26 @@ svg {
 	background: var(--orange);
 	color: #fff;
 	box-shadow: 0 2px 0 #b33a0e;
+}
+
+/* the key, download, guide and feedback: behind ⋯ on a phone, in the bar otherwise,
+   with the game's sound in between */
+.more {
+	display: contents;
+}
+.more-toggle {
+	display: none;
+}
+.top > .game-toggle {
+	order: 1;
+}
+.more .guide-toggle,
+.more .feedback-toggle {
+	order: 2;
+}
+/* voices and score take turns on a phone */
+.views {
+	display: none;
 }
 
 /* sliders */
@@ -1139,15 +1162,245 @@ kbd {
 	border-radius: 3px;
 }
 
-/* phones: one column, the songs over everything when open */
-@media (max-width: 720px) {
+/* touch: room for a finger, inputs at 16px so the page doesn't zoom in on them */
+@media (pointer: coarse), (max-width: 720px) {
+	.icon {
+		width: 2.75rem;
+		height: 2.75rem;
+	}
+	.key-picker select {
+		height: 2.75rem;
+		font-size: 1rem;
+	}
+	.lcd {
+		height: 3.2rem;
+	}
+	.lcd .title {
+		height: 2.4rem;
+		font-size: 1rem;
+	}
+	.sections {
+		height: 2.4rem;
+	}
+	.section span {
+		line-height: 2.4rem;
+	}
+	.section .edge {
+		width: min(1.1rem, 35%);
+		box-shadow: inset -2px 0 #ffffff30;
+	}
+	.icon.add-section {
+		width: 2.4rem;
+		height: 2.4rem;
+	}
+	.tags button {
+		min-height: 2.5rem;
+		padding: 0 0.9rem;
+	}
+	.list button {
+		min-height: 2.75rem;
+		font-size: 0.9rem;
+	}
+	#voices button,
+	#instruments button {
+		min-height: 2.5rem;
+	}
+	#voices button {
+		-webkit-touch-callout: none;
+		user-select: none;
+	}
+	.brick,
+	.pad {
+		min-height: 2.75rem;
+	}
+	.sheet,
+	#score {
+		font-size: 16px;
+	}
+	.post textarea {
+		font-size: 1rem;
+	}
+}
+
+/* a short window, such as a phone on its side: the page scrolls rather than squash the score */
+@media (max-height: 560px) {
 	.app,
 	.app:not(.songs-open) {
 		height: auto;
-		min-height: 100vh;
+		min-height: 100dvh;
+	}
+	.voices,
+	.editor {
+		min-height: 16rem;
+	}
+}
+
+/* tablets and narrow windows: the display gets a row of its own, so the sections keep
+   their width, and the voices lie above the score instead of beside it */
+@media (max-width: 940px) {
+	#voices {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+	}
+}
+@media (min-width: 941px) and (max-width: 1100px) {
+	.brand {
+		display: none;
+	}
+	.lcd {
+		grid-template-columns: minmax(5rem, 9rem) minmax(8rem, 1fr) auto auto;
+	}
+}
+@media (min-width: 721px) and (max-width: 940px) {
+	.app {
+		--side: 12rem;
+		grid-template-columns: var(--side) minmax(0, 1fr);
+		grid-template-rows: auto auto auto minmax(0, 1fr);
+		grid-template-areas:
+			'top top'
+			'songs screen'
+			'songs voices'
+			'songs editor';
+	}
+	.app:not(.songs-open) {
 		grid-template-columns: minmax(0, 1fr);
-		grid-template-rows: auto auto auto minmax(24rem, 1fr);
 		grid-template-areas: 'top' 'screen' 'voices' 'editor';
+	}
+	.top {
+		flex-wrap: wrap;
+	}
+	.top .lcd {
+		order: 9;
+		flex: 1 1 100%;
+	}
+	.key-picker {
+		margin-left: auto;
+	}
+	.voices {
+		max-height: 28vh;
+	}
+}
+
+/* phones: a player. The display on top, the roll, the voices or the score, and a
+   row of controls under the thumb. The songs open over all of it but that row. */
+@media (max-width: 720px) {
+	:root {
+		--dock: 4.5rem;
+	}
+	.app,
+	.app:not(.songs-open) {
+		padding: 0.5rem 0.75rem;
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+		grid-template-rows: auto auto auto minmax(0, 1fr) var(--dock);
+		grid-template-areas:
+			'lcd lcd lcd lcd lcd'
+			'screen screen screen screen screen'
+			'views views views views views'
+			'main main main main main'
+			'toggle loop play game more';
+	}
+	.top {
+		display: contents;
+	}
+	.brand,
+	.piano-toggle {
+		display: none;
+	}
+	.songs-toggle,
+	.loop-toggle,
+	#play,
+	.game-toggle,
+	.more-toggle {
+		justify-self: center;
+	}
+	.songs-toggle {
+		grid-area: toggle;
+	}
+	.loop-toggle {
+		grid-area: loop;
+	}
+	#play {
+		grid-area: play;
+		width: 3.8rem;
+		height: 3.8rem;
+	}
+	#play::before {
+		border-left-width: 1.05rem;
+		border-top-width: 0.65rem;
+		border-bottom-width: 0.65rem;
+	}
+	.live #play::before {
+		width: 0.95rem;
+		height: 0.95rem;
+	}
+	.game-toggle {
+		grid-area: game;
+	}
+	.more-toggle {
+		grid-area: more;
+		display: grid;
+	}
+	.lcd {
+		grid-area: lcd;
+		height: auto;
+		padding: 0.4rem 0.75rem 0.7rem;
+		gap: 0.2rem 0.6rem;
+		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-areas:
+			'title time'
+			'strip add';
+	}
+	.lcd .title {
+		grid-area: title;
+		font-size: 1.1rem;
+	}
+	#time {
+		grid-area: time;
+	}
+	.sections {
+		grid-area: strip;
+		height: 2.75rem;
+	}
+	.section span {
+		line-height: 2.75rem;
+	}
+	.icon.add-section {
+		grid-area: add;
+		width: 2.75rem;
+		height: 2.75rem;
+	}
+	.views {
+		grid-area: views;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 2px;
+		padding: 2px;
+		border-radius: 10px;
+		background: var(--panel);
+	}
+	.views button {
+		min-height: 2.5rem;
+		border: 0;
+		border-radius: 8px;
+		background: transparent;
+		color: var(--dim);
+		font: 650 0.85rem var(--sans);
+	}
+	.views button[aria-pressed='true'] {
+		background: var(--key);
+		color: var(--ink);
+		box-shadow: 0 1px 0 #c4c0b7;
+	}
+	.voices,
+	.editor {
+		grid-area: main;
+	}
+	.editor,
+	.app.view-score .voices {
+		display: none;
+	}
+	.app.view-score .editor {
+		display: flex;
 	}
 	.app:not(.songs-open) .songs {
 		display: none;
@@ -1155,48 +1408,45 @@ kbd {
 	.app.songs-open .songs {
 		display: flex;
 	}
-	.top {
-		flex-wrap: wrap;
-	}
-	.brand {
-		margin-right: auto;
-	}
-	#play {
-		order: 8;
-	}
-	.lcd {
-		order: 9;
-		flex: 1 1 calc(100% - 3.1rem);
-		grid-template-columns: minmax(0, 1fr) auto auto;
-	}
-	.lcd .title {
-		display: none;
-	}
 	.songs {
 		position: fixed;
 		z-index: 5;
-		top: 3.3rem;
-		left: 0.5rem;
-		right: 0.5rem;
-		max-height: 70vh;
+		inset: 0.5rem 0.75rem calc(var(--dock) + 1rem);
 		background: var(--body);
 		border-radius: var(--r);
-		padding: 0.6rem;
-		box-shadow: 0 20px 50px #0006;
+		padding: 0.75rem;
+		box-shadow: 0 10px 40px #0006;
+		overscroll-behavior: contain;
 	}
-	#voices {
-		flex-direction: row;
-		flex-wrap: wrap;
+	.pop {
+		inset: 0.5rem 0.75rem auto;
 	}
-	.voices {
-		overflow: visible;
+	.more,
+	#game,
+	#instruments {
+		inset: auto 0.75rem calc(var(--dock) + 1rem);
+		width: auto;
+		margin: 0;
+	}
+	.more:not(:popover-open) {
+		display: none;
+	}
+	.more:popover-open {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+	#instruments {
+		position-area: none;
+		position-try-fallbacks: none;
+		max-height: 60dvh;
+	}
+	.guide {
+		width: auto;
+		max-height: calc(100dvh - 1rem);
 	}
 	.post {
-		inset: 3.3rem 0.5rem auto 0.5rem;
 		width: auto;
-	}
-	.post textarea {
-		min-height: 8.5rem;
-		font-size: 1rem;
 	}
 }

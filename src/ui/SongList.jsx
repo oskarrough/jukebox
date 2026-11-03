@@ -1,9 +1,21 @@
 // The songs: tag chips to narrow the list, a line per song, and a blank one.
-import { For } from 'solid-js'
+import { createEffect, For } from 'solid-js'
 import { jb } from './state.js'
 import { PlusIcon } from './Icons.jsx'
 
+// On a phone the list covers the page: choosing a song leaves it.
+const leave = () => {
+	if (matchMedia('(max-width: 720px)').matches) jb.setSongsOpen(false)
+}
+
 export function SongList() {
+	// Opened, the list shows the song that plays.
+	createEffect(
+		() => jb.songsOpen(),
+		(open) => {
+			if (open) requestAnimationFrame(() => document.querySelector('#songs .on')?.scrollIntoView({ block: 'center' }))
+		},
+	)
 	return (
 		<nav id="songs" class="songs">
 			<div class="tags">
@@ -30,6 +42,7 @@ export function SongList() {
 							onClick={() => {
 								jb.pick(s().name)
 								if (!jb.live()) jb.play()
+								leave()
 							}}
 						>
 							<i />
@@ -38,7 +51,15 @@ export function SongList() {
 					)}
 				</For>
 			</div>
-			<button class="icon add" type="button" title="Start a blank song" onClick={jb.create}>
+			<button
+				class="icon add"
+				type="button"
+				title="Start a blank song"
+				onClick={() => {
+					jb.create()
+					leave()
+				}}
+			>
 				<PlusIcon />
 			</button>
 		</nav>

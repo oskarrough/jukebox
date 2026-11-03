@@ -1,10 +1,17 @@
 // The top bar: songs toggle, play, loop one pattern, the display with title, sections and time,
-// the key, download, the game's sound and the guide.
+// the key, download, the game's sound and the guide. On a phone the display is on top and the
+// controls in a row at the bottom, the key, download, guide and feedback behind ⋯.
 import { For, flush } from 'solid-js'
 import { KEY_ROOTS } from '../key.js'
 import { jb } from './state.js'
 import { Sections } from './Sections.jsx'
 import { DownloadIcon, FeedbackIcon, GuideIcon, LoopIcon, PianoIcon, SidebarIcon, SpeakerIcon } from './Icons.jsx'
+
+const MoreIcon = () => (
+	<svg viewBox="0 0 20 20">
+		<path d="M4.5 10h.01M10 10h.01M15.5 10h.01" />
+	</svg>
+)
 
 const clock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
@@ -12,7 +19,7 @@ export function TopBar() {
 	return (
 		<header class="top">
 			<button
-				class="icon"
+				class="icon songs-toggle"
 				type="button"
 				aria-controls="songs"
 				aria-pressed={String(jb.songsOpen())}
@@ -24,7 +31,7 @@ export function TopBar() {
 			<b class="brand">jukebox</b>
 			<button id="play" type="button" title={jb.live() ? 'Stop (Space, ⌘↩)' : 'Play (Space, ⌘↩)'} onClick={jb.toggle} />
 			<button
-				class="icon"
+				class="icon loop-toggle"
 				type="button"
 				aria-pressed={String(jb.looping())}
 				title={jb.looping() ? 'Play the whole song again (⌘L)' : 'Loop the pattern you’re writing (⌘L)'}
@@ -33,7 +40,7 @@ export function TopBar() {
 				<LoopIcon />
 			</button>
 			<button
-				class="icon"
+				class="icon piano-toggle"
 				type="button"
 				aria-pressed={String(jb.piano())}
 				title={jb.piano() ? 'Type text again (⌘K)' : 'Play and write notes from the keyboard, Z X for octaves (⌘K)'}
@@ -42,23 +49,33 @@ export function TopBar() {
 				<PianoIcon />
 			</button>
 			<Display />
-			<KeyPicker />
+			<button class="icon more-toggle" type="button" popovertarget="more" title="Open key, download, guide and feedback">
+				<MoreIcon />
+			</button>
+			<div id="more" class="more pop" popover>
+				<KeyPicker />
+				<button
+					class={{ icon: true, unsaved: jb.unsaved(jb.name()) }}
+					type="button"
+					title={jb.canSave ? 'Save to music/ (⌘S)' : 'Download as a .song file (⌘S)'}
+					onClick={jb.save}
+				>
+					<DownloadIcon />
+				</button>
+				<button class="icon guide-toggle" type="button" popovertarget="guide" title="Open the song format guide">
+					<GuideIcon />
+				</button>
+				<button class="icon feedback-toggle" type="button" popovertarget="feedback" title="Send feedback">
+					<FeedbackIcon />
+				</button>
+			</div>
 			<button
-				class={{ icon: true, unsaved: jb.unsaved(jb.name()) }}
+				class={{ icon: true, 'game-toggle': true, on: jb.inGame() }}
 				type="button"
-				title={jb.canSave ? 'Save to music/ (⌘S)' : 'Download as a .song file (⌘S)'}
-				onClick={jb.save}
+				popovertarget="game"
+				title="Hear it the way the game places it"
 			>
-				<DownloadIcon />
-			</button>
-			<button class={{ icon: true, on: jb.inGame() }} type="button" popovertarget="game" title="Hear it the way the game places it">
 				<SpeakerIcon />
-			</button>
-			<button class="icon" type="button" popovertarget="guide" title="Open the song format guide">
-				<GuideIcon />
-			</button>
-			<button class="icon" type="button" popovertarget="feedback" title="Send feedback">
-				<FeedbackIcon />
 			</button>
 		</header>
 	)

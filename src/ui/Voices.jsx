@@ -1,5 +1,5 @@
 // The voices beside the score, each in its roll colour: click to mute, ⌥-click
-// to solo. The square lights while the voice plays a note. Click the
+// or a long press to solo. The square lights while the voice plays a note. Click the
 // instrument's name to hear others and switch to one. Below them, the loop
 // bricks.
 import { createSignal, For, Show } from 'solid-js'
@@ -11,6 +11,19 @@ import { Instruments } from './Instruments.jsx'
 export function Voices() {
 	// The voice whose instruments are open, if any.
 	const [swapping, setSwapping] = createSignal(null)
+	// A finger has no ⌥: holding a voice solos it, and the lift that follows isn't a tap.
+	let timer = 0
+	let soloed = false
+	const hold = (e, name) => {
+		soloed = false
+		if (e.pointerType !== 'touch') return
+		timer = setTimeout(() => {
+			soloed = true
+			navigator.vibrate?.(10)
+			jb.toggleVoice(name, true)
+		}, 450)
+	}
+	const release = () => clearTimeout(timer)
 	return (
 		<section class="voices">
 			<div id="voices">
@@ -24,8 +37,16 @@ export function Voices() {
 							<button
 								type="button"
 								aria-pressed={String(!jb.isMuted(voice().name))}
-								title={`${jb.isMuted(voice().name) ? 'Unmute' : 'Mute'} ${voice().name} (⌥-click to solo)`}
-								onClick={(e) => jb.toggleVoice(voice().name, e.altKey)}
+								title={`${jb.isMuted(voice().name) ? 'Unmute' : 'Mute'} ${voice().name} (⌥-click or hold to solo)`}
+								onPointerDown={(e) => hold(e, voice().name)}
+								onPointerUp={release}
+								onPointerCancel={release}
+								onPointerLeave={release}
+								onContextMenu={(e) => e.pointerType === 'touch' && e.preventDefault()}
+								onClick={(e) => {
+									if (soloed) soloed = false
+									else jb.toggleVoice(voice().name, e.altKey)
+								}}
 							>
 								<i />
 								<span>{voice().name}</span>
@@ -65,8 +86,9 @@ export function Voices() {
 	)
 }
 
-// A loop brick: hover to hear it, tap to add it to every pattern, or drag it
-// onto the song, or onto one pattern up in the display.
+// A loop brick: hover to hear it, click or tap to add it to every pattern, or
+// drag it onto the song, or onto one pattern up in the display. A tap adds it
+// and the song plays it, so it isn't heard twice.
 function Bricks() {
 	return (
 		<div id="bricks">

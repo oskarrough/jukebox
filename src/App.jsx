@@ -1,8 +1,9 @@
 // The jukebox page: every song in music/, to write, edit and replay, and to
 // hear the way the game places it. The address bar always links to what's
 // playing: ?song=sonnenallee&kind=bar&d=6. State and actions live in
-// ui/state.js; each part of the page is a component in ui/.
-import { onSettled } from 'solid-js'
+// ui/state.js; each part of the page is a component in ui/. On a phone the
+// voices and the score take turns below the roll.
+import { createSignal, onSettled } from 'solid-js'
 import { jb } from './ui/state.js'
 import { TopBar } from './ui/TopBar.jsx'
 import { SongList } from './ui/SongList.jsx'
@@ -19,6 +20,7 @@ import '@fontsource/ia-writer-mono/700.css'
 import './App.css'
 
 export default function App() {
+	const [view, setView] = createSignal('voices')
 	onSettled(() => {
 		const stopBoot = jb.boot()
 		// Space plays and stops, unless you're typing; ⌘↩ plays and stops
@@ -61,10 +63,26 @@ export default function App() {
 	})
 
 	return (
-		<main class={{ app: true, 'songs-open': jb.songsOpen(), live: jb.live(), dragging: jb.dragging() }}>
+		<main
+			class={{
+				app: true,
+				'songs-open': jb.songsOpen(),
+				'view-score': view() === 'score',
+				live: jb.live(),
+				dragging: jb.dragging(),
+			}}
+		>
 			<TopBar />
 			<SongList />
 			<Roll />
+			<nav class="views">
+				<button type="button" aria-pressed={String(view() === 'voices')} title="Show the voices" onClick={() => setView('voices')}>
+					Voices
+				</button>
+				<button type="button" aria-pressed={String(view() === 'score')} title="Show the score" onClick={() => setView('score')}>
+					Score
+				</button>
+			</nav>
 			<Voices />
 			<Editor />
 			<GamePanel />
