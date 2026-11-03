@@ -1,6 +1,7 @@
 /* the score in CodeMirror (?editor=cm): App.css paints the pieces, under .line */
 .code.cm {
 	display: flex;
+	background: var(--key);
 }
 .cm .cm-editor {
 	flex: 1;
@@ -28,18 +29,6 @@
 .cm .cm-selectionBackground,
 .cm .cm-focused .cm-selectionBackground {
 	background: #2d6cdf33;
-}
-.cm .cm-gutters {
-	width: var(--gut);
-	background: transparent;
-	border: 0;
-	color: #b7b3aa;
-}
-.cm .cm-lineNumbers {
-	flex: 1;
-}
-.cm .cm-lineNumbers .cm-gutterElement {
-	padding: 0 0.6rem 0 0;
 }
 .cm .cm-line.line {
 	padding: 0 0.7rem;

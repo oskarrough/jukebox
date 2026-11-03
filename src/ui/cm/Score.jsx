@@ -4,7 +4,7 @@
 // chord pad on its bar. Each writes text, so ⌘Z, saving and agents still work.
 import { createEffect, createMemo, onSettled, untrack } from 'solid-js'
 import { Annotation, EditorState, Transaction } from '@codemirror/state'
-import { EditorView, hoverTooltip, keymap, lineNumbers, drawSelection } from '@codemirror/view'
+import { EditorView, hoverTooltip, keymap, drawSelection } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap, isolateHistory } from '@codemirror/commands'
 import {
 	acceptCompletion,
@@ -315,7 +315,6 @@ export function Score() {
 			doc,
 			extensions: [
 				info.init(() => untrack(song)),
-				lineNumbers(),
 				drawSelection(),
 				history(),
 				EditorView.lineWrapping,
