@@ -27,8 +27,4 @@ and `width`/`height` or `size_px` (width, with height set by the ratio).
 `motion: { on: true, amount: 1, frames: 48 }` plus `frame` selects a drifting still.
 The CLI uses the same dial names; `--size` sets `size_px`.
 
-## Provenance
-
-Vendored with the original author's permission from [Vein](https://www.playgrnd.tools/vein).
-This is a standalone adaptation of its served bundle, decompiled into readable source;
-it is not the upstream source and does not track upstream updates.
+Source: [Vein](https://www.playgrnd.tools/vein).

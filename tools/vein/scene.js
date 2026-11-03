@@ -1,6 +1,6 @@
 /**
  * Vein — cut-paper marbling, vendored with the author's permission.
- * From https://www.playgrnd.tools/vein; see README.md for provenance.
+ * From https://www.playgrnd.tools/vein.
  * A warped noise field, sliced into filled contour paths.
  */
 import { PALETTES, hexToRgb } from './palettes.js'
