@@ -5,9 +5,30 @@
 // screen when there's no melody); muted voices fade out. A song with a chord
 // row has its chords along the top, under the pattern names.
 
-const COLORS = ['#ffd96b', '#5fd1a6', '#ff8a70', '#8fc8ff', '#c9a2ff', '#f2c48d', '#b4e67a', '#ff9fcf', '#7fe0e0', '#e6e08a']
+// Caran d'Ache pigments (see --c-* in App.css), spelled out because roll.js has no CSS.
+const COLORS = [
+	'lab(78.1128 32.6792 82.6376)',
+	'lab(59.2648 -49.2568 3.41769)',
+	'lab(63.0034 54.6564 26.0879)',
+	'lab(58.0569 -10.4415 -45.1862)',
+	'lab(67.5775 68.3862 -12.7348)',
+	'lab(68.1739 14.7461 54.8651)',
+	'lab(61.5296 -58.6363 39.9921)',
+	'lab(63.0659 1.23221 -44.4879)',
+	'lab(71.1376 -44.6808 10.8983)',
+	'lab(70.855 -36.4744 -14.9111)',
+]
 // the drums' own warm to violet family, more saturated than the melody's
-const DRUM_COLORS = ['#ff4d4d', '#ff9a1f', '#e0b020', '#ff5ea8', '#d466f2', '#8f7cff', '#b8745a', '#e9cfa6']
+const DRUM_COLORS = [
+	'lab(51.0916 62.7477 41.8985)',
+	'lab(85.3906 10.2282 92.7778)',
+	'lab(50.227 76.0093 -8.98042)',
+	'lab(65.1177 53.6556 66.5807)',
+	'lab(59.173 20.487 -39.7255)',
+	'lab(44.9946 68.9684 -6.21602)',
+	'lab(84.6744 6.12866 46.9872)',
+	'lab(43.7626 33.3261 27.7532)',
+]
 
 // One colour per voice, each kind cycling through its own palette.
 export function voiceColors(song) {

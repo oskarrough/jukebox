@@ -14,8 +14,16 @@ const MODS = [
 	['sus', 'Swap every chord’s 3rd for the 4th'],
 	['add9', 'Add the 9th to every chord, without the 7th'],
 ]
-// A colour per column, warm at home, cooler down the circle, redder up it.
-const HUES = [235, 185, 140, 85, 50, 20, 345]
+// A pigment per column, warm at home, cooler down the circle, redder up it.
+const HUES = [
+	'var(--c-ultramarine)',
+	'var(--c-cerulean-blue)',
+	'var(--c-imperial-green)',
+	'var(--c-chrome-yellow-deep)',
+	'var(--c-orange)',
+	'var(--c-scarlet-lake)',
+	'var(--c-opera)',
+]
 
 export function ChordPad() {
 	const columns = () => padChords(jb.key(), jb.mod())
@@ -30,7 +38,7 @@ export function ChordPad() {
 			type="button"
 			class={{ 'chord-key': true, minor: props.minor, home: props.home, on: jb.chordNow() === props.sym }}
 			data-far={props.far}
-			style={{ '--h': props.hue }}
+			style={{ '--p': props.hue }}
 			title={`Write ${props.sym} into ${where()}`}
 			onPointerEnter={(e) => {
 				if (e.pointerType === 'mouse') jb.hearChord(props.sym)
