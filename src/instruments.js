@@ -1,0 +1,127 @@
+// Every instrument a voice can play, by group, with a line on how it sounds
+// (read from src/synth.js). The guide, the instrument picker and the song
+// reference read this; a new instrument in the synth gets its line here.
+// Drum lanes take x X o . steps; every other group plays notes.
+
+export const GROUPS = [
+	[
+		'Keys and mallets',
+		[
+			['rhodes', 'tine electric piano with tremolo, growls hit hard'],
+			['organ', 'electric organ with a quick vibrato'],
+			['pipe', 'pipe organ with an octave below, big room'],
+			['harpsichord', 'bright quill pluck with an octave on top'],
+			['accordion', 'three reeds tuned apart, a musette'],
+			['steeldrum', 'steel pan, a ringing strike'],
+			['marimba', 'warm wooden bars, shorter up high'],
+			['vibes', 'vibraphone, metal bars under a tremolo'],
+			['celesta', 'soft bell keys, a short glassy ring'],
+			['glock', 'glockenspiel, bright ringing metal'],
+			['xylophone', 'hard wooden bars, short and dry'],
+			['musicbox', 'tiny high tines in a long room'],
+			['bell', 'church bell, rings for seconds'],
+			['timpani', 'orchestral kettle drum, tuned by the note'],
+		],
+	],
+	[
+		'Strings',
+		[
+			['strings', 'string section, slow bow and vibrato'],
+			['fiddle', 'solo violin with a wide vibrato'],
+			['pizz', 'plucked strings, short and dark'],
+			['harp', 'concert harp, soft pluck, long ring'],
+			['guitar', 'acoustic guitar, warm pluck'],
+			['drive', 'overdriven electric guitar; drive= adds dirt'],
+			['wah', 'funk guitar through a wah that opens each pick'],
+			['banjo', 'bright twang, quick to die'],
+			['oud', 'fretless lute, paired strings, round body'],
+			['saz', 'bağlama, brighter and shorter than the oud'],
+			['qanun', 'zither, three strings a note, ringing'],
+		],
+	],
+	[
+		'Winds and brass',
+		[
+			['flute', 'breathy flute with a slow vibrato'],
+			['ney', 'reed flute, more breath than tone, scoops up'],
+			['clarinet', 'hollow, woody reed'],
+			['oboe', 'thin, nasal reed'],
+			['bassoon', 'dark low reed'],
+			['brass', 'brass section, brighter played louder'],
+			['trumpet', 'solo trumpet, bright, opens played louder'],
+			['horn', 'French horn, round and soft'],
+			['tuba', 'low, round brass bass'],
+		],
+	],
+	[
+		'Voices',
+		[
+			['choir', 'choir singing ah, slow to swell'],
+			['voices', 'soft oo pad, slow to swell'],
+			['chop', 'one clipped sung syllable, cut at the note end'],
+		],
+	],
+	[
+		'Bass',
+		[
+			['808', 'sliding sine sub with a thump; drive= for phonk'],
+			['logdrum', 'amapiano log drum, hollow, falls into pitch'],
+			['ebass', 'picked electric bass, bright and round'],
+			['fretless', 'fretless bass, warm, sings with vibrato'],
+			['upright', 'double bass, dark pluck and thump'],
+			['synbass', 'saw and square, a filter that snaps shut'],
+		],
+	],
+	[
+		'Synths',
+		[
+			['moog', 'mono analog lead, made for ~ slides'],
+			['pad', 'detuned saws, slow swell; a small att= stabs'],
+			['chip', 'game console square with a little vibrato'],
+			['cowbell808', 'the 808 cowbell as notes, C#5 its stock pitch'],
+			['sine', 'plain sine wave, pure'],
+			['square', 'plain square wave, hollow'],
+			['saw', 'plain saw wave, buzzy'],
+			['triangle', 'plain triangle wave, soft'],
+		],
+	],
+	[
+		'Drums',
+		[
+			['kick', 'round electronic kick'],
+			['snare', 'snare, a noise crack over a tuned body'],
+			['rim', 'rimshot click'],
+			['clap', 'hand clap, three quick hits and a tail'],
+			['hat', 'closed hi-hat'],
+			['ohat', 'open hi-hat'],
+			['ride', 'ride cymbal, a long metal ping'],
+			['crash', 'crash cymbal'],
+			['tomlo', 'low tom'],
+			['tommid', 'mid tom'],
+			['tomhi', 'high tom'],
+			['shaker', 'shaker'],
+			['tamb', 'tambourine'],
+			['cowbell', 'cowbell, one pitch'],
+			['clave', 'claves, a high wooden click'],
+			['block', 'wood block'],
+			['guiro', 'güiro scrape'],
+			['tri', 'triangle, high and ringing'],
+			['conga', 'conga; X slaps'],
+			['tumba', 'low conga; X slaps'],
+			['bongo', 'high bongo; X slaps'],
+			['bongolo', 'low bongo; X slaps'],
+			['timbale', 'timbale, bright metal shell'],
+			['cuica', 'samba friction drum; X sings high, o low'],
+			['bodhran', 'Irish frame drum, deep'],
+			['dum', 'darbuka centre stroke, deep'],
+			['tek', 'darbuka rim stroke, sharp'],
+			['riq', 'small frame drum with jingles'],
+			['gong', 'gong, long and low'],
+			['thunder', 'a thunder roll, seconds long'],
+			['surf', 'a wave breaking, seconds long'],
+		],
+	],
+]
+
+// [{ name, group, drum, sound }…], in the groups' order.
+export const INSTRUMENTS = GROUPS.flatMap(([group, list]) => list.map(([name, sound]) => ({ name, group, drum: group === 'Drums', sound })))

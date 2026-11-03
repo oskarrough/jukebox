@@ -1,4 +1,8 @@
-// The song format guide, opened from the top bar's "?".
+// The song format guide, opened from the top bar's "?". Its words for agents
+// are in .agents/skills/compose-song/reference.md: change both together.
+import { For } from 'solid-js'
+import { GROUPS } from '../instruments.js'
+
 export function Guide() {
 	return (
 		<div id="guide" class="pop guide" popover>
@@ -82,44 +86,25 @@ export function Guide() {
 				game doesn't know yet, like <code>markt</code> for a market, wait harmlessly until it does.
 			</p>
 			<p>
-				Links start playing straight away: <code>?song=konvoi&amp;kind=convoy&amp;d=20</code>. The address bar always shows what is playing.
+				Links open on a song, as a game places it: <code>?song=konvoi&amp;kind=convoy&amp;d=20</code>. The address bar always shows what is
+				playing.
 			</p>
 			<h3>Instruments</h3>
-			<p>
-				Keys and mallets: <code>rhodes</code> tine electric piano, <code>organ</code>, <code>pipe</code> organ, <code>harpsichord</code>,
-				<code>accordion</code>, <code>steeldrum</code>, <code>marimba</code>, <code>vibes</code>, <code>celesta</code>, <code>glock</code>,
-				<code>xylophone</code>, <code>musicbox</code>, <code>bell</code>, <code>timpani</code>.
-			</p>
-			<p>
-				Strings: <code>strings</code> section, <code>fiddle</code>, <code>pizz</code>, <code>harp</code>, <code>guitar</code>,
-				<code>drive</code> overdriven electric guitar, <code>wah</code> funk guitar through a wah, <code>banjo</code>, <code>oud</code>,
-				<code>saz</code> bağlama, brighter and shorter than the oud, <code>qanun</code> zither.
-			</p>
-			<p>
-				Winds and brass: <code>flute</code>, <code>ney</code> reed flute, <code>clarinet</code>, <code>oboe</code>, <code>bassoon</code>,
-				<code>brass</code> section, <code>trumpet</code>, <code>horn</code>, <code>tuba</code>.
-			</p>
-			<p>
-				Voices: <code>choir</code> sings ah, <code>voices</code> a soft oo pad, <code>chop</code> one clipped sung syllable, cut at the end
-				of the note.
-			</p>
-			<p>
-				Bass: <code>808</code> sliding sub, <code>logdrum</code> amapiano log drum, <code>ebass</code> picked electric bass,
-				<code>fretless</code>, <code>upright</code>, <code>synbass</code>.
-			</p>
-			<p>
-				Synths: <code>moog</code> mono lead, made for slides, <code>pad</code>, <code>chip</code>, <code>cowbell808</code> the 808 cowbell
-				played as notes (<code>C#5</code> is its stock pitch), and plain <code>sine</code>, <code>square</code>, <code>saw</code>,
-				<code>triangle</code>.
-			</p>
-			<p>
-				Drums: <code>kick</code>, <code>snare</code>, <code>rim</code>, <code>clap</code>, <code>hat</code>, <code>ohat</code> open hat,
-				<code>ride</code>, <code>crash</code>, <code>tomlo</code>, <code>tommid</code>, <code>tomhi</code>, <code>shaker</code>,
-				<code>tamb</code>, <code>cowbell</code>, <code>clave</code>, <code>block</code>, <code>guiro</code>, <code>tri</code>,
-				<code>conga</code>, <code>tumba</code>, <code>bongo</code>, <code>bongolo</code>, <code>timbale</code>, <code>cuica</code> samba
-				friction drum (<code>X</code> sings high, <code>o</code> low), <code>bodhran</code>, <code>dum</code> and <code>tek</code> for the
-				darbuka, <code>riq</code>, <code>gong</code>, and two weathers: <code>thunder</code> and <code>surf</code>.
-			</p>
+			<For each={GROUPS}>
+				{([group, list]) => (
+					<p>
+						{group}:{' '}
+						<For each={list}>
+							{([inst, sound], i) => (
+								<>
+									<code title={sound}>{inst}</code>
+									{i() < list.length - 1 ? ', ' : '.'}
+								</>
+							)}
+						</For>
+					</p>
+				)}
+			</For>
 		</div>
 	)
 }

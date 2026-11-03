@@ -1,0 +1,68 @@
+# The song format
+
+Everything a `.song` file can say. The page's Guide says the same for people; change both together. Instruments, with a line on how each sounds, are in `src/instruments.js`.
+
+A song is a head, some voices, some patterns and a `loop` line. Anything after `#` is a comment.
+
+## Head
+
+One setting a line, before the first pattern.
+
+- `title`: the song's name; the file name is its slug (`Hermannstraße um drei` → `hermannstrasse-um-drei.song`).
+- `about`: one line on what it is, where it plays, what music it's after.
+- `composer` (or `by`).
+- `key G`, `key Dm`: the key. The page's key switch transposes from it, and loop bricks land in it.
+- `tempo 120`: beats a minute, 20 to 400.
+- `beats 4`: beats to a bar, 1 to 16. `steps 4`: steps to a beat, 1 to 12. A bar is beats × steps steps (16 by default; `beats 3` `steps 2` is 6).
+- `swing 0.1`: 0 to 0.75, delays every other step. Only with an even `steps`.
+- `reverb 0.3`: how loud the shared room is, 0 to 1.
+- `tags nkgta wip`: any words, to find the song by in the list.
+- `game dodgethis`: which game it's for; none means NK GTA.
+- `street Sonnenallee`, `at bar cafe`: where it plays in NK GTA (see the skill).
+
+## Voices
+
+`voice <name> <instrument> <options>`, for example `voice lead flute vol=0.6 pan=-0.3`.
+
+| Option   | Range, default   | What it does                                                                       |
+| -------- | ---------------- | ---------------------------------------------------------------------------------- |
+| `vol`    | 0 to 2, 0.8      | volume                                                                             |
+| `pan`    | -1 to 1, 0       | left to right                                                                      |
+| `rev`    | 0 to 1           | send to the shared room; each instrument has its own default (808 0.04, pipe 0.55) |
+| `oct`    | -4 to 4          | shifts octaves                                                                     |
+| `trans`  | -48 to 48        | shifts semitones                                                                   |
+| `gate`   | 0.05 to 1, 1     | how much of each note sounds; 0.5 is staccato                                      |
+| `glide`  | 0.005 to 2, 0.07 | seconds a `~` slide takes                                                          |
+| `bright` | 0.1 to 4, 1      | dark to bright                                                                     |
+| `att`    | 0.001 to 4       | attack in seconds; each instrument has its own default                             |
+| `rel`    | 0.005 to 6       | release in seconds; each instrument has its own default                            |
+| `center` | a note, D4       | where `[chords]` are voiced                                                        |
+| `drive`  | 0 to 4, 0        | dirt, only on `808`, `logdrum` and `drive`                                         |
+
+Drum instruments (the Drums group) take drum lanes; every other instrument takes notes.
+
+## Notes
+
+- Each word is one step. `A4` is one step; each dash holds it one more (`A4-` two, `A4---` four). Each dot is a step of rest (`....` four). Bars are split by `|`, and every bar adds up to exactly beats × steps.
+- `[Am7]`, `[C/E]`, `[D5]` are chords; `C4+E4+G4` stacks notes yourself.
+- `~D4` slides into D4 from the voice's last note. `D4!` is louder, `D4?` softer; marks stack.
+- `Eq4` is a quarter tone flat (the E of maqam Rast and Bayati); `~` slides into quarter tones too.
+- Alone in a bar: `%` repeats the bar before, `_` is silence, `=` holds the last note through.
+- Two lines for the same voice in one pattern run on: the second's bars follow the first's.
+
+## Drum lanes
+
+One character a step: `x` a hit, `X` an accent, `o` a soft hit, `.` a rest. Spaces don't count: `x... x... x... x...` is four on the floor. Some drums play the accent differently: congas and bongos slap on `X`, the cuíca sings high on `X` and low on `o`.
+
+## Patterns and the loop
+
+- `pattern A` starts a pattern; its lines follow as `name | bar | bar |`. It lasts as long as its longest voice. `pattern A tempo=90 beats=3` changes timing for that pattern alone; `tempo`, `beats`, `steps` and `swing` also work as lines inside it.
+- `pattern B from A` starts as a copy of A. A voice line in B replaces A's whole line; `lead@3 | … |` replaces bar 3 onwards, as many bars as you write, and keeps the rest. `mute hat snare` drops voices.
+- `play intro` plays once. `loop A A2 B*2 C+5` repeats forever: `*2` twice, `+5` or `-2` transposes. With no `play` or `loop`, every pattern loops in order.
+
+## Effects
+
+- One shared room reverb. `reverb` in the head sets how loud it is; each voice's `rev=` sets how much it sends.
+- Per voice: `bright=` darkens or opens the tone, `drive=` dirties `808`, `logdrum` and `drive`, `att=` and `rel=` shape each note, `gate=` shortens it.
+- The whole mix then runs through a gentle bass lift, a slight top cut, a compressor and a limiter. Nothing to set.
+- There is no delay or echo. Write an echo as more voices: the same notes a step or two later, quieter, darker, panned apart and wetter, as `music/hermannstrasse-um-drei.song` does.

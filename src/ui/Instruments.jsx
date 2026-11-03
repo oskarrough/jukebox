@@ -2,80 +2,11 @@
 // opened from a voice's instrument name. Moving through them plays each one;
 // picking one rewrites the voice's line.
 import { createEffect, createMemo, For, Show } from 'solid-js'
-import { DRUMS, MELODIC } from '../score.js'
+import { GROUPS } from '../instruments.js'
 import { jb } from './state.js'
 
-// [group, [instrument, what it is]…]; anything the guide doesn't group yet
-// lands at the end.
-const GROUPS = [
-	[
-		'Keys and mallets',
-		[
-			['rhodes', 'tine electric piano'],
-			['organ'],
-			['pipe', 'pipe organ'],
-			['harpsichord'],
-			['accordion'],
-			['steeldrum'],
-			['marimba'],
-			['vibes'],
-			['celesta'],
-			['glock'],
-			['xylophone'],
-			['musicbox'],
-			['bell'],
-			['timpani'],
-		],
-	],
-	[
-		'Strings',
-		[
-			['strings', 'string section'],
-			['fiddle'],
-			['pizz', 'plucked strings'],
-			['harp'],
-			['guitar'],
-			['drive', 'overdriven electric guitar'],
-			['wah', 'funk guitar through a wah'],
-			['banjo'],
-			['oud'],
-			['saz', 'bağlama, brighter and shorter than the oud'],
-			['qanun', 'zither'],
-		],
-	],
-	[
-		'Winds and brass',
-		[['flute'], ['ney', 'reed flute'], ['clarinet'], ['oboe'], ['bassoon'], ['brass', 'brass section'], ['trumpet'], ['horn'], ['tuba']],
-	],
-	[
-		'Voices',
-		[
-			['choir', 'sings ah'],
-			['voices', 'a soft oo pad'],
-			['chop', 'one clipped sung syllable'],
-		],
-	],
-	[
-		'Bass',
-		[['808', 'sliding sub'], ['logdrum', 'amapiano log drum'], ['ebass', 'picked electric bass'], ['fretless'], ['upright'], ['synbass']],
-	],
-	[
-		'Synths',
-		[
-			['moog', 'mono lead, made for slides'],
-			['pad'],
-			['chip'],
-			['cowbell808', 'the 808 cowbell as notes'],
-			['sine'],
-			['square'],
-			['saw'],
-			['triangle'],
-		],
-	],
-]
-const grouped = new Set(GROUPS.flatMap(([, list]) => list.map(([i]) => i)))
-const MELODIC_GROUPS = [...GROUPS, ['', MELODIC.filter((i) => !grouped.has(i)).map((i) => [i])]].filter(([, list]) => list.length)
-const DRUM_GROUPS = [['', DRUMS.map((i) => [i])]]
+const MELODIC_GROUPS = GROUPS.filter(([group]) => group !== 'Drums')
+const DRUM_GROUPS = [['', GROUPS.find(([group]) => group === 'Drums')[1]]]
 
 // The list for `props.voice` (a voice's name, or null), anchored to the
 // instrument name that opened it.
@@ -138,11 +69,11 @@ export function Instruments(props) {
 							</Show>
 							<div>
 								<For each={list}>
-									{([inst, what]) => (
+									{([inst, sound]) => (
 										<button
 											type="button"
 											aria-pressed={String(inst === current())}
-											title={`Switch to ${inst}${what ? `: ${what}` : ''}`}
+											title={`Switch to ${inst}: ${sound}`}
 											onPointerEnter={(e) => e.currentTarget.focus({ preventScroll: true })}
 											onFocus={() => hear(inst)}
 											onClick={() => pick(inst)}
