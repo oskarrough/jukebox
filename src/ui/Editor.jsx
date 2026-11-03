@@ -17,7 +17,7 @@ import { barAt, caretAt } from './link.js'
 import { nudge, stepsOf, toggleStep } from './nudge.js'
 import { sample, suggest } from './complete.js'
 import { mistakes } from './lint.js'
-import { DRUM_STEPS, HINTS } from './hints.js'
+import { DRUM_STEPS, HINTS, chordNotes } from './hints.js'
 import { OCTAVE_KEYS, noteOf, octaveAt } from './keyboard.js'
 import { moment, record, sizeOf, stepNote } from './record.js'
 import { mark, paint } from './paint.js'
@@ -174,6 +174,10 @@ export function Editor() {
 		if (kind === 'inst') return { ln, start: col, voice: /^\s*voice\s+(\S+)/i.exec(line)[1], inst: el.textContent.toLowerCase() }
 		const music = /^\s*(\w+)(@\d+)?\s*\|/.exec(line)
 		if (music) {
+			if (kind === 'chord') {
+				const tip = chordNotes(el.textContent)
+				return tip && { ln, start: col, tip }
+			}
 			if (!drums().has(music[1]) || (kind !== 'note' && kind !== 'rest')) return null
 			const bar = barAt(line, line.slice(0, col).split('|').length - 2)
 			return bar && { ln, start: bar.start + bar.text.search(/\S|$/), tip: DRUM_STEPS }

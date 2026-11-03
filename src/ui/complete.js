@@ -4,12 +4,10 @@
 // lines. Read from the text, so they're there before it compiles. On an
 // empty line, or where a word is due, only the likeliest next thing is
 // offered, for the ghost after the caret.
-import { DRUMS, MELODIC, OPTIONS, PATTERN_OPTIONS, SETTINGS, parse } from '../score.js'
+import { CHORDS, DRUMS, LOW, MELODIC, OPTIONS, PARTS, PATTERN_OPTIONS, SETTINGS, noteToMidi, parse } from '../score.js'
 import { prefersFlats, transposeNoteName } from '../key.js'
 
 export const INSTRUMENTS = [...MELODIC, ...DRUMS]
-// Instruments that sound best an octave or two down.
-const LOW = new Set(['808', 'logdrum', 'ebass', 'upright', 'fretless', 'synbass', 'tuba', 'bassoon', 'timpani'])
 
 // A note to hear `inst` by: the key's root, or a drum hit.
 export function sample(inst, key) {
@@ -56,8 +54,9 @@ export function suggest(text, pos, key) {
 		}
 		// After a play or loop line.
 		if (tail > pattern) return word ? offer(['pattern', 'play', 'loop']) : next(fresh ? 'pattern ' : null)
-		// Inside a pattern: its voices, then whatever ends it.
-		if (word) return offer([...voices, 'mute', 'pattern', 'play', 'loop'], (w) => (voices.includes(w) ? ' | ' : ' '))
+		// Inside a pattern: its voices and chord row, then whatever ends it.
+		if (word)
+			return offer([...voices, 'chords', 'mute', 'pattern', 'play', 'loop'], (w) => (voices.includes(w) || w === 'chords' ? ' | ' : ' '))
 		const written = new Set(above.slice(pattern + 1).map((l) => /^\s*(\w+)(@\d+)?\s*\|/.exec(l)?.[1]))
 		const left = voices.filter((v) => !written.has(v))
 		return next(fresh ? 'pattern ' : left.length ? `${left[0]} | ` : null)
@@ -69,10 +68,11 @@ export function suggest(text, pos, key) {
 		const near = INSTRUMENTS.filter((w) => w.startsWith(name) || name.startsWith(w))
 		return offer([...near, ...INSTRUMENTS])
 	}
-	if (/^\s*voice\s+\S+\s+\S+\s/i.test(before))
+	if (/^\s*voice\s+\S+\s+\S+\s.*\bpart=\w*$/i.test(before)) return offer(PARTS)
+	if ((m = /^\s*voice\s+\S+\s+(\S+)\s/i.exec(before)))
 		return word
 			? offer(
-					OPTIONS.filter((o) => !new RegExp(`\\s${o}=`, 'i').test(before)),
+					OPTIONS.filter((o) => !new RegExp(`\\s${o}=`, 'i').test(before) && !(o === 'part' && DRUMS.includes(m[1].toLowerCase()))),
 					() => '=',
 				)
 			: null
@@ -88,11 +88,46 @@ export function suggest(text, pos, key) {
 		return next(patterns[prev ? patterns.indexOf(prev) + 1 : 0])
 	}
 	if (/^\s*mute\s/i.test(before)) return word ? offer(voices) : null
+	if ((m = /^\s*chords(@\d+)?\s*\|.*?([A-G][#b]?\S*)?$/.exec(before))) {
+		if (m[2]) return chordNames(m[2], pos, key)
+		if (/\|\s*$/.test(before) && !/\S/.test(text.slice(pos).split('\n')[0]))
+			return /\|\s*\S/.test(before) ? null : next(`${before.endsWith('|') ? ' ' : ''}${progression(key)} |`)
+		return null
+	}
 	if ((m = /^\s*([A-Za-z_]\w*)(@\d+)?\s*\|\s*$/.exec(before))) {
 		const bar = firstBar(text, m[1], above, key)
 		return bar && next(`${before.endsWith('|') ? ' ' : ''}${bar} |`)
 	}
 	return null
+}
+
+// The chords that could finish `written` on the chord row: the one the key
+// makes on that root first, then its richer kinds, then the rest.
+const KINDS = ['', 'm', '7', 'm7', 'maj7', 'm9', 'maj9', '9', 'm11', 'sus2', 'sus4', '6/9', 'add9', 'dim', '13']
+function chordNames(written, pos, key) {
+	const [, root] = /^([A-G][#b]?)/.exec(written)
+	const pc = noteToMidi(`${root}4`) % 12
+	const from = (((pc - (key?.pc ?? 0)) % 12) + 12) % 12
+	// The scale's chords, from its root: major, or minor from the 3rd below.
+	const own = key?.minor
+		? { 0: 'm', 2: 'dim', 3: '', 5: 'm', 7: 'm', 8: '', 10: '' }
+		: { 0: '', 2: 'm', 4: 'm', 5: '', 7: '', 9: 'm', 11: 'dim' }
+	const first = own[from]
+	const richer = first === 'm' ? ['m7', 'm9', 'm11'] : first === '' ? ['maj7', '7', '6/9', 'maj9'] : first === 'dim' ? ['m7b5'] : []
+	const kinds = [...new Set([...(first == null ? [] : [first, ...richer]), ...KINDS])].filter((k) => k in CHORDS)
+	const items = kinds
+		.map((k) => root + k)
+		.filter((w) => w.startsWith(written) && w !== written)
+		.slice(0, 8)
+		.map((w) => ({ word: w, insert: `${w} ` }))
+	return items.length ? { start: pos - written.length, end: pos, items, quiet: false } : null
+}
+
+// Four bars of chords to start from, the ones most songs in the key use.
+function progression(key) {
+	const flats = prefersFlats(key)
+	const at = (semis, kind) => transposeNoteName(`${key.letter}${key.acc}4`, semis, flats).slice(0, -1) + kind
+	return (key.minor ? [at(0, 'm'), at(8, ''), at(3, ''), at(10, '')] : [at(0, ''), at(7, ''), at(9, 'm'), at(5, '')]).join(' | ')
 }
 
 // A first bar for voice `name`, to start from: a hit on every beat for a

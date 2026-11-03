@@ -37,6 +37,19 @@ export function paint(line, voices) {
 		push('space', m[1])
 		push('word', m[2])
 		words(m[3], m[2].toLowerCase() === 'mute' ? 'name' : 'part')
+	} else if ((m = body.match(/^(\s*)(chords)(@\d+)?(\s*)(\|.*)$/))) {
+		// The chord row: its chords, and - . % _ between them.
+		push('space', m[1])
+		push('word', m[2])
+		push('opt', m[3])
+		push('space', m[4])
+		for (const n of m[5].matchAll(/(\|)|(\s+)|([-%_]+)|(\.+)|([^\s|]+)/g)) {
+			if (n[1]) push('bar', n[1])
+			else if (n[2]) push('space', n[2])
+			else if (n[3]) push('same', n[3])
+			else if (n[4]) push('rest', n[4])
+			else push('chord', n[5])
+		}
 	} else if ((m = body.match(/^(\s*)(\S+?)(@\d+)?(\s*)(\|.*)$/))) {
 		const voice = voices.includes(m[2]) ? m[2] : null
 		push('space', m[1])

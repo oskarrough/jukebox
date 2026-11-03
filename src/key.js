@@ -1,6 +1,6 @@
 // Song key: parse, infer, transpose the score text, and drop bricks into it.
 // Bricks and the new-song starter are written in C; they move with the song.
-import { compile, noteToMidi, parse, parseKey } from './score.js'
+import { CHORD_RE, compile, noteToMidi, parse, parseKey } from './score.js'
 
 const SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 const FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
@@ -52,7 +52,7 @@ export function transposeNoteName(s, semis, flats) {
 }
 
 export function transposeChordBody(sym, semis, flats) {
-	const m = /^([A-G])(#|b)?([^/]*)(?:\/([A-G])(#|b)?)?$/.exec(sym)
+	const m = CHORD_RE.exec(sym)
 	if (!m) return sym
 	let out = spellPc(pcOf(m[1], m[2]) + semis, flats) + m[3]
 	if (m[4]) out += '/' + spellPc(pcOf(m[4], m[5]) + semis, flats)
@@ -77,11 +77,20 @@ export function transposeScore(text, semis, key) {
 	return String(text)
 		.split('\n')
 		.map((line) => {
-			const music = /^([A-Za-z_]\w*(?:@\d+)?\s*\|)(.*)$/.exec(line)
+			const music = /^(([A-Za-z_]\w*)(?:@\d+)?\s*\|)(.*)$/.exec(line)
 			if (music) {
-				const rest = music[2]
+				const row = music[2] === 'chords'
+				const rest = music[3]
 					.split(/(\s+|\|)/)
-					.map((tok) => (tok === '|' || /^\s*$/.test(tok) ? tok : transposeToken(tok, semis, flats)))
+					.map((tok) =>
+						tok === '|' || /^\s*$/.test(tok)
+							? tok
+							: row
+								? /^[A-G]/.test(tok)
+									? transposeChordBody(tok, semis, flats)
+									: tok
+								: transposeToken(tok, semis, flats),
+					)
 					.join('')
 				return music[1] + rest
 			}

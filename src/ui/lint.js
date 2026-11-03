@@ -2,11 +2,11 @@
 // one is obvious: the word it should be, or a line it needs. Errors you're
 // still writing wait: those on the line you're typing on, and those that are
 // only there because that line isn't finished yet.
-import { CHORDS, OPTIONS, PATTERN_OPTIONS, SETTINGS, chordToMidis, parse } from '../score.js'
+import { CHORDS, OPTIONS, PARTS, PATTERN_OPTIONS, SETTINGS, chordToMidis, parse } from '../score.js'
 import { INSTRUMENTS } from './complete.js'
 import { barAt } from './link.js'
 
-const KEYWORDS = [...SETTINGS, 'voice', 'pattern', 'play', 'loop', 'mute']
+const KEYWORDS = [...SETTINGS, 'voice', 'pattern', 'play', 'loop', 'mute', 'chords']
 const KEYS = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'].flatMap((k) => [k, k + 'm'])
 const MUSIC = /^\s*([A-Za-z_]\w*)(@\d+)?\s*\|/
 const starts = (word) => (line) => new RegExp(`^\\s*${word}\\b`, 'i').test(line ?? '')
@@ -129,6 +129,7 @@ const FIX = {
 		)
 		if (voice) return word(ctx, voice)
 		const setting = closest(e.word, KEYWORDS)
+		if (setting === 'chords') return word(ctx, setting)
 		if (setting) return { ...word(ctx, setting), msg: `No setting called ${e.word}` }
 		return addVoice(ctx)
 	},
@@ -168,8 +169,20 @@ const FIX = {
 		return to ? word(ctx, `[${to}]${tail}`) : null
 	},
 	chord: (ctx) => {
-		const to = chord(ctx.e.word.slice(1, -1))
-		return to && word(ctx, `[${to}]`)
+		// On the chord row a chord goes without brackets.
+		const { row } = ctx.e
+		const sym = row ? ctx.e.word.replace(/^\[(.*)\]$/, '$1') : ctx.e.word.slice(1, -1)
+		const to = row && sym !== ctx.e.word && chordToMidis(sym, 60) ? sym : chord(sym)
+		return to && word(ctx, row ? to : `[${to}]`)
+	},
+	part: slip(PARTS),
+	// x steps with no chord row to follow: one, on the tonic, under the pattern line.
+	nochords: (ctx) => {
+		const { lines, song } = ctx
+		const ln = above(lines, ctx.line)
+		if (!ln || !isPattern(lines[ln - 1])) return null
+		const to = `chords | ${song.key ? song.key.name : 'C'} |`
+		return { ln: ln + 1, start: 0, end: 0, to: `${to}\n`, label: `+ ${to}`, tip: 'Add a chord row to follow' }
 	},
 	hit: (ctx) => (/^[0O]$/.test(ctx.e.word) ? word(ctx, 'o') : null),
 	'empty-bar': (ctx) => ({ start: ctx.bar.start, end: ctx.bar.end, to: ' _ ', label: '_', tip: 'Make it a silent bar' }),
@@ -211,7 +224,8 @@ const FIX = {
 		const trail = bar.text.slice(bar.text.trimEnd().length) || ' '
 		const text = bar.text.trim()
 		const fill = e.used < e.need
-		const to = voice.drum ? drumBar(text, e.need) : fill ? `${text} ${'.'.repeat(e.need - e.used)}` : cut(text, e.need)
+		const steps = voice.drum || /^[xXo.\-\s]+$/.test(text)
+		const to = steps ? drumBar(text, e.need) : fill ? `${text} ${'.'.repeat(e.need - e.used)}` : cut(text, e.need)
 		return { start: bar.start, end: bar.end, to: lead + to + trail, label: to, tip: fill ? 'Fill with rests' : `Cut to ${e.need} steps` }
 	},
 }

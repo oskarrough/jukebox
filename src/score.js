@@ -107,35 +107,57 @@ const SETTINGS = ['title', 'key', 'tempo', 'beats', 'steps', 'swing', 'reverb', 
 const PATTERN_OPTIONS = ['tempo', 'beats', 'steps', 'swing']
 
 // Every option a voice line takes, as in vol=0.8.
-const OPTIONS = ['vol', 'pan', 'rev', 'oct', 'trans', 'gate', 'glide', 'bright', 'att', 'rel', 'center', 'drive', 'echo', 'tail']
+const OPTIONS = ['vol', 'pan', 'rev', 'oct', 'trans', 'gate', 'glide', 'bright', 'att', 'rel', 'center', 'drive', 'echo', 'tail', 'part']
 
+// What a voice plays of the chord row's chord, on its x steps: the whole
+// chord, its root (the note after / on a slash chord), the chord without its
+// root (when a bass has it), its top note, or the next note up on each hit.
+const PARTS = ['chord', 'root', 'rootless', 'top', 'up']
+
+// Instruments that sound best an octave or two down: their chords and roots
+// sit around D2 unless center= says otherwise.
+const LOW = new Set(['808', 'logdrum', 'ebass', 'upright', 'fretless', 'synbass', 'tuba', 'bassoon', 'timpani'])
+
+// Each chord as semitones above its root; 12 and up are the colours a
+// pianist plays above the octave: 14 the 9th, 17 the 11th, 21 the 13th.
 const CHORDS = {
 	'': [0, 4, 7],
 	maj: [0, 4, 7],
 	m: [0, 3, 7],
 	min: [0, 3, 7],
+	5: [0, 7],
+	6: [0, 4, 7, 9],
+	m6: [0, 3, 7, 9],
 	7: [0, 4, 7, 10],
 	m7: [0, 3, 7, 10],
 	maj7: [0, 4, 7, 11],
 	mmaj7: [0, 3, 7, 11],
-	6: [0, 4, 7, 9],
-	m6: [0, 3, 7, 9],
 	9: [0, 4, 7, 10, 14],
 	m9: [0, 3, 7, 10, 14],
 	maj9: [0, 4, 7, 11, 14],
 	add9: [0, 4, 7, 14],
 	madd9: [0, 3, 7, 14],
+	'6/9': [0, 4, 7, 9, 14],
+	'm6/9': [0, 3, 7, 9, 14],
+	// An 11 leaves out the 3rd, a 13 the 11th, as pianists do.
+	11: [0, 7, 10, 14, 17],
+	m11: [0, 3, 7, 10, 14, 17],
+	13: [0, 4, 7, 10, 14, 21],
+	m13: [0, 3, 7, 10, 14, 21],
+	maj13: [0, 4, 7, 11, 14, 21],
 	sus2: [0, 2, 7],
 	sus4: [0, 5, 7],
 	sus: [0, 5, 7],
 	'7sus4': [0, 5, 7, 10],
+	'9sus4': [0, 5, 7, 10, 14],
 	dim: [0, 3, 6],
 	dim7: [0, 3, 6, 9],
 	m7b5: [0, 3, 6, 10],
 	aug: [0, 4, 8],
 	'+': [0, 4, 8],
-	5: [0, 7],
 	'7b9': [0, 4, 7, 10, 13],
+	'7#9': [0, 4, 7, 10, 15],
+	'maj7#11': [0, 4, 7, 11, 18],
 }
 
 function pcOf(letter, acc) {
@@ -158,21 +180,80 @@ function placeNear(pc, lo) {
 	return lo + ((((pc - lo) % 12) + 12) % 12)
 }
 
-// [Dm7] or [C/E] -> midi notes voiced in a window around `center`
+// Dm7, C/E, C6/9: its root, its kind and the note after the slash.
+const CHORD_RE = /^([A-G])(#|b)?(.*?)(?:\/([A-G])(#|b)?)?$/
+function parseChord(sym) {
+	const m = CHORD_RE.exec(sym)
+	if (!m || !Object.hasOwn(CHORDS, m[3])) return null
+	return { root: pcOf(m[1], m[2]), ivs: CHORDS[m[3]], bass: m[4] ? pcOf(m[4], m[5]) : null }
+}
+
+// [Dm7] or [C/E] -> midi notes voiced in a window around `center`. Chords
+// with colours above the octave are voiced the way a pianist would; the
+// rest as they always were, every note within a few steps of `center`.
 function chordToMidis(sym, center) {
-	const m = /^([A-G])(#|b)?([^/]*)(?:\/([A-G])(#|b)?)?$/.exec(sym)
-	if (!m || !(m[3] in CHORDS)) return null
-	const root = pcOf(m[1], m[2])
+	const c = parseChord(sym)
+	if (!c) return null
+	if (c.ivs.some((iv) => iv >= 12)) return voicing(c, center)
 	const lo = center - 6
-	const set = new Set(CHORDS[m[3]].map((iv) => placeNear((root + iv) % 12, lo)))
-	if (m[4]) set.add(placeNear(pcOf(m[4], m[5]), lo - 12))
+	const set = new Set(c.ivs.map((iv) => placeNear((c.root + iv) % 12, lo)))
+	if (c.bass != null) set.add(placeNear(c.bass, lo - 12))
 	return [...set].sort((a, b) => a - b)
+}
+
+// The best way to play chord `c` near `center`: every note within 14 steps
+// of it, colours above the root's octave, close rather than spread, seldom
+// two a semitone apart. After `prev`, the one the hands move least to reach;
+// with nothing before, root at the bottom.
+function voicing(c, center, prev) {
+	const notes = c.ivs.map((iv) => ({ pc: (c.root + iv) % 12, colour: iv >= 12, root: iv === 0 }))
+	const places = notes.map((n) => {
+		const out = []
+		for (let m = placeNear(n.pc, center - 14); m <= center + 14; m += 12) out.push(m)
+		return out
+	})
+	let best = null
+	let least = Infinity
+	const pick = (k, chosen) => {
+		if (k < notes.length) {
+			for (const m of places[k]) pick(k + 1, [...chosen, m])
+			return
+		}
+		const root = notes.some((n) => n.root) ? chosen[notes.findIndex((n) => n.root)] : null
+		if (root != null && notes.some((n, i) => n.colour && chosen[i] <= root + 12)) return
+		const sorted = [...chosen].sort((a, b) => a - b)
+		let cost = 0
+		for (let i = 1; i < sorted.length; i++) {
+			const gap = sorted[i] - sorted[i - 1]
+			if (gap < 1) return
+			cost += gap === 1 ? 4 : 3 * Math.max(0, gap - 5)
+		}
+		const middle = (sorted[0] + sorted.at(-1)) / 2
+		if (prev?.length) {
+			const near = (a, list) => Math.min(...list.map((b) => Math.abs(a - b)))
+			cost += sorted.reduce((n, a) => n + near(a, prev), 0) + prev.reduce((n, b) => n + near(b, sorted), 0)
+			cost += 0.3 * Math.abs(middle - center)
+		} else cost += Math.abs(middle - center) + (root == null || sorted[0] === root ? 0 : 6)
+		if (cost < least) [best, least] = [sorted, cost]
+	}
+	pick(0, [])
+	if (!best) {
+		const lo = center - 6
+		best = [...new Set(c.ivs.map((iv) => placeNear((c.root + iv) % 12, lo) + (iv >= 12 ? 12 : 0)))].sort((a, b) => a - b)
+	}
+	if (c.bass != null && c.bass !== best[0] % 12) best = [placeNear(c.bass, best[0] - 12), ...best]
+	return best
 }
 
 const T_HOLD = /^-+$/
 const T_REST = /^(\.+)(-*)$/
 const NOTE_SRC = '[A-Ga-g](?:##|bb|#|b|q)?[0-8]'
 const T_NOTE = new RegExp('^(~?)(\\[[^\\]]+\\]|' + NOTE_SRC + '(?:\\+' + NOTE_SRC + ')*)([!?]*)(-*)([!?]*)$')
+
+// A bar of steps like a drum lane's, x... ..x. x---, on a voice that takes
+// notes: it plays the chord row's chord in that rhythm, - holding.
+const T_FOLLOW = /^[xXo.\-\s]*[xXo][xXo.\-\s]*$/
+const HIT = { x: 0.8, X: 1.05, o: 0.42 }
 
 // What's wrong with a word that should be a note.
 const noteMsg = (s) => (/^[A-Ga-g](##|bb|#|b|q)?$/.test(s) ? 'Needs an octave, like C4' : `No note called ${s}`)
@@ -248,6 +329,10 @@ function parse(text) {
 			})
 			const at = pm[2] ? +pm[2] : 0
 			if (pm[2] && at < 1) err(ln, 'Bars start at 1', { kind: 'at0', word: `${pm[1]}@${pm[2]}` })
+			if (pm[1] === 'chords') {
+				cur.chords.push({ bars, ln, at })
+				return
+			}
 			;(cur.raw[pm[1]] = cur.raw[pm[1]] || []).push({ bars, ln, at })
 			if (!cur.voiceOrder.includes(pm[1])) cur.voiceOrder.push(pm[1])
 			return
@@ -313,7 +398,7 @@ function parse(text) {
 					return
 				}
 				if (song.patterns[name]) err(ln, `${name} is already a pattern`, { kind: 'pattern-twice', word: name })
-				cur = { name, ln, from: null, opts: {}, raw: {}, voiceOrder: [], mute: new Set() }
+				cur = { name, ln, from: null, opts: {}, raw: {}, chords: [], voiceOrder: [], mute: new Set() }
 				for (let k = 2; k < words.length; k++) {
 					const w = words[k]
 					if (w.toLowerCase() === 'from') {
@@ -391,7 +476,8 @@ function parse(text) {
 			trans: 0,
 			glide: 0.07,
 			gate: 1,
-			center: 62,
+			center: LOW.has(instL) ? 38 : 62,
+			part: 'chord',
 			bright: 1,
 			att: null,
 			rel: null,
@@ -452,6 +538,10 @@ function parse(text) {
 				case 'tail':
 					v.tail = inRange(ln, k, val, 0, 0.9, 0.5, '0 to 0.9, how much of each echo comes back')
 					break
+				case 'part':
+					if (PARTS.includes(val.toLowerCase())) v.part = val.toLowerCase()
+					else err(ln, 'part takes chord, root, rootless, top or up', { kind: 'part', word: val })
+					break
 				case 'center': {
 					const m = noteToMidi(val)
 					if (m == null) err(ln, noteMsg(val), { kind: 'center', word: val })
@@ -462,7 +552,8 @@ function parse(text) {
 					err(ln, `No option called ${kv[1]}`, { kind: 'opt', word: kv[1] })
 			}
 		}
-		if (song.voiceMap[name]) err(ln, `${name} is already a voice`, { kind: 'twice', word: name })
+		if (name === 'chords') err(ln, 'chords is the chord row', { kind: 'twice', word: name })
+		else if (song.voiceMap[name]) err(ln, `${name} is already a voice`, { kind: 'twice', word: name })
 		else {
 			song.voiceMap[name] = v
 			song.voices.push(v)
@@ -497,6 +588,23 @@ function parseMelodicBars(bars, barSteps, voice, ctx) {
 			else err('No note to hold', { kind: 'hold', word: '=' })
 			return
 		}
+		if (T_FOLLOW.test(trimmed)) {
+			if (!ctx.chords) err('No chords to follow', { kind: 'nochords' })
+			let k = 0
+			for (const ch of trimmed.replace(/\s+/g, '')) {
+				if (ch === '-') {
+					if (last && last.step + last.len === start + k) last.len++
+				} else if (ch === '.') last = null
+				else events.push((last = { step: start + k, len: 1, vel: HIT[ch], follow: true }))
+				k++
+			}
+			if (k !== barSteps) {
+				err(`${steps(k)}, needs ${barSteps}`, { kind: 'steps', used: k, need: barSteps })
+				for (const e of events) if (e.step >= start + barSteps) e.len = 0
+				if (last && last.step + last.len > start + barSteps) last.len = Math.max(1, start + barSteps - last.step)
+			}
+			return
+		}
 		let pos = start
 		for (const tok of trimmed.split(/\s+/)) {
 			let m
@@ -524,6 +632,8 @@ function parseMelodicBars(bars, barSteps, voice, ctx) {
 				pos += len
 			} else if (tok === '%' || tok === '_' || tok === '=') {
 				err(`${tok} needs a bar of its own`, { kind: 'alone', word: tok })
+			} else if (T_FOLLOW.test(tok)) {
+				err('x steps need a bar of their own', { kind: 'alone', word: tok })
 			} else {
 				err(noteMsg(tok), { kind: 'note', word: tok })
 			}
@@ -536,8 +646,70 @@ function parseMelodicBars(bars, barSteps, voice, ctx) {
 			if (last && last.step + last.len > start + barSteps && used > barSteps) last.len = Math.max(1, start + barSteps - last.step)
 		}
 	})
-	for (const e of events) if (e.len > 0) out.push(e)
+	for (const e of events) if (e.len > 0) out.push(...(e.follow ? follow(e, voice, ctx) : [e]))
 	return out
+}
+
+// A hit on an x step, as the notes of the chord row's chord: struck again
+// where the chord changes while it's held, silent where there is none.
+function follow(e, voice, ctx) {
+	const at = ctx.chords
+	if (!at) return []
+	const out = []
+	for (let s = e.step; s < e.step + e.len; s++) {
+		const sym = at[Math.min(s, at.length - 1)]
+		const held = out.at(-1)
+		if (held && held.sym === sym && held.step + held.len === s) held.len++
+		else if (sym) out.push({ step: s, len: 1, vel: e.vel, sym, notes: part(sym, voice, ctx.played, s === e.step) })
+	}
+	return out
+}
+
+// The notes of chord `sym` that `voice` plays, moving as little as it can
+// from what it played before (`played`, kept per voice).
+function part(sym, voice, played, struck) {
+	const c = parseChord(sym)
+	const before = played[voice.name]
+	const rootless = voice.part === 'rootless' && c.ivs.length > 2 ? { root: c.root, ivs: c.ivs.filter((iv) => iv % 12), bass: null } : c
+	const notes = before?.sym === sym ? before.notes : voicing(rootless, voice.center, before?.notes)
+	const up = before?.sym === sym && struck ? (before.up + 1) % notes.length : 0
+	played[voice.name] = { sym, notes, up }
+	if (voice.part === 'root') return [placeNear(c.bass ?? c.root, voice.center - 7)]
+	if (voice.part === 'top') return [notes.at(-1)]
+	if (voice.part === 'up') return [notes[up]]
+	return notes
+}
+
+// The chord row: which chord sounds on each step, null where none does.
+// Chords in a bar share it evenly; - holds the one before a share longer,
+// . is a share with none. The last chord rings on to the pattern's end.
+function parseChordBars(bars, barSteps, ctx) {
+	const at = []
+	bars.forEach((barSrc, bi) => {
+		const err = (msg, about) => ctx.err(msg, { bar: bi, ...about })
+		const toks = barSrc.trim().split(/\s+/)
+		const start = bi * barSteps
+		if (toks.length === 1 && toks[0] === '%') {
+			if (bi === 0) err('No bar to repeat', { kind: 'repeat', word: '%' })
+			for (let k = 0; k < barSteps; k++) at.push(at[start - barSteps + k] ?? null)
+			return
+		}
+		if (toks.length === 1 && toks[0] === '_') {
+			for (let k = 0; k < barSteps; k++) at.push(null)
+			return
+		}
+		let sym = null
+		toks.forEach((tok, i) => {
+			if (tok === '.') sym = null
+			else if (tok !== '-') {
+				sym = parseChord(tok) ? tok : null
+				if (!sym) err(`No chord called ${tok}`, { kind: 'chord', word: tok, row: true })
+			}
+			const to = start + Math.round(((i + 1) * barSteps) / toks.length)
+			while (at.length < to) at.push(sym)
+		})
+	})
+	return at
 }
 
 function parseDrumBars(bars, barSteps, voice, ctx) {
@@ -583,6 +755,7 @@ function compile(text, only) {
 		let raw = {},
 			opts = {},
 			order = [],
+			chords = [],
 			mute = new Set()
 		if (p.from) {
 			if (stack.includes(p.from)) {
@@ -594,6 +767,7 @@ function compile(text, only) {
 					raw = Object.assign({}, base.raw)
 					opts = Object.assign({}, base.opts)
 					order = base.order.slice()
+					chords = base.chords
 					mute = new Set(base.mute)
 				}
 			}
@@ -603,9 +777,10 @@ function compile(text, only) {
 			mute.delete(v)
 			if (!order.includes(v)) order.push(v)
 		}
+		if (p.chords.length) chords = patch(p.chords, chords)
 		p.mute.forEach((v) => mute.add(v))
 		Object.assign(opts, p.opts)
-		return (resolved[name] = { name, ln: p.ln, raw, opts, order, mute })
+		return (resolved[name] = { name, ln: p.ln, raw, opts, order, chords, mute })
 	}
 
 	// A line written voice@N | … | replaces bars from N on and keeps the rest,
@@ -638,6 +813,21 @@ function compile(text, only) {
 		// Where each voice's bars are written: the line, and which bar on it.
 		const where = {}
 		let nBars = 0
+		// Each bar's error goes on the line that holds the bar.
+		const placed = (name, lines) => ({
+			err: (m, about) => {
+				const w = where[name][about.bar]
+				err(w ? w.ln : lines[0].ln, m, { ...about, bar: w?.k })
+			},
+		})
+		let chords = null
+		if (r.chords.length) {
+			const bars = r.chords.flatMap((l) => l.bars)
+			where.chords = r.chords.flatMap((l) => l.bars.map((_, k) => ({ ln: l.ln, k: (l.k ?? 0) + k })))
+			chords = parseChordBars(bars, barSteps, placed('chords', r.chords))
+			nBars = bars.length
+		}
+		const played = {}
 		for (const vName of r.order) {
 			if (r.mute.has(vName)) continue
 			const voice = song.voiceMap[vName]
@@ -648,18 +838,32 @@ function compile(text, only) {
 			}
 			const bars = [].concat(...lines.map((l) => l.bars))
 			where[vName] = lines.flatMap((l) => l.bars.map((_, k) => ({ ln: l.ln, k: (l.k ?? 0) + k })))
-			// Each bar's error goes on the line that holds the bar.
-			const ctx = {
-				err: (m, about) => {
-					const w = where[vName][about.bar]
-					err(w ? w.ln : lines[0].ln, m, { ...about, bar: w?.k })
-				},
-			}
+			const ctx = { ...placed(vName, lines), chords, played }
 			perVoice[vName] = voice.drum ? parseDrumBars(bars, barSteps, voice, ctx) : parseMelodicBars(bars, barSteps, voice, ctx)
 			nBars = Math.max(nBars, bars.length)
 		}
 		if (!nBars) err(r.ln, 'Empty pattern', { kind: 'empty', word: name })
-		return (compiled[name] = { name, tempo, beats, steps, swing, barSteps, bars: Math.max(1, nBars), perVoice, where, ln: r.ln })
+		const row = []
+		if (chords)
+			for (let k = 0; k < Math.max(1, nBars) * barSteps; k++) {
+				const sym = chords[Math.min(k, chords.length - 1)]
+				const held = row.at(-1)
+				if (held && held.sym === sym && held.step + held.len === k) held.len++
+				else if (sym) row.push({ step: k, len: 1, sym })
+			}
+		return (compiled[name] = {
+			name,
+			tempo,
+			beats,
+			steps,
+			swing,
+			barSteps,
+			bars: Math.max(1, nBars),
+			perVoice,
+			where,
+			chords: row,
+			ln: r.ln,
+		})
 	}
 
 	const voices = song.voices
@@ -696,6 +900,8 @@ function compile(text, only) {
 					beats: p.beats,
 					steps: p.steps,
 					where: p.where,
+					// The chord row: each chord's step in the pattern, its length and name.
+					chords: p.chords,
 					ln: p.ln,
 				})
 				const evs = []
@@ -769,4 +975,20 @@ function compile(text, only) {
 	}
 }
 
-export { parse, compile, noteToMidi, chordToMidis, MELODIC, DRUMS, CHORDS, OPTIONS, SETTINGS, PATTERN_OPTIONS }
+export {
+	parse,
+	compile,
+	noteToMidi,
+	chordToMidis,
+	parseChord,
+	voicing,
+	CHORD_RE,
+	MELODIC,
+	DRUMS,
+	LOW,
+	CHORDS,
+	PARTS,
+	OPTIONS,
+	SETTINGS,
+	PATTERN_OPTIONS,
+}

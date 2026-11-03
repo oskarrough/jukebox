@@ -45,6 +45,17 @@ export function Guide() {
 				Alone in a bar, <code>%</code> repeats the previous bar, <code>_</code> leaves it silent and <code>=</code> holds the last note
 				through it. Two lines for the same voice in one pattern run on: the second line's bars follow the first's.
 			</p>
+			<h3>Chords</h3>
+			<p>
+				<code>chords | Dm9 | % | Gm9 | Bbmaj9 C6/9 |</code> in a pattern gives the chords, a bar at a time. Chords in a bar share it evenly,{' '}
+				<code>-</code> holds one a share longer and <code>.</code> is a share with none; the last chord rings on. A voice plays them when
+				its bar is written in steps like a drum lane, <code>x--- ..x. x... ....</code>, and moves to the nearest voicing as they change.{' '}
+				<code>part=</code> says what it plays: <code>chord</code>, <code>rootless</code> (when a bass has the root), <code>root</code>,{' '}
+				<code>top</code>, or <code>up</code> the next note up on each hit. Kinds: <code>m</code> <code>7</code> <code>m7</code>{' '}
+				<code>maj7</code> <code>9</code> <code>m9</code> <code>maj9</code> <code>add9</code> <code>6/9</code> <code>11</code>{' '}
+				<code>m11</code> <code>13</code> <code>sus2</code> <code>sus4</code> <code>7sus4</code> <code>dim7</code> <code>m7b5</code> and
+				more, and <code>/E</code> for another bass note.
+			</p>
 			<h3>Drums</h3>
 			<p>
 				Drum lanes are one character a step: <code>x</code> a hit, <code>X</code> an accent, <code>o</code> a soft hit, <code>.</code> a
@@ -56,7 +67,8 @@ export function Guide() {
 				<code>pan</code> -1 left to 1 right; <code>rev</code> reverb send 0 to 1 (each instrument has its own); <code>oct=1</code> shifts
 				octaves, <code>trans=-2</code> semitones; <code>gate</code> how much of each note sounds, 0.05 to 1 (0.5 is staccato);
 				<code>glide</code> seconds a <code>~</code> slide takes (0.07); <code>bright</code> 0.1 dark to 4 bright (1); <code>att</code> and
-				<code>rel</code> attack and release in seconds; <code>center=E4</code> where chords are voiced; <code>drive</code> 0 to 4, dirt for
+				<code>rel</code> attack and release in seconds; <code>center=E4</code> where chords are voiced; <code>part</code> what a voice plays
+				of the chord row; <code>drive</code> 0 to 4, dirt for
 				<code>808</code>, <code>logdrum</code> and <code>drive</code>. <code>echo=3</code> repeats the sound every 3 steps, in time with the
 				song; <code>tail</code> 0 to 0.9 (0.5) is how much of each repeat comes back.
 			</p>
