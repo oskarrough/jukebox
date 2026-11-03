@@ -174,6 +174,11 @@ const T_REST = /^(\.+)(-*)$/
 const NOTE_SRC = '[A-Ga-g](?:##|bb|#|b|q)?[0-8]'
 const T_NOTE = new RegExp('^(~?)(\\[[^\\]]+\\]|' + NOTE_SRC + '(?:\\+' + NOTE_SRC + ')*)([!?]*)(-*)([!?]*)$')
 
+// What's wrong with a word that should be a note.
+const noteMsg = (s) => (/^[A-Ga-g](##|bb|#|b|q)?$/.test(s) ? 'Needs an octave, like C4' : `No note called ${s}`)
+
+const steps = (n) => (n === 1 ? '1 step' : `${n} steps`)
+
 function velFrom(marks) {
 	let v = 0.8
 	for (const ch of marks) v *= ch === '!' ? 1.25 : 0.6
@@ -189,8 +194,9 @@ function num(s, lo, hi, def) {
 /* ------------------------------------------------------------------ parse */
 function parse(text) {
 	const errors = []
-	// `bar`, when there is one, is which bar on the line is wrong, from 0.
-	const err = (ln, msg, bar) => errors.push(bar == null ? { line: ln, msg } : { line: ln, msg, bar })
+	// Each error says what kind it is and, when it can, the `word` it's about
+	// and which `bar` on the line, from 0, so the page can point at it and fix it.
+	const err = (ln, msg, about) => errors.push({ line: ln, msg, ...about })
 	const song = {
 		title: 'Untitled',
 		composer: '',
@@ -223,18 +229,18 @@ function parse(text) {
 		const pm = /^([A-Za-z_]\w*)(?:@(\d+))?\s*\|(.*)$/.exec(line)
 		if (pm) {
 			if (!cur) {
-				err(ln, 'Music lines go inside a pattern. Add a "pattern NAME" line above this one.')
+				err(ln, 'No pattern above', { kind: 'outside' })
 				return
 			}
 			const parts = pm[3].split('|').map((s) => s.trim())
 			while (parts.length && parts[parts.length - 1] === '') parts.pop()
 			const bars = []
 			parts.forEach((b, k) => {
-				if (b === '') err(ln, `Empty bar ${k + 1} in "${pm[1]}". Use _ for a silent bar.`, k)
+				if (b === '') err(ln, 'Empty bar', { kind: 'empty-bar', bar: k })
 				else bars.push(b)
 			})
 			const at = pm[2] ? +pm[2] : 0
-			if (pm[2] && at < 1) err(ln, `Bars count from 1: write ${pm[1]}@1 for the first bar.`)
+			if (pm[2] && at < 1) err(ln, 'Bars start at 1', { kind: 'at0', word: `${pm[1]}@${pm[2]}` })
 			;(cur.raw[pm[1]] = cur.raw[pm[1]] || []).push({ bars, ln, at })
 			if (!cur.voiceOrder.includes(pm[1])) cur.voiceOrder.push(pm[1])
 			return
@@ -285,7 +291,7 @@ function parse(text) {
 				break
 			case 'key': {
 				const k = parseKey(restStr)
-				if (!k) err(ln, `key needs a name like C, Dm or F#; got "${restStr}".`)
+				if (!k) err(ln, restStr ? `No key called ${restStr}` : 'Needs a key, like Dm', { kind: 'key', word: restStr || 'key' })
 				else song.key = k
 				break
 			}
@@ -295,11 +301,11 @@ function parse(text) {
 			case 'pattern': {
 				const name = words[1]
 				if (!name || !/^[A-Za-z_]\w*$/.test(name)) {
-					err(ln, 'Pattern names use letters, digits and _ (for example: pattern A2).')
+					err(ln, name ? 'Names use letters, digits and _' : 'Needs a name', { kind: 'pattern-name', word: name ?? 'pattern' })
 					cur = null
 					return
 				}
-				if (song.patterns[name]) err(ln, `Pattern "${name}" is defined twice; the later one wins.`)
+				if (song.patterns[name]) err(ln, `${name} is already a pattern`, { kind: 'pattern-twice', word: name })
 				cur = { name, ln, from: null, opts: {}, raw: {}, voiceOrder: [], mute: new Set() }
 				for (let k = 2; k < words.length; k++) {
 					const w = words[k]
@@ -309,7 +315,10 @@ function parse(text) {
 					}
 					const kv = /^(\w+)=(.+)$/.exec(w)
 					if (!kv) {
-						err(ln, `Can't read "${w}" in the pattern line.`)
+						const bare = /^(\w+)\W?/.exec(w)?.[1].toLowerCase()
+						const lone = PATTERN_OPTIONS.includes(bare) && w === bare && words[k + 1]
+						err(ln, PATTERN_OPTIONS.includes(bare) ? 'Missing =' : `No option called ${w}`, { kind: 'pattern-word', word: w })
+						if (lone) k++
 						continue
 					}
 					const key = kv[1].toLowerCase()
@@ -317,14 +326,14 @@ function parse(text) {
 					else if (key === 'beats') cur.opts.beats = Math.round(num(kv[2], 1, 16, 4))
 					else if (key === 'steps') cur.opts.steps = Math.round(num(kv[2], 1, 12, 4))
 					else if (key === 'swing') cur.opts.swing = num(kv[2], 0, 0.75, 0)
-					else err(ln, `Unknown pattern option "${kv[1]}".`)
+					else err(ln, `No option called ${kv[1]}`, { kind: 'pattern-opt', word: kv[1] })
 				}
 				song.patterns[name] = cur
 				if (!song.patternOrder.includes(name)) song.patternOrder.push(name)
 				break
 			}
 			case 'mute':
-				if (!cur) err(ln, '"mute" only works inside a pattern.')
+				if (!cur) err(ln, 'No pattern above', { kind: 'outside' })
 				else words.slice(1).forEach((w) => cur.mute.add(w))
 				break
 			case 'play':
@@ -334,7 +343,7 @@ function parse(text) {
 				for (const w of words.slice(1)) {
 					const m = /^([A-Za-z_]\w*?)([+-]\d+)?(?:\*(\d+))?$/.exec(w)
 					if (!m) {
-						err(ln, `Can't read "${w}". Write a pattern name, optionally with +N/-N to transpose and *N to repeat.`)
+						err(ln, 'Like A, A*2 or A+5', { kind: 'refs', word: w })
 						continue
 					}
 					list.push({ name: m[1], trans: m[2] ? parseInt(m[2], 10) : 0, times: m[3] ? Math.min(64, parseInt(m[3], 10)) : 1, ln })
@@ -342,27 +351,27 @@ function parse(text) {
 				break
 			}
 			default:
-				err(
-					ln,
-					`Unknown line "${words[0]}". Lines start with a setting (title, tempo, voice, pattern, play, loop…) or a voice name followed by |.`,
-				)
+				// Inside a pattern, a word on its own is most likely a voice.
+				if (!cur) err(ln, `No setting called ${words[0]}`, { kind: 'line', word: words[0] })
+				else if (song.voiceMap[words[0]]) err(ln, 'Missing |', { kind: 'bars', word: words[0] })
+				else err(ln, `No voice called ${words[0]}`, { kind: 'line', word: words[0], music: true })
 		}
 	})
 
 	function parseVoice(w, ln) {
 		const [name, inst] = w
 		if (!name || !inst) {
-			err(ln, 'Write voices as: voice NAME INSTRUMENT [options]')
+			err(ln, name ? 'No instrument' : 'Needs a name and an instrument', { kind: 'voice-line', word: name ?? 'voice' })
 			return
 		}
 		if (!/^[A-Za-z_]\w*$/.test(name)) {
-			err(ln, `Voice name "${name}" should use letters, digits and _.`)
+			err(ln, 'Names use letters, digits and _', { kind: 'name', word: name })
 			return
 		}
 		const instL = inst.toLowerCase()
 		const isDrum = DRUMS.includes(instL)
 		if (!isDrum && !MELODIC.includes(instL)) {
-			err(ln, `Unknown instrument "${inst}".`)
+			err(ln, `No instrument called ${inst}`, { kind: 'inst', word: inst })
 			return
 		}
 		const v = {
@@ -382,10 +391,14 @@ function parse(text) {
 			drive: 0,
 			ln,
 		}
-		for (const opt of w.slice(2)) {
+		for (let i = 2; i < w.length; i++) {
+			const opt = w[i]
 			const kv = /^(\w+)=(.+)$/.exec(opt)
 			if (!kv) {
-				err(ln, `Voice options look like key=value; got "${opt}".`)
+				// vol 0.8 or vol:0.8: one slip, not two.
+				const bare = /^(\w+)\W?/.exec(opt)?.[1].toLowerCase()
+				err(ln, OPTIONS.includes(bare) ? 'Missing =' : `No option called ${opt}`, { kind: 'opt-form', word: opt })
+				if (OPTIONS.includes(bare) && opt === bare && w[i + 1]) i++
 				continue
 			}
 			const k = kv[1].toLowerCase(),
@@ -426,15 +439,15 @@ function parse(text) {
 					break
 				case 'center': {
 					const m = noteToMidi(val)
-					if (m == null) err(ln, `center= needs a note like E4; got "${val}".`)
+					if (m == null) err(ln, noteMsg(val), { kind: 'center', word: val })
 					else v.center = m
 					break
 				}
 				default:
-					err(ln, `Unknown voice option "${kv[1]}".`)
+					err(ln, `No option called ${kv[1]}`, { kind: 'opt', word: kv[1] })
 			}
 		}
-		if (song.voiceMap[name]) err(ln, `Voice "${name}" is declared twice.`)
+		if (song.voiceMap[name]) err(ln, `${name} is already a voice`, { kind: 'twice', word: name })
 		else {
 			song.voiceMap[name] = v
 			song.voices.push(v)
@@ -451,11 +464,11 @@ function parseMelodicBars(bars, barSteps, voice, ctx) {
 	const out = []
 	bars.forEach((barSrc, bi) => {
 		const start = bi * barSteps
-		const where = `bar ${bi + 1} of "${voice.name}" in pattern ${ctx.pattern}`
+		const err = (msg, about) => ctx.err(msg, { bar: bi, ...about })
 		const trimmed = barSrc.trim()
 		if (trimmed === '%') {
 			const prev = events.filter((e) => e.step >= start - barSteps && e.step < start)
-			if (bi === 0) ctx.err(`% in ${where} has no previous bar to repeat.`)
+			if (bi === 0) err('No bar to repeat', { kind: 'repeat', word: '%' })
 			prev.forEach((e) => events.push(Object.assign({}, e, { step: e.step + barSteps })))
 			last = events.length ? events[events.length - 1] : null
 			return
@@ -466,7 +479,7 @@ function parseMelodicBars(bars, barSteps, voice, ctx) {
 		}
 		if (trimmed === '=') {
 			if (last && last.step + last.len === start) last.len += barSteps
-			else ctx.err(`= in ${where} needs a note sounding right up to the bar line.`)
+			else err('No note to hold', { kind: 'hold', word: '=' })
 			return
 		}
 		let pos = start
@@ -484,7 +497,7 @@ function parseMelodicBars(bars, barSteps, voice, ctx) {
 				if (head[0] === '[') {
 					notes = chordToMidis(head.slice(1, -1), voice.center)
 					if (!notes) {
-						ctx.err(`Unknown chord "${head}" in ${where}.`)
+						err(`No chord called ${head.slice(1, -1)}`, { kind: 'chord', word: head })
 						notes = []
 					}
 				} else {
@@ -495,14 +508,14 @@ function parseMelodicBars(bars, barSteps, voice, ctx) {
 				if (notes.length) events.push(last)
 				pos += len
 			} else if (tok === '%' || tok === '_' || tok === '=') {
-				ctx.err(`"${tok}" must be alone in its bar (${where}).`)
+				err(`${tok} needs a bar of its own`, { kind: 'alone', word: tok })
 			} else {
-				ctx.err(`Can't read "${tok}" in ${where}. Notes look like D5, F#4, Bb3, Eq4 (half-flat), chords like [Dm] or C4+E4+G4.`)
+				err(noteMsg(tok), { kind: 'note', word: tok })
 			}
 		}
 		const used = pos - start
 		if (used !== barSteps) {
-			ctx.err(`${where[0].toUpperCase() + where.slice(1)} has ${used} steps; a bar here holds ${barSteps}.`)
+			err(`${steps(used)}, needs ${barSteps}`, { kind: 'steps', used, need: barSteps })
 			// clip anything spilling into the next bar so later bars stay aligned
 			for (const e of events) if (e.step >= start + barSteps) e.len = 0
 			if (last && last.step + last.len > start + barSteps && used > barSteps) last.len = Math.max(1, start + barSteps - last.step)
@@ -516,10 +529,10 @@ function parseDrumBars(bars, barSteps, voice, ctx) {
 	const events = []
 	bars.forEach((barSrc, bi) => {
 		const start = bi * barSteps
-		const where = `bar ${bi + 1} of "${voice.name}" in pattern ${ctx.pattern}`
+		const err = (msg, about) => ctx.err(msg, { bar: bi, ...about })
 		const s = barSrc.replace(/\s+/g, '')
 		if (s === '%') {
-			if (bi === 0) ctx.err(`% in ${where} has no previous bar to repeat.`)
+			if (bi === 0) err('No bar to repeat', { kind: 'repeat', word: '%' })
 			events
 				.filter((e) => e.step >= start - barSteps && e.step < start)
 				.forEach((e) => events.push({ step: e.step + barSteps, len: 1, vel: e.vel }))
@@ -532,11 +545,11 @@ function parseDrumBars(bars, barSteps, voice, ctx) {
 				if (ch === 'x') events.push({ step: start + k, len: 1, vel: 0.8 })
 				else if (ch === 'X') events.push({ step: start + k, len: 1, vel: 1.05 })
 				else if (ch === 'o') events.push({ step: start + k, len: 1, vel: 0.42 })
-				else if (ch !== '.' && ch !== '-') ctx.err(`Drum lanes use x X o and . — found "${ch}" in ${where}.`)
+				else if (ch !== '.' && ch !== '-') err('Steps are x X o .', { kind: 'hit', word: ch })
 			}
 			k++
 		}
-		if (k !== barSteps) ctx.err(`${where[0].toUpperCase() + where.slice(1)} has ${k} steps; a bar here holds ${barSteps}.`)
+		if (k !== barSteps) err(`${steps(k)}, needs ${barSteps}`, { kind: 'steps', used: k, need: barSteps })
 	})
 	return events
 }
@@ -545,7 +558,7 @@ function parseDrumBars(bars, barSteps, voice, ctx) {
 // With `only`, the song loops that one pattern.
 function compile(text, only) {
 	const { song, errors } = parse(text)
-	const err = (ln, msg, bar) => errors.push(bar == null ? { line: ln, msg } : { line: ln, msg, bar })
+	const err = (ln, msg, about) => errors.push({ line: ln, msg, ...about })
 
 	const resolved = {}
 	function resolve(name, stack) {
@@ -558,10 +571,10 @@ function compile(text, only) {
 			mute = new Set()
 		if (p.from) {
 			if (stack.includes(p.from)) {
-				err(p.ln, `Pattern "${name}" builds on itself through "from".`)
+				err(p.ln, `${name} builds on itself`, { kind: 'self', word: p.from })
 			} else {
 				const base = resolve(p.from, stack.concat(name))
-				if (!base) err(p.ln, `Pattern "${name}" builds on "${p.from}", which doesn't exist.`)
+				if (!base) err(p.ln, `No pattern called ${p.from}`, { kind: 'nopattern', word: p.from, from: true })
 				else {
 					raw = Object.assign({}, base.raw)
 					opts = Object.assign({}, base.opts)
@@ -615,24 +628,22 @@ function compile(text, only) {
 			const voice = song.voiceMap[vName]
 			const lines = r.raw[vName]
 			if (!voice) {
-				err(lines[0].ln, `"${vName}" isn't a voice. Declare it first: voice ${vName} INSTRUMENT`)
+				err(lines[0].ln, `No voice called ${vName}`, { kind: 'novoice', word: vName })
 				continue
 			}
 			const bars = [].concat(...lines.map((l) => l.bars))
 			where[vName] = lines.flatMap((l) => l.bars.map((_, k) => ({ ln: l.ln, k: (l.k ?? 0) + k })))
-			const ctx = { pattern: name, err: (m) => err(lines[0].ln, m) }
-			// report errors on the specific line that holds the bar
-			let barLine = []
-			lines.forEach((l) => l.bars.forEach(() => barLine.push(l.ln)))
-			ctx.err = (m) => {
-				const bm = /bar (\d+)/i.exec(m)
-				const w = bm && where[vName][+bm[1] - 1]
-				err(w ? barLine[+bm[1] - 1] : lines[0].ln, m, w?.k)
+			// Each bar's error goes on the line that holds the bar.
+			const ctx = {
+				err: (m, about) => {
+					const w = where[vName][about.bar]
+					err(w ? w.ln : lines[0].ln, m, { ...about, bar: w?.k })
+				},
 			}
 			perVoice[vName] = voice.drum ? parseDrumBars(bars, barSteps, voice, ctx) : parseMelodicBars(bars, barSteps, voice, ctx)
 			nBars = Math.max(nBars, bars.length)
 		}
-		if (!nBars) err(r.ln, `Pattern "${name}" has no music lines.`)
+		if (!nBars) err(r.ln, 'Empty pattern', { kind: 'empty', word: name })
 		return (compiled[name] = { name, tempo, beats, steps, swing, barSteps, bars: Math.max(1, nBars), perVoice, where, ln: r.ln })
 	}
 
@@ -650,7 +661,7 @@ function compile(text, only) {
 		for (const ref of refs) {
 			const p = compilePattern(ref.name)
 			if (!p) {
-				err(ref.ln, `There's no pattern called "${ref.name}".`)
+				err(ref.ln, `No pattern called ${ref.name}`, { kind: 'nopattern', word: ref.name })
 				continue
 			}
 			const stepDur = 60 / p.tempo / p.steps
@@ -716,7 +727,7 @@ function compile(text, only) {
 	const intro = timeline(playRefs)
 	const loop = timeline(loopRefs)
 	const empty = !intro.dur && !loop.dur
-	if (empty && !errors.length) errors.push({ line: 1, msg: 'Nothing to play yet. Add a pattern and a loop line.' })
+	if (empty && !errors.length) errors.push({ line: 1, msg: 'Nothing to play yet', kind: 'nothing' })
 
 	errors.sort((a, b) => a.line - b.line)
 	return {

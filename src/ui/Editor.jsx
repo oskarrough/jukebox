@@ -2,7 +2,7 @@
 // of the text shows each voice in its roll colour, the bars, rests and
 // comments, and a line number level with each line however many rows it wraps
 // to. A wrong word gets a red wavy line and its line a red number and a note
-// at its end; a click on the note fixes a slip. It replays a moment after you
+// at its end, once you've left the line; a click on the note fixes it. It replays a moment after you
 // stop typing. Where the caret is lights its bar on the roll; a note clicked
 // on the roll puts the caret on it. ⌥↑/↓ or an ⌥-drag nudges the note, number
 // or drum step there; on a drum line, pads under the score switch its steps
@@ -33,7 +33,19 @@ export function Editor() {
 	const settled = () => draft() === jb.text()
 	// A song with nothing in it yet isn't wrong, just empty.
 	const errors = () => (settled() && !jb.parsed().empty ? jb.parsed().errors : [])
-	const wrong = createMemo(() => mistakes(jb.text(), errors()))
+	// The line the caret is on, and the one you're typing on: what's wrong
+	// there waits until you leave it or stop for a while.
+	const [caretLn, setCaretLn] = createSignal(0)
+	const [typingLn, setTypingLn] = createSignal(0)
+	let typingAt = 0
+	let idle = 0
+	const typed = (ln) => {
+		typingAt = ln
+		setTypingLn(ln)
+		clearTimeout(idle)
+		if (ln) idle = setTimeout(() => typed(0), 4000)
+	}
+	const wrong = createMemo(() => mistakes(jb.text(), errors(), { caret: caretLn(), typing: typingLn() }))
 	// The one a line's note tells of: the first it can fix, else the first.
 	const told = (ln) =>
 		wrong()
@@ -60,7 +72,10 @@ export function Editor() {
 
 	// You moved the caret.
 	const moved = () => {
-		jb.follow(caretAt(area.value, area.selectionStart), true)
+		const at = caretAt(area.value, area.selectionStart)
+		setCaretLn(at.ln)
+		if (at.ln !== typingAt) typed(0)
+		jb.follow(at, true)
 		if (!open()) offer(false)
 	}
 	// Where line `ln` starts in the text.
@@ -121,9 +136,8 @@ export function Editor() {
 
 	// A click on a line's note puts its fix in.
 	function fix(ln) {
-		const m = told(ln)
-		const start = startOf(ln) + m.start
-		write(start, startOf(ln) + m.end, m.fix, start + m.fix.length)
+		const { start, end, to, caret } = told(ln).fix
+		write(start, end, to, caret)
 	}
 
 	// What the pointer is over in the painted copy, found as posAt does: a
@@ -139,7 +153,7 @@ export function Editor() {
 		const ln = [...sheet.children].indexOf(row) + 1
 		if (el.closest('.msg')) {
 			const m = told(ln)
-			return m && { ln, note: true, fix: m.fix, tip: m.fix ? `Replace with ${m.fix}` : m.msg }
+			return m && { ln, note: true, fix: m.fix, tip: m.fix?.tip ?? m.msg }
 		}
 		if (el.dataset.col == null) return null
 		const col = +el.dataset.col
@@ -391,8 +405,8 @@ export function Editor() {
 									</span>
 									{note() && (
 										<span class={{ msg: true, fix: !!note().fix, hot: !!hover()?.note && hover().ln === ln }}>
-											{note().note}
-											{note().fix && <ins>{note().fix}</ins>}
+											{note().msg}
+											{note().fix && <ins>{note().fix.label}</ins>}
 										</span>
 									)}
 								</div>
@@ -411,7 +425,10 @@ export function Editor() {
 						setDraft(value)
 						unrest()
 						moved()
-						if (!writing) offer(true)
+						if (!writing) {
+							typed(caretAt(value, e.currentTarget.selectionStart).ln)
+							offer(true)
+						}
 						clearTimeout(typing)
 						typing = setTimeout(() => jb.setText(value), 300)
 					}}
@@ -438,7 +455,11 @@ export function Editor() {
 					}}
 					onPointerLeave={unrest}
 					onFocus={() => setTimeout(() => document.activeElement === area && offer(false))}
-					onBlur={() => setHint(null)}
+					onBlur={() => {
+						setHint(null)
+						setCaretLn(0)
+						typed(0)
+					}}
 					onPointerUp={moved}
 				/>
 				<ul id="suggest" ref={list} popover="manual">
