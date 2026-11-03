@@ -1,6 +1,6 @@
 // The top bar: songs toggle, play, loop one pattern, the display with title, sections and time,
 // the key, download, the game's sound and the guide.
-import { For } from 'solid-js'
+import { For, flush } from 'solid-js'
 import { KEY_ROOTS } from '../key.js'
 import { jb } from './state.js'
 import { Sections } from './Sections.jsx'
@@ -69,12 +69,36 @@ export function TopBar() {
 function Display() {
 	return (
 		<div class="lcd">
-			<b>{jb.song()?.title || jb.name()}</b>
+			<Title />
 			<Sections />
 			<span id="time">
 				{clock(jb.pos())} / {clock(jb.length(jb.song()))}
 			</span>
 		</div>
+	)
+}
+
+// The song's title, written in place: click, type, Enter or click away to keep
+// it, Esc to leave it as it was.
+function Title() {
+	const shown = () => jb.song()?.title || jb.name()
+	return (
+		<input
+			class="title"
+			aria-label="Title"
+			title="Rename the song"
+			spellcheck="false"
+			value={shown()}
+			onKeyDown={(e) => {
+				if (e.key === 'Escape') e.currentTarget.value = shown()
+				if (e.key === 'Enter' || e.key === 'Escape') e.currentTarget.blur()
+			}}
+			onBlur={(e) => {
+				jb.rename(e.currentTarget.value)
+				flush()
+				e.currentTarget.value = shown()
+			}}
+		/>
 	)
 }
 

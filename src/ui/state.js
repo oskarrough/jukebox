@@ -4,7 +4,7 @@
 import { createEffect, createMemo, createRoot, createSignal, createStore, flush, untrack } from 'solid-js'
 import { BRICKS, addBrick, brickBar, brickInto } from '../bricks.js'
 import { EFFECTS, SOURCES, effectState, runChain } from '../effects.js'
-import { inferKey, setSongKey, starter, transposeBrick } from '../key.js'
+import { inferKey, newTitle, setSongKey, starter, transposeBrick } from '../key.js'
 import { DRUMS, chordToMidis, compile, noteToMidi, parse, parseKey } from '../score.js'
 import { addSection as addPattern, moveSection, removeSection, repeatSection, sectionsOf } from './arrange.js'
 import { columnOf, marksFor } from './link.js'
@@ -52,8 +52,10 @@ export const jb = createRoot(() => {
 	const drafts = load(DRAFTS, {})
 	const [name, setName] = createSignal(NAMES[0])
 	const [texts, setTexts] = createStore({ ...SONGS, ...drafts })
-	// Songs made here, which live only on this page until saved.
-	const [made, setMade] = createSignal(load(MADE, []).filter((n) => n in drafts && !(n in SONGS)))
+	// Songs made here, which live only on this page until saved. A draft that
+	// is a song in music/ already was saved just as the page reloaded.
+	const saved = new Set(Object.values(SONGS).map((t) => t.trim()))
+	const [made, setMade] = createSignal(load(MADE, []).filter((n) => n in drafts && !(n in SONGS) && !saved.has(drafts[n].trim())))
 	const names = createMemo(() => fileNames().concat(made()))
 	const text = () => texts[name()] ?? ''
 	// Whether a song has changes that aren't in music/ yet.
@@ -467,12 +469,15 @@ export const jb = createRoot(() => {
 	function create() {
 		let n = 'new'
 		for (let i = 2; names().includes(n); i++) n = `new-${i}`
-		const blank = starter(key())
+		// Filtered by a tag, the song starts with it, and with its game if it is one.
+		const t = untrack(tag) ?? ''
+		const game = songs().some((s) => s.song?.game === t) ? t : ''
+		const title = newTitle(songs().map((s) => s.song?.title ?? s.name))
+		const blank = starter('C', { title, tag: t, game })
 		if (playing) stop()
 		setMade((m) => [...m, n])
 		setTexts((s) => void (s[n] = blank))
 		keepDrafts()
-		setTag(null)
 		setBricksOpen(true)
 		pick(n)
 		requestAnimationFrame(() => {
@@ -494,6 +499,14 @@ export const jb = createRoot(() => {
 		setTimeout(() => setFresh(null), 600)
 		flush()
 		if (!playing) play()
+	}
+
+	// Gives the song a new title, as one edit in the score.
+	function rename(title) {
+		title = title.trim().replace(/\s+/g, ' ')
+		const t = score()
+		if (!title || title === parse(t).song.title) return
+		rewrite(/^title\b.*$/im.test(t) ? t.replace(/^title\b.*$/im, `title    ${title}`) : `title    ${title}\n${t}`)
 	}
 
 	function changeKey(root, mode) {
@@ -534,11 +547,19 @@ export const jb = createRoot(() => {
 		keepDrafts()
 	}
 
-	// A song saved into music/ comes back from Vite as a new songs.js; take its
-	// files without reloading the page.
+	// A song saved into music/, or changed there by anything else, comes back
+	// from Vite as a new songs.js; take its files without reloading the page.
+	// A song with no edits here plays the new text; one with edits keeps them.
 	if (import.meta.hot)
 		import.meta.hot.accept('../songs.js', (mod) => {
-			if (mod) setFiles({ ...mod.SONGS })
+			if (!mod) return
+			const was = untrack(files)
+			setFiles({ ...mod.SONGS })
+			setTexts((s) => {
+				for (const [n, t] of Object.entries(mod.SONGS)) if (s[n] === undefined || s[n] === was[n]) s[n] = t
+			})
+			flush()
+			keepDrafts()
 		})
 
 	// Whether the page has read its address yet; until then it mustn't write it.
@@ -655,6 +676,7 @@ export const jb = createRoot(() => {
 		pick,
 		create,
 		drop,
+		rename,
 		changeKey,
 		save,
 		canSave,
