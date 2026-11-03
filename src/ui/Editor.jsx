@@ -2,16 +2,18 @@
 // of the text shows each voice in its roll colour, the bars, rests and
 // comments, and a line number level with each line however many rows it wraps
 // to. A wrong word gets a red wavy line and its line a red number and a note
-// at its end, once you've left the line; a click on the note fixes it. It replays a moment after you
+// at its end, once the word is finished or you stop typing, never while it's
+// being written; a click on the note fixes it. It replays a moment after you
 // stop typing. Where the caret is lights its bar on the roll; a note clicked
 // on the roll puts the caret on it. ⌥↑/↓ or an ⌥-drag nudges the note, number
 // or drum step there; on a drum line, pads under the score switch its steps
 // on and off. While you type, what could come next is suggested, the likeliest
-// faint after the caret; pointing at an instrument plays it, at an option says
-// what it does. In a bar, a tick shows where each beat starts and the bar's
+// faint after the caret; where it comes from a fixed list, the list opens as
+// soon as you get there, and ⌃Space opens it anywhere. Pointing at an
+// instrument plays it, at an option says what it does. In a bar, a tick shows where each beat starts and the bar's
 // closing | turns warm when it holds too few or too many steps. With the piano on, the keyboard plays notes and writes them in:
 // in time while the song plays, else at the caret.
-import { For, createEffect, createMemo, createSignal, flush, onSettled } from 'solid-js'
+import { For, Show, createEffect, createMemo, createSignal, flush, onSettled } from 'solid-js'
 import { jb } from './state.js'
 import { barAt, caretAt } from './link.js'
 import { nudge, stepsOf, toggleStep } from './nudge.js'
@@ -22,7 +24,7 @@ import { OCTAVE_KEYS, noteOf, octaveAt } from './keyboard.js'
 import { moment, record, sizeOf, stepNote } from './record.js'
 import { mark, paint } from './paint.js'
 import { ruler } from './ruler.js'
-import { parse } from '../score.js'
+import { compile, parse } from '../score.js'
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 
@@ -34,25 +36,49 @@ export function Editor() {
 	let typing = 0
 	// What's in the box right now, ahead of the song while you type.
 	const [draft, setDraft] = createSignal(() => jb.text())
-	const settled = () => draft() === jb.text()
-	// A song with nothing in it yet isn't wrong, just empty.
-	const errors = () => (settled() && !jb.parsed().empty ? jb.parsed().errors : [])
-	// The line the caret is on, and the one you're typing on: what's wrong
-	// there waits until you leave it or stop for a while.
+	// What's checked for mistakes: the box as of the last finished word, the
+	// last pause, or the song as it last changed.
+	const [checked, setChecked] = createSignal(() => jb.text())
+	const errors = createMemo(() => {
+		const t = checked()
+		const r = t === jb.text() ? jb.parsed() : compile(t)
+		// A song with nothing in it yet isn't wrong, just empty.
+		return r.empty ? [] : r.errors
+	})
+	// The line the caret is on.
 	const [caretLn, setCaretLn] = createSignal(0)
-	const [typingLn, setTypingLn] = createSignal(0)
 	// Where the caret is in the box, for the beat ruler.
 	const [caretPos, setCaretPos] = createSignal(-1)
 	const ruled = createMemo(() => (caretPos() < 0 ? null : ruler(draft(), caretPos())))
-	let typingAt = 0
-	let idle = 0
-	const typed = (ln) => {
-		typingAt = ln
-		setTypingLn(ln)
-		clearTimeout(idle)
-		if (ln) idle = setTimeout(() => typed(0), 4000)
-	}
-	const wrong = createMemo(() => mistakes(jb.text(), errors(), { caret: caretLn(), typing: typingLn() }))
+	let lastLn = 0
+	// The mistakes in what's checked, where they are in the box now: those
+	// past what's been written since aren't known yet, so they wait.
+	const wrong = createMemo(() => {
+		const t = checked()
+		const now = draft()
+		const out = mistakes(t, errors(), { caret: caretLn() })
+		if (t === now) return out
+		const was = t.split('\n')
+		const is = now.split('\n')
+		if (was.length !== is.length) return new Map()
+		let d = 0
+		while (t[d] === now[d]) d++
+		const shift = now.length - t.length
+		const moved = (m) =>
+			m.fix && m.fix.start >= d
+				? { ...m, fix: { ...m.fix, start: m.fix.start + shift, end: m.fix.end + shift, caret: m.fix.caret + shift } }
+				: m
+		const kept = new Map()
+		for (const [ln, list] of out) {
+			const a = was[ln - 1]
+			const b = is[ln - 1]
+			let p = 0
+			while (p < a.length && a[p] === b[p]) p++
+			const left = (a === b ? list : list.filter((m) => m.end <= p)).map(moved)
+			if (left.length) kept.set(ln, left)
+		}
+		return kept
+	})
 	// The one a line's note tells of: the first it can fix, else the first.
 	const told = (ln) =>
 		wrong()
@@ -82,7 +108,9 @@ export function Editor() {
 		const at = caretAt(area.value, area.selectionStart)
 		setCaretLn(at.ln)
 		setCaretPos(area.selectionStart)
-		if (at.ln !== typingAt) typed(0)
+		// Leaving a line finishes its last word.
+		if (at.ln !== lastLn) setChecked(area.value)
+		lastLn = at.ln
 		jb.follow(at, true)
 		if (!open()) offer(false)
 	}
@@ -106,30 +134,42 @@ export function Editor() {
 		moved()
 	}
 
-	// What's suggested at the caret: the words, which one is picked, and the
-	// line `ln` and column `col` where the word being written starts. As you
-	// type, a menu opens under that word; at the end of a line the picked one
-	// also shows faint after the caret. A caret moved without typing only gets
-	// quiet ones, which have no menu.
+	// What's suggested at the caret: the words, which one is picked (-1 for
+	// none yet, where nothing has to be written), and the line `ln` and column
+	// `col` where the word being written starts. As you type, a menu opens
+	// under that word; at the end of a line the picked or likeliest one also
+	// shows faint after the caret. A caret moved without typing only gets
+	// quiet ones, which have no menu; `all` asks for every choice there.
 	const [hint, setHint] = createSignal(null)
 	const open = () => !!hint() && !hint().quiet
-	function offer(open) {
+	function offer(open, all = false) {
 		const pos = area.selectionStart
-		const s = area.selectionEnd === pos && suggest(area.value, pos, jb.key())
+		const s = area.selectionEnd === pos && suggest(area.value, pos, jb.key(), all)
 		if (!s || (!open && !s.quiet)) return setHint(null)
 		const before = area.value.slice(0, s.start)
 		const after = area.value.slice(pos).split('\n')[0]
-		setHint({ ...s, i: 0, ln: before.split('\n').length, col: s.start - before.lastIndexOf('\n') - 1, atEnd: !after.trim() })
+		const ln = before.split('\n').length
+		setHint({ ...s, i: s.free ? -1 : 0, ln, col: s.start - before.lastIndexOf('\n') - 1, atEnd: !after.trim() })
 	}
 	const ghost = createMemo(() => {
 		const h = hint()
-		const text = h?.atEnd && h.items[h.i].insert.slice(h.end - h.start)
+		const item = h?.atEnd && h.items[h.i >= 0 ? h.i : h.likely ? 0 : -1]
+		const text = item?.insert.slice(h.end - h.start)
 		return text ? { ln: h.ln, col: h.col + h.end - h.start, text } : null
 	})
 	function pick(i) {
 		const h = hint()
 		setHint({ ...h, i })
 		if (h.items[i].inst) hear(h.items[i].word)
+	}
+	// Where the pointer last was: a menu opening under a resting one picks
+	// nothing until it moves.
+	let pointer = ''
+	function stirred(e) {
+		const at = `${e.screenX},${e.screenY}`
+		if (at === pointer) return false
+		pointer = at
+		return true
 	}
 	function accept(item) {
 		const h = hint()
@@ -220,6 +260,16 @@ export function Editor() {
 		if (el.matches(':popover-open') !== on) el.togglePopover(on)
 	}
 	createEffect(open, (on) => shown(list, on))
+	// The picked one stays in view, its group's name with it; a new list starts at its top.
+	createEffect(hint, (h) => {
+		if (!h || h.quiet) return
+		const on = list.querySelector('.on')
+		if (!on) return void (list.scrollTop = 0)
+		const top = (on.previousElementSibling?.matches('.group') ? on.previousElementSibling : on).offsetTop
+		const bottom = on.offsetTop + on.offsetHeight
+		if (top < list.scrollTop) list.scrollTop = top
+		else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight
+	})
 	createEffect(
 		() => !!hover(),
 		(on) => shown(tip, on),
@@ -344,17 +394,24 @@ export function Editor() {
 	}
 
 	function keyDown(e) {
+		if (e.ctrlKey && e.code === 'Space' && !e.metaKey && !e.altKey) {
+			e.preventDefault()
+			offer(true, true)
+			return
+		}
 		const h = hint()
 		if (h) {
 			const move = !h.quiet && { ArrowDown: 1, ArrowUp: -1 }[e.key]
 			if (move) {
 				e.preventDefault()
-				pick((h.i + move + h.items.length) % h.items.length)
+				const n = h.items.length
+				pick(h.i < 0 ? (move > 0 ? 0 : n - 1) : (h.i + move + n) % n)
 				return
 			}
-			if (e.key === 'Tab' || (e.key === 'Enter' && !h.quiet)) {
+			// Enter takes only a picked one; with none picked it's a new line.
+			if (e.key === 'Tab' || (e.key === 'Enter' && !h.quiet && h.i >= 0)) {
 				e.preventDefault()
-				accept(h.items[h.i])
+				accept(h.items[Math.max(h.i, 0)])
 				return
 			}
 			setHint(null)
@@ -496,9 +553,11 @@ export function Editor() {
 						setDraft(value)
 						unrest()
 						moved()
+						// A finished word is checked at once; one still being written waits for a pause.
+						const end = writing || /[\s|]/.test(value[e.currentTarget.selectionStart - 1] ?? '\n')
+						if (end && e.inputType?.startsWith('insert')) setChecked(value)
 						if (!writing) {
 							take = null
-							typed(caretAt(value, e.currentTarget.selectionStart).ln)
 							offer(true)
 						}
 						clearTimeout(typing)
@@ -514,6 +573,7 @@ export function Editor() {
 					}}
 					onKeyDown={keyDown}
 					onPointerDown={(e) => {
+						stirred(e)
 						setHint(null)
 						const at = whatAt(e.clientX, e.clientY)
 						if (at?.fix) {
@@ -524,6 +584,7 @@ export function Editor() {
 						pointerDown(e)
 					}}
 					onPointerMove={(e) => {
+						stirred(e)
 						if (e.buttons || e.altKey) return
 						cancelAnimationFrame(frame)
 						frame = requestAnimationFrame(() => rest(e.clientX, e.clientY))
@@ -535,24 +596,32 @@ export function Editor() {
 						setHint(null)
 						setCaretLn(0)
 						setCaretPos(-1)
-						typed(0)
+						setChecked(area.value)
 					}}
 					onPointerUp={moved}
 				/>
 				<ul id="suggest" ref={list} popover="manual">
 					<For each={open() ? hint().items : []} keyed={false}>
 						{(item, i) => (
-							<li
-								class={{ on: i === hint()?.i }}
-								title="Write this here (Tab)"
-								onMouseDown={(e) => {
-									e.preventDefault()
-									accept(item())
-								}}
-								onMouseEnter={() => pick(i)}
-							>
-								{item().word}
-							</li>
+							<>
+								<Show when={item().group && item().group !== hint()?.items[i - 1]?.group}>
+									<li class="group">{item().group}</li>
+								</Show>
+								<li
+									class={{ on: i === hint()?.i }}
+									title="Write this here (Tab)"
+									onMouseDown={(e) => {
+										e.preventDefault()
+										accept(item())
+									}}
+									onPointerMove={(e) => stirred(e) && pick(i)}
+								>
+									{item().word}
+									<Show when={item().hint}>
+										<small>{item().hint}</small>
+									</Show>
+								</li>
+							</>
 						)}
 					</For>
 				</ul>

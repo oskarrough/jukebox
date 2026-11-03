@@ -10,6 +10,7 @@ import { paint } from '../src/ui/paint.js'
 import { caretAt, columnOf, marksFor } from '../src/ui/link.js'
 import { nudge, stepsOf, toggleStep } from '../src/ui/nudge.js'
 import { suggest } from '../src/ui/complete.js'
+import { HINTS } from '../src/ui/hints.js'
 import { inferKey, keyOf, setSongKey, starter, transposeScore } from '../src/key.js'
 
 const STARTER_ISH = 'voice kick kick\npattern A\nkick | x... x... x... x... |\nloop A'
@@ -419,7 +420,48 @@ mute ki`
 		expect(next('voice kick kick\npattern A\n').items[0].insert).toBe('kick | ')
 		expect(next('voice kick kick\npattern A\nkick | ').items[0].insert).toBe('x... x... x... x... |')
 		expect(next('voice lead square\npattern A\nlead | ').items[0].insert).toBe('C4--- E4--- G4--- E4--- |')
-		expect(next('pattern A\npattern B\n\nloop A ').items[0].insert).toBe('B')
+		expect(next('pattern A\npattern B\n\nloop A ').items[0].insert).toBe('B ')
+	})
+
+	test('a fixed slot shows all its choices before a letter is typed', () => {
+		const key = parseKey('C')
+		const at = (t, all) => suggest(t, t.length, key, all)
+		const voice = at('voice kick kick\nvoice ')
+		expect(voice).toMatchObject({ quiet: false, free: true, likely: false })
+		expect(voice.items).toHaveLength(INSTRUMENTS.length)
+		expect(voice.items[0]).toMatchObject({ word: 'rhodes', group: 'Keys and mallets' })
+		expect(voice.items.find((i) => i.word === 'kick').insert).toBe('kick2 kick ')
+		expect(voice.items.find((i) => i.word === '808').insert).toBe('sub 808 ')
+		expect(at('voice sh').items[0].insert).toBe('shaker shaker ')
+		const inst = at('voice kick ')
+		expect(inst).toMatchObject({ likely: true, free: false })
+		expect(inst.items[0]).toMatchObject({ word: 'kick', group: '' })
+		expect(at('voice lead pad ').items.map((i) => i.word)).toContain('vol')
+		expect(at('voice lead pad vol=0.5 ').items.map((i) => i.word)).not.toContain('vol')
+		expect(at('voice lead pad ').items[0].hint).toBe(HINTS.vol)
+		expect(at('voice lead pad vol=')).toBeNull()
+		expect(at('voice a pad part=').items.map((i) => i.word)).toEqual(['chord', 'root', 'rootless', 'top', 'up'])
+		expect(at('pattern A\npattern B from ').items.map((i) => i.word)).toEqual(['A'])
+		expect(at('pattern A ').items[0].word).toBe('from')
+		const loop = at('pattern A\npattern B\nloop ')
+		expect(loop).toMatchObject({ likely: true, free: true })
+		expect(loop.items.map((i) => i.insert)).toEqual(['A ', 'B '])
+		expect(at('voice a sine\nvoice b hat\npattern A\nmute a ').items.map((i) => i.word)).toEqual(['b'])
+		expect(at('title Some song')).toBeNull()
+		expect(at('title ')).toBeNull()
+	})
+
+	test('an empty line keeps its ghost, and asking shows every choice', () => {
+		const key = parseKey('C')
+		const at = (t, all) => suggest(t, t.length, key, all)
+		expect(at('tempo 100\n')).toMatchObject({ quiet: true })
+		const head = at('tempo 100\n', true)
+		expect(head).toMatchObject({ quiet: false, likely: true })
+		expect(head.items[0].insert).toBe('voice ')
+		expect(head.items.map((i) => i.word)).toContain('title')
+		expect(head.items.map((i) => i.word)).not.toContain('tempo')
+		const inside = at('voice a sine\nvoice b hat\npattern A\na | C4 |\n', true)
+		expect(inside.items.map((i) => i.insert).slice(0, 3)).toEqual(['b | ', 'a | ', 'chords | '])
 	})
 })
 
