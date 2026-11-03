@@ -66,7 +66,7 @@ export function Voices() {
 }
 
 // A loop brick: hover to hear it, tap to add it to every pattern, or drag it
-// onto the song.
+// onto the song, or onto one pattern up in the display.
 function Bricks() {
 	return (
 		<div id="bricks">
@@ -77,7 +77,7 @@ function Bricks() {
 						class="brick"
 						data-shelf={b.shelf}
 						draggable="true"
-						title={`Add ${b.label} (${b.inst}) to every pattern, or drag it in`}
+						title={`Add ${b.label} (${b.inst}) to every pattern, or drag it onto one`}
 						onClick={() => jb.drop(b.id)}
 						onPointerEnter={() => jb.hearBrick(b.id)}
 						onPointerLeave={() => jb.stopSample()}

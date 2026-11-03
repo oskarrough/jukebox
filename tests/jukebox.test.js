@@ -3,7 +3,8 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { compile, noteToMidi, parseKey, MELODIC, DRUMS } from '../src/score.js'
 import { mtof } from '../src/synth.js'
 import { HEAR, cueAt, join, shape, runChain, effectState, EFFECTS } from '../src/player.js'
-import { BRICKS, addBrick } from '../src/bricks.js'
+import { BRICKS, addBrick, brickInto } from '../src/bricks.js'
+import { addSection, moveSection, removeSection, repeatSection, sectionsOf } from '../src/ui/arrange.js'
 import { paint } from '../src/ui/paint.js'
 import { caretAt, columnOf, marksFor } from '../src/ui/link.js'
 import { nudge, stepsOf, toggleStep } from '../src/ui/nudge.js'
@@ -413,5 +414,86 @@ mute ki`
 		expect(noteOf('KeyK', 3, parseKey('C'))).toBe('C4')
 		expect(noteOf('KeyQ', 4, parseKey('C'))).toBeNull()
 		expect(octaveAt('lead | A2- C3 ', 14)).toBe(3)
+	})
+})
+
+describe('arranging sections', () => {
+	const KONVOI = readFileSync(new URL('konvoi.song', dir), 'utf8')
+	const order = (t) => t.match(/^(play|loop)\b.*$/gm)
+	const brick = (id) => BRICKS.find((b) => b.id === id)
+	// Which voices each pattern plays, by name.
+	const heard = (t) => {
+		const out = {}
+		for (const [name, s] of Object.entries(compile(t).loop.sections.reduce((m, s) => ({ ...m, [s.name]: s }), {})))
+			out[name] = Object.keys(s.where).sort()
+		return out
+	}
+
+	test('a section is each play and loop word, as long as it plays', () => {
+		const { all, fixed } = sectionsOf(KONVOI, compile(KONVOI))
+		expect(fixed).toBe(false)
+		expect(all.map((s) => s.word)).toEqual(['intro', 'A', 'A2', 'A', 'A+5'])
+		const twice = KONVOI.replace('loop A A2 A A+5', 'loop A*2 A2')
+		const [, a, a2] = sectionsOf(twice, compile(twice)).all
+		expect(a.dur).toBeCloseTo(a2.dur * 2)
+		expect(a2.start).toBeCloseTo(a.start + a.dur)
+	})
+
+	test('moving a section reorders its line, and into the other line only well inside it', () => {
+		expect(order(moveSection(KONVOI, 4, 1))).toEqual(['play intro', 'loop A+5 A A2 A'])
+		expect(order(moveSection(KONVOI, 2, 1))).toEqual(['play intro', 'loop A2 A A A+5'])
+		expect(order(moveSection(KONVOI, 0, 3))).toEqual(['loop A A2 intro A A+5'])
+		expect(order(moveSection(KONVOI, 4, 0))).toEqual(['play A+5 intro', 'loop A A2 A'])
+	})
+
+	test('copying, repeating and removing a section', () => {
+		expect(order(moveSection(KONVOI, 2, 5, true))).toEqual(['play intro', 'loop A A2 A A+5 A2'])
+		expect(order(repeatSection(KONVOI, 4, 3))).toEqual(['play intro', 'loop A A2 A A+5*3'])
+		expect(order(repeatSection(repeatSection(KONVOI, 4, 3), 4, 1))).toEqual(['play intro', 'loop A A2 A A+5'])
+		expect(order(removeSection(KONVOI, 2))).toEqual(['play intro', 'loop A A A+5'])
+		expect(order(removeSection(KONVOI, 0))).toEqual(['loop A A2 A A+5'])
+		const one = 'voice a sine\npattern A\na | C4 |\nloop A # the end'
+		expect(removeSection(one, 0)).toBe(one)
+		expect(moveSection(one, 0, 1, true)).toBe('voice a sine\npattern A\na | C4 |\nloop A A # the end')
+	})
+
+	test('adding a section builds a pattern on the one you are in', () => {
+		const { text, name } = addSection(KONVOI, 'A2')
+		expect(name).toBe('A3')
+		expect(text).toContain('mute clar\n\npattern A3 from A2\n')
+		expect(order(text)).toEqual(['play intro', 'loop A A2 A A+5 A3'])
+		expect(compile(text).errors).toEqual([])
+		const bare = 'voice a sine\npattern A\na | C4 |'
+		expect(order(addSection(bare, 'A').text)).toEqual(['loop A A2'])
+	})
+
+	test('a brick dropped on a section plays there only', () => {
+		let t = 'key C\nvoice kick kick\npattern A\nkick | x... x... x... x... |\npattern A2 from A\npattern A3 from A2\nloop A A2 A3'
+		t = brickInto(t, brick('hats'), 'A2').text
+		expect(heard(t)).toEqual({ A: ['kick'], A2: ['hat', 'kick'], A3: ['kick'] })
+		// A pattern built on it keeps the part it had.
+		t = brickInto(t, brick('break'), 'A').text
+		expect(compile(t).errors).toEqual([])
+		const kick = (name) => /\n(kick[^\n]*)/.exec(t.slice(t.indexOf(`pattern ${name}`)))?.[1]
+		expect(kick('A')).toContain('..x. .x..')
+		expect(kick('A2')).toContain('x... x... x... x...')
+		// Another instrument for the same part gets its own voice, in place of the old one there.
+		t = brickInto(t, brick('pulse'), 'A3').text
+		t = brickInto(t, brick('bounce'), 'A3').text
+		expect(heard(t).A3).toEqual(['bass2', 'kick'])
+		expect(compile(t).voices.find((v) => v.name === 'bass2').inst).toBe('ebass')
+		// A mute of the brick's voice in that pattern goes.
+		expect(heard(brickInto(KONVOI, brick('arp'), 'A2').text).A2).toContain('arp')
+		expect(heard(brickInto(KONVOI, brick('bells'), 'A').text).A2).not.toContain('bell')
+		const clar = KONVOI.replace(/voice clar\s+clarinet/, 'voice clar  marimba')
+		expect(heard(brickInto(clar, { ...brick('arp'), voice: 'clar' }, 'A2').text).A2).toContain('clar')
+	})
+
+	test('every brick drops into every section of every song', () => {
+		for (const name of ['konvoi', 'maybachufer', 'buschkrugallee']) {
+			const text = readFileSync(new URL(`${name}.song`, dir), 'utf8')
+			for (const s of sectionsOf(text, compile(text)).all)
+				for (const b of BRICKS) expect(compile(brickInto(text, b, s.name).text).errors).toEqual([])
+		}
 	})
 })

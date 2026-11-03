@@ -1,8 +1,9 @@
-// The top bar: songs toggle, play, loop one pattern, the display with title, position and time,
+// The top bar: songs toggle, play, loop one pattern, the display with title, sections and time,
 // the key, download, the game's sound and the guide.
-import { For, createMemo, createSignal } from 'solid-js'
+import { For } from 'solid-js'
 import { KEY_ROOTS } from '../key.js'
 import { jb } from './state.js'
+import { Sections } from './Sections.jsx'
 import { DownloadIcon, FeedbackIcon, GuideIcon, LoopIcon, PianoIcon, SidebarIcon, SpeakerIcon } from './Icons.jsx'
 
 const clock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
@@ -63,52 +64,15 @@ export function TopBar() {
 	)
 }
 
-// The black display: the song's title, where it's got to, and how long it is.
+// The black display: the song's title, its sections as they play, and how
+// long it is.
 function Display() {
-	// Where you're dragging the position to, until you let go.
-	const [dragging, setDragging] = createSignal(null)
-	const at = () => dragging() ?? jb.pos()
-	const total = () => jb.length(jb.song())
-	// A tick where each part of the song starts, a bright one where the loop
-	// comes back to.
-	const marks = createMemo(() => {
-		const s = jb.song()
-		if (!s) return []
-		const len = total() || 1
-		return [s.intro, s.loop].flatMap((tl, k) =>
-			tl.sections.map((sec) => ({
-				left: `${(((k ? s.intro.dur : 0) + sec.start) / len) * 100}%`,
-				loop: !!(k && !sec.start && s.intro.dur),
-			})),
-		)
-	})
 	return (
 		<div class="lcd">
 			<b>{jb.song()?.title || jb.name()}</b>
-			<div class="seek">
-				<div id="marks">
-					<For each={marks()} keyed={false}>
-						{(m) => <i class={{ loop: m().loop }} style={{ left: m().left }} />}
-					</For>
-				</div>
-				{/* From 0 to 1, so a song getting shorter never clamps it. */}
-				<input
-					type="range"
-					min="0"
-					max="1"
-					step="0.0001"
-					value={total() ? at() / total() : 0}
-					aria-label="Position"
-					title="Jump to a moment in the song"
-					onInput={(e) => setDragging(Number(e.currentTarget.value) * total())}
-					onChange={(e) => {
-						jb.seek(Number(e.currentTarget.value) * total())
-						setDragging(null)
-					}}
-				/>
-			</div>
+			<Sections />
 			<span id="time">
-				{clock(at())} / {clock(total())}
+				{clock(jb.pos())} / {clock(jb.length(jb.song()))}
 			</span>
 		</div>
 	)

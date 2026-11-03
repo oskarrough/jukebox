@@ -14,7 +14,8 @@
 	--green: #17b26a;
 	--yellow: #ffcf2e;
 	--red: #d6341a;
-	--sans: system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+	--sans: 'Inter Variable', system-ui, sans-serif;
+	--score: 'iA Writer Quattro', var(--mono);
 	--mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
 	--r: 12px;
 	--side: 14rem;
@@ -188,9 +189,9 @@ svg {
 	min-width: 0;
 	height: 2.6rem;
 	display: grid;
-	grid-template-columns: minmax(6rem, 14rem) minmax(0, 1fr) auto;
+	grid-template-columns: minmax(6rem, 14rem) minmax(0, 1fr) auto auto;
 	align-items: center;
-	gap: 0.9rem;
+	gap: 0.6rem;
 	background: var(--screen);
 	color: #9be86a;
 	border-radius: 10px;
@@ -209,20 +210,99 @@ svg {
 #time {
 	font-variant-numeric: tabular-nums;
 }
-.seek {
+/* the sections, each as long as it plays, where the position bar was */
+.sections {
 	position: relative;
-	height: 1.2rem;
+	height: 1.7rem;
+	touch-action: none;
 }
-#marks i {
+.section {
 	position: absolute;
-	top: 0.2rem;
-	bottom: 0.2rem;
-	width: 1px;
-	background: #555;
+	top: 0;
+	bottom: 0;
+	display: flex;
+	padding: 0;
+	border: 0;
+	border-right: 2px solid var(--screen);
+	border-radius: 4px;
+	background: #ffffff12;
+	color: #999;
+	font: 0.7rem var(--mono);
+	overflow: hidden;
+	cursor: grab;
 }
-#marks i.loop {
-	background: #9be86a;
+.section span {
+	flex: 1;
+	min-width: 0;
+	padding: 0 0.3rem;
+	line-height: 1.7rem;
+	text-align: left;
+	white-space: nowrap;
+	overflow: hidden;
+}
+.section span + span {
+	box-shadow: inset 1px 0 #ffffff1a;
+}
+.section:hover {
+	background: #ffffff1f;
+}
+.section.here {
+	background: #ffffff2e;
+	color: #ddd;
+}
+.section.on {
+	color: #fff;
+}
+.section.loop {
+	box-shadow: inset 2px 0 #9be86a;
+}
+.section.moved {
+	background: #9be86a40;
+	color: #fff;
+	cursor: grabbing;
+}
+.section .edge {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: 0.5rem;
+	cursor: ew-resize;
+}
+.section .edge:hover {
+	box-shadow: inset -2px 0 #9be86a;
+}
+.section.gone {
+	opacity: 0.25;
+}
+.section.over {
+	box-shadow: inset 0 0 0 1.5px #9be86a;
+}
+.sections.holding .section {
+	cursor: grabbing;
+}
+.sections .head {
+	position: absolute;
+	top: -0.15rem;
+	bottom: -0.15rem;
 	width: 2px;
+	margin-left: -1px;
+	background: var(--orange);
+	border-radius: 1px;
+	pointer-events: none;
+}
+.icon.add-section {
+	width: 1.7rem;
+	height: 1.7rem;
+	background: transparent;
+	box-shadow: inset 0 0 0 1.5px #333;
+	color: #9be86a;
+}
+.icon.add-section:hover {
+	box-shadow: inset 0 0 0 1.5px #9be86a;
+}
+.icon.add-section:disabled {
+	visibility: hidden;
 }
 .key-picker {
 	display: flex;
@@ -284,9 +364,6 @@ input[type='range']::-moz-range-thumb {
 	border-radius: 50%;
 	background: var(--orange);
 	border: 2px solid #fff;
-}
-.seek input[type='range']::-webkit-slider-runnable-track {
-	background: #ffffff22;
 }
 
 /* songs */
@@ -570,7 +647,7 @@ input[type='range']::-moz-range-thumb {
 }
 .sheet,
 #score {
-	font: 12.5px/1.6 var(--mono);
+	font: 14px/1.6 var(--score);
 	tab-size: 4;
 	white-space: pre-wrap;
 	overflow-wrap: break-word;
@@ -725,7 +802,7 @@ input[type='range']::-moz-range-thumb {
 	border: 0;
 	overflow: visible;
 	list-style: none;
-	font: 12.5px/1.6 var(--mono);
+	font: 14px/1.6 var(--score);
 	color: var(--ink);
 	background: var(--key);
 	border-radius: 8px;
@@ -1065,7 +1142,7 @@ kbd {
 	.lcd {
 		order: 9;
 		flex: 1 1 calc(100% - 3.1rem);
-		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-columns: minmax(0, 1fr) auto auto;
 	}
 	.lcd b {
 		display: none;

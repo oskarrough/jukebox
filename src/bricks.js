@@ -1,5 +1,5 @@
 // Loop bricks, after Dance eJay: one bar of something that grooves, dropped into
-// a song as a new voice playing it in every pattern. A brick is 16 steps; it
+// a song as a new voice playing it in every pattern, or in one. A brick is 16 steps; it
 // stretches to whatever a bar holds in the song.
 import { parse } from './score.js'
 import { keyOf, transposeBrick } from './key.js'
@@ -153,4 +153,109 @@ export function addBrick(text, brick) {
 	if (!Object.keys(song.patterns).length)
 		lines.push('', 'pattern A', `${name} | ${brickBar(brick, song.beats * song.steps)} |`, '', 'loop A')
 	return { text: lines.filter((l) => l != null).join('\n'), voice: name }
+}
+
+// Whether pattern `name` of `song` plays voice `v`: its own line or one it
+// builds on with from, unless muted along the way.
+function plays(song, name, v, seen = []) {
+	const p = song.patterns[name]
+	if (!p || seen.includes(name) || p.mute.has(v)) return false
+	if (p.voiceOrder.includes(v)) return true
+	return !!p.from && plays(song, p.from, v, [...seen, name])
+}
+// The pattern whose lines for `v` pattern `name` plays.
+function ownerOf(song, name, v, seen = []) {
+	const p = song.patterns[name]
+	if (!p || seen.includes(name)) return null
+	return p.voiceOrder.includes(v) ? p : p.from ? ownerOf(song, p.from, v, [...seen, name]) : null
+}
+// How many bars pattern `p` is, its own or from what it builds on.
+function barsIn(song, p, seen = []) {
+	const own = Math.max(0, ...Object.values(p.raw).map((ls) => ls.reduce((n, l) => n + l.bars.length, 0)))
+	const base = p.from && !seen.includes(p.from) && song.patterns[p.from]
+	return own || (base ? barsIn(song, base, [...seen, p.name]) : 1)
+}
+// Where pattern `p` ends in `lines`, and which of its lines are music or mute.
+function bodyOf(lines, p) {
+	let last = p.ln - 1
+	const music = []
+	const mutes = []
+	for (let i = p.ln; i < lines.length; i++) {
+		const l = strip(lines[i] ?? '')
+		if (!l) continue
+		const m = MUSIC.exec(l)
+		if (!m && !/^mute\b/i.test(l)) break
+		last = i
+		if (m) music.push([i, m[1]])
+		else mutes.push(i)
+	}
+	return { last, music, mutes }
+}
+
+// The song `text` with `brick` added to pattern `name` only. Every other
+// pattern sounds as it did: one built on it with from keeps what it had (it
+// gets the old line, or a mute if it had none). A brick whose voice already
+// plays another instrument gets a voice of its own, replacing that one here.
+export function brickInto(text, brick, name) {
+	const { song } = parse(text)
+	const p = song.patterns[name]
+	if (!p) return { text, voice: null }
+	brick = transposeBrick(brick, keyOf(text, song))
+	let v = brick.voice
+	let replaced = null
+	if (song.voiceMap[v] && song.voiceMap[v].inst !== brick.inst) {
+		replaced = v
+		const kin = song.voices.find((w) => w.inst === brick.inst && new RegExp(`^${v}\\d+$`).test(w.name))
+		let n = 2
+		while (!kin && song.voiceMap[v + n]) n++
+		v = kin ? kin.name : v + n
+	}
+	const lines = text.split('\n')
+	const inserts = [] // [after line index, text], kept in order
+	const mutes = new Map() // pattern -> voices to mute in it
+	const mute = (q, w) => mutes.set(q, [...(mutes.get(q) ?? []), w])
+
+	const changed = [v, replaced].filter(Boolean)
+	for (const c of Object.values(song.patterns).filter((c) => c.from === name))
+		for (const w of changed) {
+			if (c.voiceOrder.includes(w) || c.mute.has(w)) continue
+			if (!plays(song, name, w)) mute(c, w)
+			else for (const l of ownerOf(song, name, w).raw[w]) inserts.push([bodyOf(lines, c).last, lines[l.ln - 1]])
+		}
+
+	const body = bodyOf(lines, p)
+	// The brick's line, in place of this voice's own lines here.
+	const line = `${v.padEnd(4)} | ${[brickBar(brick, (p.opts.beats || song.beats) * (p.opts.steps || song.steps)), ...Array(barsIn(song, p) - 1).fill('%')].join(' | ')} |`
+	const own = body.music.filter(([, w]) => w === v).map(([i]) => i)
+	if (own.length) {
+		lines[own[0]] = line
+		for (const i of own.slice(1)) lines[i] = null
+	} else inserts.push([body.last, line])
+	// The voice it replaces goes quiet here.
+	if (replaced) {
+		for (const [i, w] of body.music) if (w === replaced) lines[i] = null
+		if (p.from && plays(song, p.from, replaced) && !p.mute.has(replaced)) mute(p, replaced)
+	}
+	// A mute here of the brick's own voice goes.
+	for (const i of body.mutes) {
+		const words = strip(lines[i]).split(/\s+/)
+		if (!words.includes(v)) continue
+		const left = words.slice(1).filter((w) => w !== v)
+		lines[i] = left.length ? `mute ${left.join(' ')}` : null
+	}
+	for (const [q, ws] of mutes) {
+		const at = bodyOf(lines, q).mutes.find((i) => lines[i] != null)
+		if (at != null) lines[at] = `${lines[at]} ${ws.join(' ')}`
+		else inserts.push([q.ln - 1, `mute ${ws.join(' ')}`])
+	}
+	if (!song.voiceMap[v]) {
+		const voiceLines = lines.flatMap((l, i) => (l != null && /^voice\s/i.test(strip(l)) ? [i] : []))
+		const firstPattern = Math.min(...Object.values(song.patterns).map((q) => q.ln - 1))
+		inserts.push([voiceLines.length ? voiceLines.at(-1) : firstPattern - 1, `voice ${v} ${brick.inst} vol=${brick.vol}`])
+	}
+	// From the bottom up, so earlier line numbers stay put; at the same place,
+	// in the order they came.
+	const ordered = inserts.map((ins, k) => [...ins, k]).sort((a, b) => b[0] - a[0] || b[2] - a[2])
+	for (const [after, l] of ordered) lines.splice(after + 1, 0, l)
+	return { text: lines.filter((l) => l != null).join('\n'), voice: v }
 }

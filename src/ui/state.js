@@ -2,10 +2,11 @@
 // its text as you edit it, what's muted, how the game would place it, and
 // the audio playing it. Components read the signals and call the actions.
 import { createEffect, createMemo, createRoot, createSignal, createStore, flush, untrack } from 'solid-js'
-import { BRICKS, addBrick, brickBar } from '../bricks.js'
+import { BRICKS, addBrick, brickBar, brickInto } from '../bricks.js'
 import { EFFECTS, SOURCES, effectState, runChain } from '../effects.js'
 import { inferKey, setSongKey, starter, transposeBrick } from '../key.js'
 import { DRUMS, chordToMidis, compile, noteToMidi, parse, parseKey } from '../score.js'
+import { addSection as addPattern, moveSection, removeSection, repeatSection, sectionsOf } from './arrange.js'
 import { columnOf, marksFor } from './link.js'
 import { slug } from './slug.js'
 import { voiceColors } from '../roll.js'
@@ -87,6 +88,9 @@ export const jb = createRoot(() => {
 		return s
 	}
 	const song = createMemo(() => songOf(name(), only()))
+	// The whole song, even while one pattern loops, and its sections in play order.
+	const whole = createMemo(() => songOf(name()))
+	const sections = createMemo(() => sectionsOf(text(), whole()))
 	// The bars on the roll the caret is in.
 	const marks = createMemo(() => marksFor(song(), caret()))
 	const songs = createMemo(() => names().map((n) => ({ name: n, song: songOf(n), made: made().includes(n) })))
@@ -373,25 +377,65 @@ export const jb = createRoot(() => {
 		if (one.voices[0]) sample(one.voices[0], one.loop.events)
 	}
 
-	// Gives voice `name` the instrument `inst`, keeping its options; written
-	// into the score the way typing would, so ⌘Z undoes it.
-	function swap(name, inst) {
+	// The score as it stands in the editor, a keystroke ahead of `text`.
+	const score = () => document.getElementById('score')?.value ?? text()
+	// Writes `next` over the score the way typing would, as one edit, so ⌘Z
+	// undoes it.
+	function rewrite(next) {
 		const area = document.getElementById('score')
-		const t = area?.value ?? text()
+		const t = score()
+		if (next === t) return
+		if (area) {
+			let a = 0
+			while (a < t.length && t[a] === next[a]) a++
+			let z = 0
+			while (z < t.length - a && z < next.length - a && t[t.length - 1 - z] === next[next.length - 1 - z]) z++
+			const mid = next.slice(a, next.length - z)
+			area.focus({ preventScroll: true })
+			area.setSelectionRange(a, t.length - z)
+			if (mid) document.execCommand('insertText', false, mid)
+			else document.execCommand('delete')
+			area.blur()
+		}
+		setText(next)
+	}
+
+	// Gives voice `name` the instrument `inst`, keeping its options.
+	function swap(name, inst) {
+		const t = score()
 		const v = parse(t).song.voiceMap[name]
 		if (!v) return
 		const lines = t.split('\n')
 		const m = /^(\s*voice\s+\S+\s+)(\S+)/i.exec(lines[v.ln - 1])
 		if (!m) return
 		const start = lines.slice(0, v.ln - 1).reduce((n, l) => n + l.length + 1, 0) + m[1].length
-		const stop = start + m[2].length
-		if (area) {
-			area.focus({ preventScroll: true })
-			area.setSelectionRange(start, stop)
-			document.execCommand('insertText', false, inst)
-			area.blur()
-		}
-		setText(t.slice(0, start) + inst + t.slice(stop))
+		rewrite(t.slice(0, start) + inst + t.slice(start + m[2].length))
+	}
+
+	// Plays the song from section `s` (from sections), its pattern where the
+	// caret is, so ⌘L loops it.
+	function playSection(s) {
+		reveal(s.ln)
+		if (!untrack(only)) seek(s.start)
+		if (!playing) play()
+	}
+	// Moves section `from` to the gap before `to`, or copies it there.
+	const moveTo = (from, to, copy) => rewrite(moveSection(score(), from, to, copy))
+	const remove = (i) => rewrite(removeSection(score(), i))
+	const repeat = (i, times) => rewrite(repeatSection(score(), i, times))
+	// A new pattern from the one you're in (or hearing), at the end of the loop,
+	// and there you are.
+	function addSection() {
+		const all = untrack(sections).all
+		const at = untrack(caret)?.pattern
+		const here = all.find((s) => s.name === at) ?? all.find((s) => untrack(pos) < s.start + s.dur) ?? all.at(-1)
+		if (!here) return
+		const { text: next, name: added } = addPattern(score(), here.name)
+		if (!added) return
+		rewrite(next)
+		flush()
+		const s = untrack(sections).all.findLast((s) => s.name === added)
+		if (s) playSection(s)
 	}
 
 	// The piano: the computer keyboard plays notes into the score.
@@ -438,13 +482,14 @@ export const jb = createRoot(() => {
 		})
 	}
 
-	// Drops a loop brick into the song: a new voice playing it in every pattern.
-	function drop(id) {
+	// Drops a loop brick into the song: a new voice playing it in every
+	// pattern, or only in `pattern`.
+	function drop(id, pattern) {
 		const brick = BRICKS.find((b) => b.id === id)
 		if (!brick) return
 		stopSample()
-		const { text: next, voice } = addBrick(text(), brick)
-		setText(next)
+		const { text: next, voice } = pattern ? brickInto(score(), brick, pattern) : addBrick(score(), brick)
+		rewrite(next)
 		setFresh(voice)
 		setTimeout(() => setFresh(null), 600)
 		flush()
@@ -553,6 +598,14 @@ export const jb = createRoot(() => {
 		setText,
 		parsed,
 		song,
+		whole,
+		sections,
+		only,
+		playSection,
+		moveTo,
+		remove,
+		repeat,
+		addSection,
 		shown,
 		colors,
 		key,
