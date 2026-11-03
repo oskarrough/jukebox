@@ -124,7 +124,8 @@
 		0 0 0 1px var(--line);
 }
 .cm-tooltip.cm-tooltip-autocomplete > ul {
-	max-height: calc(8 * 1.6em + 6px);
+	/* as tall as half the window allows, so a long list needs less scrolling */
+	max-height: min(24 * 1.6em + 6px, 45vh);
 	font: 14px/1.6 var(--score);
 	color: var(--ink);
 }
