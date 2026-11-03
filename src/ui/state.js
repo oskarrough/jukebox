@@ -7,8 +7,10 @@ import { EFFECTS, SOURCES, effectState, runChain } from '../effects.js'
 import { inferKey, setSongKey, starter } from '../key.js'
 import { chordToMidis, compile, noteToMidi, parse, parseKey } from '../score.js'
 import { columnOf, marksFor } from './link.js'
+import { slug } from './slug.js'
 import { voiceColors } from '../roll.js'
 import { AHEAD, begin, end, feed, synthFor, tune } from '../player.js'
+import { ALIASES } from '../aliases.js'
 import { NAMES, SONGS } from '../songs.js'
 
 // Hearing the song as written: every device bypassed.
@@ -42,16 +44,6 @@ function store(key, value) {
 		localStorage.setItem(key, JSON.stringify(value))
 	} catch {}
 }
-
-// A file name from a song's title: "Noch Licht am Feld" is noch-licht-am-feld.
-const slug = (title) =>
-	title
-		.normalize('NFKD')
-		.replace(/ß/g, 'ss')
-		.replace(/[\u0300-\u036f]/g, '')
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, '-')
-		.replace(/^-|-$/g, '') || 'song'
 
 export const jb = createRoot(() => {
 	// What's in music/, as last saved; the page's edits are drafts on top.
@@ -442,7 +434,8 @@ export const jb = createRoot(() => {
 		const fit = () => setSongsOpen(!narrow.matches)
 		fit()
 		narrow.addEventListener('change', fit)
-		const wanted = names().includes(asked.get('song')) ? asked.get('song') : null
+		const asking = ALIASES[asked.get('song')] ?? asked.get('song')
+		const wanted = names().includes(asking) ? asking : null
 		// After the page has settled: picking a song flushes, which can't happen
 		// while it settles. It only plays if the browser lets sound start
 		// before a click; otherwise it waits on the play button.

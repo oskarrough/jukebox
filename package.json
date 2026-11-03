@@ -23,7 +23,7 @@
 		"build": "bun run check && vite build",
 		"preview": "vite preview",
 		"test": "bun test",
-		"check": "oxlint --quiet && oxfmt --check",
+		"check": "oxlint --quiet && oxfmt --check && bun scripts/check-names.js",
 		"format": "oxfmt",
 		"deploy": "wrangler deploy"
 	},

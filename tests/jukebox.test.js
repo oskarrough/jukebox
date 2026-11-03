@@ -48,7 +48,7 @@ oud | D4- Eq4- F4- ~Eq4- D4------- |`)
 	})
 
 	test('the Sonnenallee songs are in a maqam with quarter tones', () => {
-		for (const name of ['sonnenallee', 'sonnenallee-nacht']) {
+		for (const name of ['sonnenallee', 'sonnenallee-bei-nacht']) {
 			const song = score(name)
 			expect(song.street).toBe('Sonnenallee')
 			expect(song.loop.events.some((e) => e.m?.some((m) => m % 1))).toBe(true)
@@ -60,7 +60,7 @@ describe('songs say where they belong', () => {
 	test('street and at in the head', () => {
 		expect(score('konvoi').at).toEqual([])
 		expect(score('hasenheide').at).toEqual(['cafe'])
-		for (const name of ['tempelhof', 'luftbruecke']) expect(score(name).at).toEqual(['feld'])
+		for (const name of ['tempelhofer-feld', 'luftbruecke']) expect(score(name).at).toEqual(['feld'])
 		expect(compile('at Doener  cafe\nvoice a sine\npattern A\na | C4 |').at).toEqual(['doener', 'cafe'])
 	})
 	test("game names the game a song is for; without it a song is NK GTA's", () => {
