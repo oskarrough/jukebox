@@ -8,6 +8,7 @@ import { inferKey, newTitle, setSongKey, starter, transposeBrick } from '../key.
 import { DRUMS, chordToMidis, compile, noteToMidi, parse, parseKey } from '../score.js'
 import { addSection as addPattern, moveSection, removeSection, repeatSection, sectionsOf } from './arrange.js'
 import { columnOf, marksFor } from './link.js'
+import { addPad, barsIn, harmonyVoice, writeChord } from './pad.js'
 import { slug } from './slug.js'
 import { voiceColors } from '../roll.js'
 import { AHEAD, begin, end, feed, synthFor, tune } from '../player.js'
@@ -452,6 +453,81 @@ export const jb = createRoot(() => {
 		if (s) playSection(s)
 	}
 
+	// The chord pad: open or not, what its modifier makes of a chord, and a bar
+	// picked for its next tap ({ pattern, bar }), on the tape or by the last tap.
+	const [padOpen, setPadOpen] = createSignal(false)
+	const [mod, setMod] = createSignal(null)
+	const [picked, setPicked] = createSignal(null)
+	const togglePad = () => setPadOpen((on) => !on)
+	function pickBar(pattern, bar) {
+		setPicked({ pattern, bar })
+		setPadOpen(true)
+	}
+	// The voice that plays the chord row, if any.
+	const harmony = createMemo(() => harmonyVoice(text()))
+	// Where `pos` is in what's playing: its section, the bar and the step in the pattern.
+	function sectionAt(s, at) {
+		if (!s) return null
+		const tl = at < s.intro.dur ? s.intro : s.loop
+		const t = at < s.intro.dur ? at : at - s.intro.dur
+		const sec = tl.sections.find((x) => t >= x.start && t < x.start + x.dur)
+		if (!sec) return null
+		const step = Math.floor(((t - sec.start) / sec.barDur) * sec.beats * sec.steps)
+		return { sec, bar: Math.floor((t - sec.start) / sec.barDur), step }
+	}
+	// The chord sounding now.
+	const chordNow = createMemo(() => {
+		const here = sectionAt(nowPlaying(), pos())
+		return here?.sec.chords?.find((c) => here.step >= c.step && here.step < c.step + c.len)?.sym ?? null
+	})
+	// Where the next chord tapped goes: { pattern, bar }. A bar picked first;
+	// playing, the bar playing; stopped, the bar after the pattern's last
+	// chord, round to its first when the row is as long as its voices.
+	const patternNames = createMemo(() => parse(text()).song.patternOrder)
+	const target = createMemo(() => {
+		const names = patternNames()
+		if (!names.length) return { pattern: null, bar: 0 }
+		const here = live() ? sectionAt(nowPlaying(), pos()) : null
+		const pattern =
+			here?.sec.name ?? [caret()?.pattern, sectionAt(nowPlaying(), pos())?.sec.name].find((n) => names.includes(n)) ?? names[0]
+		const pick = picked()
+		if (pick?.pattern === pattern) return pick
+		if (here) return { pattern, bar: here.bar }
+		const { row, voices } = barsIn(compileText(text(), pattern).loop.sections[0])
+		return { pattern, bar: voices && row >= voices ? 0 : row }
+	})
+	// Plays chord `sym` on the voice that plays the chord row, or a pad.
+	const PAD = parse('voice pad pad vol=0.35').song.voices[0]
+	function hearChord(sym) {
+		const s = song()
+		const voice = s?.voices.find((v) => v.name === untrack(harmony)) ?? PAD
+		const m = chordToMidis(sym, voice.center)
+		if (!m) return
+		const beat = 60 / (s?.tempo ?? 100)
+		sample(voice, [{ t: 0, d: 4 * beat * voice.gate, vel: 0.8, m: m.map((n) => n + voice.trans) }])
+	}
+	// Writes chord `sym` where the next chord goes, as one edit. Stopped, the
+	// tap after goes in the bar after it.
+	function tapChord(sym) {
+		const at = untrack(target)
+		const out = writeChord(score(), at.pattern, at.bar, sym)
+		if (!out) return
+		draw(out.text, out.ln, out.col)
+		const pattern = at.pattern ?? parse(out.text).song.patternOrder[0]
+		const { voices } = barsIn(compileText(out.text, pattern).loop.sections[0])
+		const next = at.bar + 1
+		setPicked(playing || !voices ? null : { pattern, bar: next < voices ? next : 0 })
+	}
+	// A pad that plays the chord row, in every pattern.
+	function addChordVoice() {
+		const { text: next, voice } = addPad(score())
+		rewrite(next)
+		setFresh(voice)
+		setTimeout(() => setFresh(null), 600)
+		flush()
+		if (!playing) play()
+	}
+
 	// The piano: the computer keyboard plays notes into the score.
 	const [piano, setPiano] = createSignal(false)
 	function togglePiano() {
@@ -471,6 +547,7 @@ export const jb = createRoot(() => {
 
 	function pick(n) {
 		setName(n)
+		setPicked(null)
 		from = 0
 		setPos(0)
 		if (playing) since = -(context.currentTime + 0.05)
@@ -664,6 +741,17 @@ export const jb = createRoot(() => {
 		swap,
 		piano,
 		togglePiano,
+		padOpen,
+		togglePad,
+		mod,
+		setMod,
+		target,
+		pickBar,
+		harmony,
+		chordNow,
+		hearChord,
+		tapChord,
+		addChordVoice,
 		inGame,
 		fx,
 		setFx,

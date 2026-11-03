@@ -1,4 +1,4 @@
-// The top bar: songs toggle, play, loop one pattern, the display with title, sections and time,
+// The top bar: songs toggle, play, loop one pattern, the piano, the chord pad, the display with title, sections and time,
 // the key, download, the game's sound and the guide. On a phone the display is on top and the
 // controls in a row at the bottom, the key, download, guide and feedback behind ⋯.
 import { For, flush } from 'solid-js'
@@ -10,6 +10,16 @@ import { DownloadIcon, FeedbackIcon, GuideIcon, LoopIcon, PianoIcon, SidebarIcon
 const MoreIcon = () => (
 	<svg viewBox="0 0 20 20">
 		<path d="M4.5 10h.01M10 10h.01M15.5 10h.01" />
+	</svg>
+)
+
+// A chord: three notes on one stem.
+const ChordIcon = () => (
+	<svg viewBox="0 0 20 20">
+		<path d="M13 3v11.5" />
+		<ellipse cx="10.5" cy="15" rx="2.5" ry="1.8" />
+		<ellipse cx="10.5" cy="11" rx="2.5" ry="1.8" />
+		<ellipse cx="10.5" cy="7" rx="2.5" ry="1.8" />
 	</svg>
 )
 
@@ -47,6 +57,15 @@ export function TopBar() {
 				onClick={jb.togglePiano}
 			>
 				<PianoIcon />
+			</button>
+			<button
+				class="icon pad-toggle"
+				type="button"
+				aria-pressed={String(jb.padOpen())}
+				title={jb.padOpen() ? 'Hide the chord pad (⌘J)' : 'Tap chords into the pattern you’re in (⌘J)'}
+				onClick={jb.togglePad}
+			>
+				<ChordIcon />
 			</button>
 			<Display />
 			<button class="icon more-toggle" type="button" popovertarget="more" title="Open key, download, guide and feedback">

@@ -58,6 +58,8 @@ Drum instruments (the Drums group) take drum lanes; every other instrument takes
 
 `chords | Dm9 | % | Gm9 | Bbmaj9 C6/9 |` in a pattern gives the chords, a bar at a time; voices play them in their own rhythm. Chords in a bar share it evenly; `-` holds the one before a share longer (`Am - - G` is Am for three beats), `.` is a share with no chord. `%` and `_` work as in notes. The last chord rings on to the pattern's end. A `from` pattern inherits the row, `chords@3 | … |` patches it, and `+5` on the loop line and the key switch move it.
 
+In the page, the chord pad (⌘J) writes chords into the row by tapping: the key's chords in the middle, 7, 9, sus and add9 on the side; click a chord on the tape to pick its bar.
+
 A voice that takes notes follows the row when a bar is written in steps, like a drum lane: `pad | x--------------- |`, `bass | x... ..x. x... .... |`. `-` holds; a held chord is struck again where the row changes. `part=` says what it plays: `chord` (the default) the whole chord, `rootless` without its root (when a bass has it), `root` the root (or the note after `/`), `top` the top note, `up` the next note up on each hit. Chords move to the nearest voicing around `center=`. Note bars and step bars mix freely, even on one line.
 
 Chord kinds: none (major), `m`, `5`, `6`, `m6`, `7`, `m7`, `maj7`, `mmaj7`, `9`, `m9`, `maj9`, `add9`, `madd9`, `6/9`, `m6/9`, `11`, `m11`, `13`, `m13`, `maj13`, `sus2`, `sus4`, `7sus4`, `9sus4`, `dim`, `dim7`, `m7b5`, `aug`, `7b9`, `7#9`, `maj7#11`, and `/E` after any of them for another bass note. Their 9ths, 11ths and 13ths sit above the octave, as a pianist plays them.

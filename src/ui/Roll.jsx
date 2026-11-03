@@ -6,18 +6,22 @@
 // switches that step. While you drag it shows the song as it will be, and
 // you hear the note; letting go writes it into the score. A click on a note
 // without dragging finds it in the score, and the tape holds still so a
-// second click can delete it; the pattern names along the top jump there.
-import { onSettled } from 'solid-js'
+// second click can delete it; the pattern names along the top jump there,
+// and a click on the chords under them picks that bar for the chord pad,
+// which sits below the tape when it's open.
+import { Show, onSettled } from 'solid-js'
 import { drawRoll, hitRoll } from '../roll.js'
 import { compile } from '../score.js'
 import { prefersFlats, transposeToken } from '../key.js'
 import { addNote, blocked, moveNote, nameOf, noteAt, placeAt, removeNote, setHit, snap, stretchNote, timeAt } from './draw.js'
 import { jb } from './state.js'
+import { ChordPad } from './ChordPad.jsx'
 
 const TIPS = {
 	note: 'Find in the score; drag to move or stretch, double-click to delete',
 	hit: 'Switch this step on or off',
 	jump: 'Jump here, and to the pattern in the score',
+	chord: 'Pick a chord for this bar on the pad',
 	broken: 'Fix this bar in the score to draw here',
 }
 
@@ -39,7 +43,8 @@ export function Roll() {
 			frame = requestAnimationFrame(draw)
 			const song = jb.nowPlaying()
 			if (!song) return canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
-			const sounding = drawRoll(canvas, preview ?? song, jb.elapsed(), jb.mutedSet(), jb.marks(), ghost, drag?.song)
+			const bar = jb.padOpen() ? jb.target() : null
+			const sounding = drawRoll(canvas, preview ?? song, jb.elapsed(), jb.mutedSet(), jb.marks(), ghost, drag?.song, bar)
 			const next = song.voices.map((_, i) => (jb.live() && sounding.has(i) ? 1 : (levels[i] ?? 0) * 0.85))
 			const quiet = (l) => (l < 0.01 ? 0 : l)
 			if (next.some((l, i) => Math.abs(quiet(l) - quiet(levels[i] ?? 0)) > 0.01) || next.length !== levels.length)
@@ -120,6 +125,7 @@ export function Roll() {
 		ghost = null
 		if (!cur) return say('pointer', 'Jump here, and to the note in the score')
 		const hit = hitAt(e, cur.song)
+		if (hit.bar) return say('pointer', TIPS.chord)
 		if (hit.event) {
 			const drum = cur.song.voices[hit.event.v].drum
 			return say(drum ? 'pointer' : hit.end ? 'ew-resize' : 'grab', drum ? TIPS.hit : TIPS.note)
@@ -161,6 +167,7 @@ export function Roll() {
 		if (e.button !== 0 || !song) return
 		const cur = current()
 		const hit = hitAt(e, song)
+		if (hit.bar) return jb.pickBar(hit.bar.section.name, hit.bar.b)
 		if (!cur || (hit.section && !hit.event)) return jump(hit)
 		const start = { ...cur, x: e.clientX, y: e.clientY, moved: false, next: null, key: null }
 		if (hit.event) {
@@ -296,6 +303,9 @@ export function Roll() {
 				}}
 				onDblClick={remove}
 			/>
+			<Show when={jb.padOpen()}>
+				<ChordPad />
+			</Show>
 		</section>
 	)
 }
