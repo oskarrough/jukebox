@@ -40,7 +40,12 @@ export function SongList() {
 				jb.undo()
 			}}
 		>
-			<div class="tags">
+			<span class="k add">
+				<button type="button" title="Choose how to start a song" popovertarget="styles">
+					<PlusIcon />
+				</button>
+			</span>
+			<div class="tags seg">
 				<For each={jb.tags()}>
 					{(t) => (
 						<button
@@ -95,13 +100,12 @@ export function SongList() {
 				</For>
 			</div>
 			<Show when={jb.gone()}>
-				<button type="button" class="undo" title="Bring the song back (⌘Z)" onClick={jb.undo}>
-					Undo
-				</button>
+				<span class="k undo">
+					<button type="button" title="Bring the song back (⌘Z)" onClick={jb.undo}>
+						Undo
+					</button>
+				</span>
 			</Show>
-			<button class="icon add" type="button" title="Choose how to start a song" popovertarget="styles">
-				<PlusIcon />
-			</button>
 			<div
 				id="styles"
 				popover
@@ -110,25 +114,27 @@ export function SongList() {
 					else jb.stopStyle()
 				}}
 			>
-				<button type="button" class="icon" title="Start a blank song (Enter)" onClick={() => make('')}>
-					Blank
-				</button>
+				<span class="k">
+					<button type="button" title="Start a blank song (Enter)" onClick={() => make('')}>
+						Blank
+					</button>
+				</span>
 				<For each={STARTERS}>
 					{(s) => (
-						<button
-							type="button"
-							class="style"
-							data-style={s.id}
-							title={`Start a ${s.name.toLowerCase()} song`}
-							onClick={() => make(s.id)}
-							onPointerEnter={() => jb.hearStyle(s.id)}
-							onPointerLeave={() => jb.stopStyle()}
-							onFocus={(e) => {
-								if (!e.currentTarget.matches(':hover')) jb.hearStyle(s.id)
-							}}
-						>
-							{s.name}
-						</button>
+						<span class="k">
+							<button
+								type="button"
+								title={`Start a ${s.name.toLowerCase()} song`}
+								onClick={() => make(s.id)}
+								onPointerEnter={() => jb.hearStyle(s.id)}
+								onPointerLeave={() => jb.stopStyle()}
+								onFocus={(e) => {
+									if (!e.currentTarget.matches(':hover')) jb.hearStyle(s.id)
+								}}
+							>
+								{s.name}
+							</button>
+						</span>
 					)}
 				</For>
 			</div>

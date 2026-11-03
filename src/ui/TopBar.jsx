@@ -5,7 +5,18 @@ import { For, flush } from 'solid-js'
 import { KEY_ROOTS } from '../key.js'
 import { jb } from './state.js'
 import { Sections } from './Sections.jsx'
-import { BricksIcon, DownloadIcon, FeedbackIcon, GuideIcon, LoopIcon, PianoIcon, SidebarIcon, SpeakerIcon } from './Icons.jsx'
+import {
+	BricksIcon,
+	DownloadIcon,
+	FeedbackIcon,
+	GuideIcon,
+	LoopIcon,
+	PianoIcon,
+	PlayIcon,
+	SidebarIcon,
+	SpeakerIcon,
+	StopIcon,
+} from './Icons.jsx'
 
 const MoreIcon = () => (
 	<svg viewBox="0 0 20 20">
@@ -28,85 +39,99 @@ const clock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStar
 export function TopBar() {
 	return (
 		<header class="top">
-			<button
-				class="icon songs-toggle"
-				type="button"
-				aria-controls="songs"
-				aria-pressed={String(jb.songsOpen())}
-				title={jb.songsOpen() ? 'Hide songs' : 'Show songs'}
-				onClick={() => jb.setSongsOpen((open) => !open)}
-			>
-				<SidebarIcon />
-			</button>
+			<span class="k songs-toggle">
+				<button
+					type="button"
+					aria-controls="songs"
+					aria-pressed={String(jb.songsOpen())}
+					title={jb.songsOpen() ? 'Hide songs' : 'Show songs'}
+					onClick={() => jb.setSongsOpen((open) => !open)}
+				>
+					<SidebarIcon />
+				</button>
+			</span>
 			<b class="brand">jukebox</b>
-			<button id="play" type="button" title={jb.live() ? 'Stop (Space, ⌘↩)' : 'Play (Space, ⌘↩)'} onClick={jb.toggle} />
-			<button
-				class="icon loop-toggle"
-				type="button"
-				aria-pressed={String(jb.looping())}
-				title={jb.looping() ? 'Play the whole song again (⌘L)' : 'Loop the pattern you’re writing (⌘L)'}
-				onClick={jb.toggleLoop}
-			>
-				<LoopIcon />
-			</button>
-			<button
-				class="icon piano-toggle"
-				type="button"
-				aria-pressed={String(jb.piano())}
-				aria-controls="piano"
-				aria-expanded={String(jb.piano())}
-				title={jb.piano() ? 'Hide the piano (⌘K)' : 'Play and write notes on the piano (⌘K)'}
-				onClick={jb.togglePiano}
-			>
-				<PianoIcon />
-			</button>
-			<button
-				class="icon pad-toggle"
-				type="button"
-				aria-pressed={String(jb.padOpen())}
-				title={jb.padOpen() ? 'Hide the chord pad (⌘J)' : 'Tap chords into the pattern you’re in (⌘J)'}
-				onClick={jb.togglePad}
-			>
-				<ChordIcon />
-			</button>
-			<button
-				class="icon bricks-toggle"
-				type="button"
-				aria-pressed={String(jb.bricksOpen())}
-				title={jb.bricksOpen() ? 'Hide the loop bricks' : 'Drop loop bricks into the song'}
-				onClick={jb.toggleBricks}
-			>
-				<BricksIcon />
-			</button>
+			<span class="k play">
+				<button id="play" class="go" type="button" title={jb.live() ? 'Stop (Space, ⌘↩)' : 'Play (Space, ⌘↩)'} onClick={jb.toggle}>
+					{jb.live() ? <StopIcon /> : <PlayIcon />}
+				</button>
+			</span>
+			<span class="k loop-toggle">
+				<button
+					type="button"
+					aria-pressed={String(jb.looping())}
+					title={jb.looping() ? 'Play the whole song again (⌘L)' : 'Loop the pattern you’re writing (⌘L)'}
+					onClick={jb.toggleLoop}
+				>
+					<LoopIcon />
+				</button>
+			</span>
+			<span class="k piano-toggle">
+				<button
+					type="button"
+					aria-pressed={String(jb.piano())}
+					aria-controls="piano"
+					aria-expanded={String(jb.piano())}
+					title={jb.piano() ? 'Hide the piano (⌘K)' : 'Play and write notes on the piano (⌘K)'}
+					onClick={jb.togglePiano}
+				>
+					<PianoIcon />
+				</button>
+			</span>
+			<span class="k pad-toggle">
+				<button
+					type="button"
+					aria-pressed={String(jb.padOpen())}
+					title={jb.padOpen() ? 'Hide the chord pad (⌘J)' : 'Tap chords into the pattern you’re in (⌘J)'}
+					onClick={jb.togglePad}
+				>
+					<ChordIcon />
+				</button>
+			</span>
+			<span class="k bricks-toggle">
+				<button
+					type="button"
+					aria-pressed={String(jb.bricksOpen())}
+					title={jb.bricksOpen() ? 'Hide the loop bricks' : 'Drop loop bricks into the song'}
+					onClick={jb.toggleBricks}
+				>
+					<BricksIcon />
+				</button>
+			</span>
 			<Display />
-			<button class="icon more-toggle" type="button" popovertarget="more" title="Open key, download, guide and feedback">
-				<MoreIcon />
-			</button>
+			<span class="k more-toggle">
+				<button type="button" popovertarget="more" title="Open key, download, guide and feedback">
+					<MoreIcon />
+				</button>
+			</span>
 			<div id="more" class="more pop" popover>
 				<KeyPicker />
-				<button
-					class={{ icon: true, unsaved: jb.unsaved(jb.name()) }}
-					type="button"
-					title={jb.canSave ? 'Save to music/ (⌘S)' : 'Download as a .song file (⌘S)'}
-					onClick={jb.save}
-				>
-					<DownloadIcon />
-				</button>
-				<button class="icon guide-toggle" type="button" popovertarget="guide" title="Open the song format guide">
-					<GuideIcon />
-				</button>
-				<button class="icon feedback-toggle" type="button" popovertarget="feedback" title="Send feedback">
-					<FeedbackIcon />
-				</button>
+				<span class="k">
+					<button
+						class={{ unsaved: jb.unsaved(jb.name()) }}
+						type="button"
+						title={jb.canSave ? 'Save to music/ (⌘S)' : 'Download as a .song file (⌘S)'}
+						onClick={jb.save}
+					>
+						<DownloadIcon />
+					</button>
+				</span>
+				<span class="k guide-toggle">
+					<button type="button" popovertarget="guide" title="Open the song format guide">
+						<GuideIcon />
+					</button>
+				</span>
+				<span class="k feedback-toggle">
+					<button type="button" popovertarget="feedback" title="Send feedback">
+						<FeedbackIcon />
+					</button>
+				</span>
 			</div>
-			<button
-				class={{ icon: true, 'game-toggle': true, on: jb.inGame() }}
-				type="button"
-				popovertarget="game"
-				title="Hear it the way the game places it"
-			>
-				<SpeakerIcon />
-			</button>
+			<span class="k game-toggle">
+				<button class={{ on: jb.inGame() }} type="button" popovertarget="game" title="Hear it the way the game places it">
+					<SpeakerIcon />
+				</button>
+			</span>
 		</header>
 	)
 }
@@ -149,6 +174,7 @@ function Title() {
 	)
 }
 
+// The key: its root behind one key, a tray of all twelve, and major or minor beside it.
 function KeyPicker() {
 	const root = () => {
 		const k = jb.key()
@@ -156,24 +182,43 @@ function KeyPicker() {
 	}
 	const mode = () => (jb.key().minor ? 'min' : 'maj')
 	return (
-		<div class="key-picker">
-			<select
-				aria-label="Key"
-				title="Change key and transpose the song"
-				value={root()}
-				onChange={(e) => jb.changeKey(e.currentTarget.value, mode())}
-			>
-				<For each={KEY_ROOTS}>{(r) => <option value={r}>{r}</option>}</For>
-			</select>
-			<select
-				aria-label="Major or minor"
-				title="Switch between major and minor"
-				value={mode()}
-				onChange={(e) => jb.changeKey(root(), e.currentTarget.value)}
-			>
-				<option value="maj">maj</option>
-				<option value="min">min</option>
-			</select>
-		</div>
+		<>
+			<span class="k key-root">
+				<button type="button" popovertarget="roots" title="Change key and transpose the song">
+					{root()}
+				</button>
+			</span>
+			<div id="roots" class="seg" popover>
+				<For each={KEY_ROOTS}>
+					{(r) => (
+						<button
+							type="button"
+							aria-pressed={String(r === root())}
+							title={`Transpose to ${r}`}
+							onClick={(e) => {
+								e.currentTarget.parentElement.hidePopover()
+								jb.changeKey(r, mode())
+							}}
+						>
+							{r}
+						</button>
+					)}
+				</For>
+			</div>
+			<span class="seg key-mode">
+				<For each={['maj', 'min']}>
+					{(m) => (
+						<button
+							type="button"
+							aria-pressed={String(m === mode())}
+							title={m === 'maj' ? 'Switch to major' : 'Switch to minor'}
+							onClick={() => jb.changeKey(root(), m)}
+						>
+							{m}
+						</button>
+					)}
+				</For>
+			</span>
+		</>
 	)
 }

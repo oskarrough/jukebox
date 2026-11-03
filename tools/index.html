@@ -1,0 +1,40 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tools</title>
+<script type="module">
+	import '@fontsource-variable/inter'
+	import '../src/App.css'
+	import '../src/ui/kit.css'
+</script>
+<style>
+	.case {
+		max-width: 46rem;
+		margin: 2rem auto;
+		padding: 1.6rem 1.8rem;
+		display: grid;
+		gap: 1.6rem;
+		border-radius: var(--r);
+		background: var(--body);
+		box-shadow: var(--hi), var(--drop);
+	}
+	.back {
+		justify-self: start;
+	}
+	.row {
+		display: flex;
+		gap: 0.6rem;
+		flex-wrap: wrap;
+	}
+</style>
+<div class="case">
+	<span class="k back">
+		<a href="/" title="Go back to the jukebox">
+			<svg viewBox="0 0 20 20"><path d="M16 10H4M9 5l-5 5 5 5" /></svg>
+		</a>
+	</span>
+	<div class="row">
+		<span class="k"><a href="/tools/kit.html" title="See the keys, segments and chips the jukebox is made of">Kit</a></span>
+		<span class="k"><a href="/tools/vein.html" title="Draw vein art from a seed and download it as SVG">Vein</a></span>
+	</div>
+</div>

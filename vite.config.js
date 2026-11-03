@@ -32,7 +32,9 @@ const saveSongs = {
 	configureServer(server) {
 		// Serve the standalone pages in tools/ before Solid's page handler takes the URL.
 		server.middlewares.use(async (req, res, next) => {
-			const { pathname: path, search } = new URL(req.url, 'http://x')
+			const { pathname, search } = new URL(req.url, 'http://x')
+			// /tools and /tools/ are the overview of them.
+			const path = /^\/tools\/?$/.test(pathname) ? '/tools/index.html' : pathname
 			if (!['GET', 'HEAD'].includes(req.method) || search || !/^\/tools\/[\w-]+\.html$/.test(path)) return next()
 			let page
 			try {

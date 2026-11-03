@@ -16,6 +16,7 @@ import '@fontsource/ia-writer-mono/400.css'
 import '@fontsource/ia-writer-mono/400-italic.css'
 import '@fontsource/ia-writer-mono/700.css'
 import './App.css'
+import './ui/kit.css'
 
 export default function App() {
 	onSettled(() => {

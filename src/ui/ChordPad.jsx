@@ -14,17 +14,6 @@ const MODS = [
 	['sus', 'Swap every chord’s 3rd for the 4th'],
 	['add9', 'Add the 9th to every chord, without the 7th'],
 ]
-// A pigment per column, warm at home, cooler down the circle, redder up it.
-const HUES = [
-	'var(--c-ultramarine)',
-	'var(--c-cerulean-blue)',
-	'var(--c-imperial-green)',
-	'var(--c-chrome-yellow-deep)',
-	'var(--c-orange)',
-	'var(--c-scarlet-lake)',
-	'var(--c-opera)',
-]
-
 export function ChordPad() {
 	const columns = () => padChords(jb.key(), jb.mod())
 	const where = () => {
@@ -34,40 +23,43 @@ export function ChordPad() {
 	const chorded = () => [jb.whole()?.intro, jb.whole()?.loop].some((tl) => tl?.sections.some((s) => s.chords?.length))
 
 	const Chord = (props) => (
-		<button
-			type="button"
-			class={{ 'chord-key': true, minor: props.minor, home: props.home, on: jb.chordNow() === props.sym }}
-			data-far={props.far}
-			style={{ '--p': props.hue }}
-			title={`Write ${props.sym} into ${where()}`}
-			onPointerEnter={(e) => {
-				if (e.pointerType === 'mouse') jb.hearChord(props.sym)
-			}}
-			onPointerDown={() => jb.hearChord(props.sym)}
-			onClick={() => jb.tapChord(props.sym)}
-		>
-			{props.sym}
-		</button>
+		<span class="k">
+			<button
+				type="button"
+				class={{ home: props.home, on: jb.chordNow() === props.sym }}
+				data-far={props.far}
+				title={`Write ${props.sym} into ${where()}`}
+				onPointerEnter={(e) => {
+					if (e.pointerType === 'mouse') jb.hearChord(props.sym)
+				}}
+				onPointerDown={() => jb.hearChord(props.sym)}
+				onClick={() => jb.tapChord(props.sym)}
+			>
+				{props.sym}
+			</button>
+		</span>
 	)
 
 	return (
 		<div class="chord-pad" onPointerLeave={jb.stopSample}>
 			<Show when={chorded() && !jb.harmony()}>
-				<button type="button" class="offer" title="Add a pad that plays these chords" onClick={jb.addChordVoice}>
-					+ pad
-				</button>
+				<span class="k offer">
+					<button type="button" title="Add a pad that plays these chords" onClick={jb.addChordVoice}>
+						+ pad
+					</button>
+				</span>
 			</Show>
 			<div class="wheel">
 				<For each={columns()} keyed={false}>
-					{(col, i) => (
+					{(col) => (
 						<>
-							<Chord sym={col().major} far={col().far} hue={HUES[i]} home={col().home === 'major'} />
-							<Chord sym={col().minor} far={col().far} hue={HUES[i]} home={col().home === 'minor'} minor />
+							<Chord sym={col().major} far={col().far} home={col().home === 'major'} />
+							<Chord sym={col().minor} far={col().far} home={col().home === 'minor'} />
 						</>
 					)}
 				</For>
 			</div>
-			<div class="mods">
+			<div class="mods seg">
 				<For each={MODS}>
 					{([m, tip]) => (
 						<button

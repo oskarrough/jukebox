@@ -17,12 +17,12 @@ export function GamePanel() {
 	const lit = (id) => jb.inGame() && jb.fx.source.kind === id
 	return (
 		<div id="game" class={{ pop: true, on: jb.inGame() }} popover>
-			<div class="pads">
+			<div class="pads seg">
 				<For each={SOURCES}>
 					{(src) => (
 						<button
 							type="button"
-							class={{ pad: true, on: lit(src.id) }}
+							class={{ on: lit(src.id) }}
 							title={lit(src.id) ? 'Hear the song as written' : HEARD[src.id]}
 							onClick={() => jb.pickSource(src.id)}
 						>
@@ -46,18 +46,17 @@ export function GamePanel() {
 				/>
 				<output>{jb.own() ? '0 m' : `${Math.round(jb.fx.distance.d * 3)} m`}</output>
 			</label>
-			<label class="toggle" title="Hear it from inside a car">
-				<input
-					type="checkbox"
-					checked={!!jb.fx.inferno.inCar}
+			<span class="k toggle">
+				<button
+					type="button"
+					aria-pressed={String(!!jb.fx.inferno.inCar)}
 					disabled={!jb.inGame()}
-					onChange={(e) => {
-						const inCar = e.currentTarget.checked
-						jb.setFx((s) => void (s.inferno.inCar = inCar))
-					}}
-				/>
-				In a car
-			</label>
+					title={jb.fx.inferno.inCar ? 'Hear it out on the street' : 'Hear it from inside a car'}
+					onClick={() => jb.setFx((s) => void (s.inferno.inCar = !s.inferno.inCar))}
+				>
+					In a car
+				</button>
+			</span>
 		</div>
 	)
 }

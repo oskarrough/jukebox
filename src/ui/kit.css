@@ -1,6 +1,16 @@
 /* The controls. A key is a face sitting in a well, like one segment on its own;
    a segment is several faces sharing a well; a chip is a small face in its
    voice's ink. On is a black face. Nothing moves when it turns on. */
+:root {
+	--face: 1.85rem;
+	--chip: 1.4rem;
+}
+@media (pointer: coarse), (max-width: 720px) {
+	:root {
+		--face: 2.5rem;
+		--chip: 2rem;
+	}
+}
 .k,
 .seg {
 	display: inline-flex;
@@ -10,7 +20,7 @@
 	background: var(--panel);
 	box-shadow: var(--well);
 }
-.k > button,
+.k > :is(button, a),
 .seg > button {
 	--f: var(--key);
 	--t: var(--ink);
@@ -18,8 +28,8 @@
 	box-sizing: border-box;
 	display: inline-grid;
 	place-items: center;
-	height: 1.85rem;
-	min-width: 1.85rem;
+	height: var(--face);
+	min-width: var(--face);
 	padding: 0 0.7rem;
 	border-radius: 8px;
 	font: 600 0.8rem var(--sans);
@@ -30,17 +40,28 @@
 		0 1px 0 var(--edge);
 	cursor: pointer;
 }
-.k > button:hover,
-.seg > button:hover {
+/* an icon key is square, the same size as every other */
+.k > :is(button, a):has(> svg:only-child) {
+	padding: 0;
+}
+.k > :is(button, a):focus-visible,
+.seg > button:focus-visible,
+.chip:focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 2px;
+}
+.k > :is(button, a):not(.on, [aria-pressed='true']):hover,
+.seg > button:not(.on, [aria-pressed='true']):hover {
 	--f: color-mix(in lab, var(--key) 90%, var(--grey));
 }
-.k > button:active,
+.k > :is(button, a):active,
 .seg > button:active {
 	box-shadow: inset 0 1px 2px color-mix(in lab, var(--c-black) 30%, transparent);
 }
 .k > .on,
+.k > [aria-pressed='true'],
 .seg > .on,
-.seg > .on:hover {
+.seg > [aria-pressed='true'] {
 	--f: var(--ink);
 	--t: var(--key);
 	box-shadow: inset 0 1px 2px color-mix(in lab, var(--c-black) 50%, transparent);
@@ -53,7 +74,7 @@
 	all: unset;
 	display: inline-grid;
 	place-items: center;
-	height: 1.4rem;
+	height: var(--chip);
 	padding: 0 0.4rem;
 	border-radius: 5px;
 	font: 600 0.8rem var(--sans);
@@ -62,7 +83,8 @@
 	box-shadow: 0 1px 0 color-mix(in lab, var(--c) 60%, var(--c-black));
 	cursor: pointer;
 }
-.chip.on {
+.chip.on,
+.chip[aria-pressed='true'] {
 	outline: 2px solid var(--ink);
 	outline-offset: 1px;
 }

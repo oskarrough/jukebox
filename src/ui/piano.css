@@ -1,36 +1,12 @@
 .brush-voices {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 2px;
-	padding: 4px 8px;
+	gap: 6px;
+	padding: 6px 8px;
 	background: var(--panel);
 }
-.brush-voice {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	min-height: 32px;
-	padding: 4px 8px;
-	border: 1px solid transparent;
-	border-radius: 4px;
-	background: transparent;
-	color: var(--dim);
-	font: 11px var(--mono);
-	cursor: pointer;
-}
-.brush-voice[hidden] {
+.brush-voices:not(:has(.brush-voice:not([hidden]))) {
 	display: none;
-}
-.brush-voice span {
-	width: 10px;
-	height: 10px;
-	border-radius: 50%;
-	background: var(--p);
-}
-.brush-voice[aria-pressed='true'] {
-	border-color: var(--p);
-	color: var(--ink);
-	background: color-mix(in lab, var(--p) 14%, var(--key));
 }
 .piano-panel {
 	display: grid;
@@ -49,15 +25,6 @@
 	gap: 4px;
 	color: var(--dim);
 	font: 12px var(--mono);
-}
-.piano-controls button {
-	width: 32px;
-	height: 32px;
-	border: 1px solid var(--line);
-	border-radius: 4px;
-	background: var(--key);
-	color: var(--ink);
-	cursor: pointer;
 }
 .piano-keys {
 	grid-column: 1 / -1;
@@ -125,8 +92,5 @@
 	}
 	.piano-key {
 		font-size: 10px;
-	}
-	.brush-voice {
-		min-height: 36px;
 	}
 }

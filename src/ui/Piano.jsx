@@ -14,15 +14,13 @@ export function VoicePicker() {
 				{(voice, i) => (
 					<button
 						type="button"
-						class="brush-voice"
+						class="chip brush-voice"
 						hidden={voice().drum}
-						style={{ '--p': jb.colors()[i()] }}
-						aria-label={`Choose ${voice().name}`}
+						style={{ '--c': jb.colors()[i()] }}
 						aria-pressed={String(jb.activeVoice() === voice().name)}
 						title={`Draw and play ${voice().name}`}
 						onClick={() => jb.chooseVoice(voice().name)}
 					>
-						<span />
 						{voice().name}
 					</button>
 				)}
@@ -135,13 +133,17 @@ export function Piano() {
 		<div id="piano" class="piano-panel" style={{ '--p': colour() }}>
 			<VoicePicker />
 			<div class="piano-controls">
-				<button type="button" title="Play an octave lower (Z)" onClick={() => shift(-1)}>
-					−
-				</button>
+				<span class="k">
+					<button type="button" title="Play an octave lower (Z)" onClick={() => shift(-1)}>
+						−
+					</button>
+				</span>
 				<output>{register()}</output>
-				<button type="button" title="Play an octave higher (X)" onClick={() => shift(1)}>
-					+
-				</button>
+				<span class="k">
+					<button type="button" title="Play an octave higher (X)" onClick={() => shift(1)}>
+						+
+					</button>
+				</span>
 			</div>
 			<div class="piano-keys">
 				<For each={keys()} keyed={(k) => k.code}>

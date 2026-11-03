@@ -63,7 +63,7 @@ function paintView(view) {
 				if (drum && col > line.text.indexOf('|') && (kind === 'note' || kind === 'rest')) {
 					for (let i = 0; i < text.length; i++) out.push(markOf(`${kind} step`, c, text[i]).range(at + col + i, at + col + i + 1))
 				} else if (kind === 'name' && c) {
-					const cls = `name chip${muted.has(voice) ? ' muted' : ''}${fresh === voice ? ' fresh' : ''}`
+					const cls = `name chip${muted.has(voice) ? ' off' : ''}${fresh === voice ? ' fresh' : ''}`
 					out.push(markOf(cls, c, null, voice, names.indexOf(voice)).range(at + col, at + col + text.length))
 				} else if (kind !== 'space') out.push(markOf(kind, c).range(at + col, at + col + text.length))
 				col += text.length

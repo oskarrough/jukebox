@@ -91,7 +91,7 @@ export function Sections() {
 
 	return (
 		<>
-			<div class={{ sections: true, holding: !!held() }} ref={strip}>
+			<div class={{ sections: true, seg: true, holding: !!held() }} ref={strip}>
 				<For each={shown()} keyed={false}>
 					{(s, k) => (
 						<button
@@ -105,7 +105,7 @@ export function Sections() {
 								gone: !!s().gone,
 								over: over() === s().i,
 							}}
-							style={{ left: `${s().left}%`, width: `${s().width}%` }}
+							style={{ '--x': s().left / 100, '--w': s().width / 100 }}
 							aria-label={label(s())}
 							title={fixed() ? `Play ${label(s())}` : `Play ${label(s())}; drag to move, ⌥-drag to copy, drag off to remove`}
 							onPointerDown={(e) => press(e, s())}
@@ -142,18 +142,19 @@ export function Sections() {
 					)}
 				</For>
 				<Show when={!held()}>
-					<i class="head" style={{ left: `${(head() / total()) * 100}%` }} />
+					<i class="head" style={{ '--x': head() / total() }} />
 				</Show>
 			</div>
-			<button
-				class="icon add-section"
-				type="button"
-				disabled={fixed() || !shown().length}
-				title="Add a pattern that starts as a copy of the one you’re in"
-				onClick={jb.addSection}
-			>
-				<PlusIcon />
-			</button>
+			<span class="k add-section">
+				<button
+					type="button"
+					disabled={fixed() || !shown().length}
+					title="Add a pattern that starts as a copy of the one you’re in"
+					onClick={jb.addSection}
+				>
+					<PlusIcon />
+				</button>
+			</span>
 		</>
 	)
 }

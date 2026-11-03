@@ -64,7 +64,11 @@ export function Feedback() {
 			<p class="public">This is a postcard: anyone can read it. Don't write anything private. It ends up publicly on GitHub.</p>
 			<div>
 				<small>{note()}</small>
-				<button type="submit">Send</button>
+				<span class="k">
+					<button type="submit" title="Send it to the jukebox's makers (⌘↩)">
+						Send
+					</button>
+				</span>
 			</div>
 		</form>
 	)

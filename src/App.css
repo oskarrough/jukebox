@@ -65,14 +65,12 @@
 	--panel: color-mix(in lab, var(--grey) 26%, var(--c-snow-white));
 	--key: color-mix(in lab, var(--c-naples-yellow) 3%, var(--c-snow-white));
 	--cap: color-mix(in lab, var(--grey) 70%, var(--c-snow-white));
-	--cap-hover: color-mix(in lab, var(--grey) 55%, var(--c-snow-white));
 	--ink: var(--c-b-black);
 	--dim: color-mix(in lab, var(--grey) 75%, var(--c-black));
 	--line: color-mix(in lab, var(--grey) 42%, var(--c-snow-white));
 	--faint: color-mix(in lab, var(--grey) 75%, var(--c-snow-white));
 	--screen: var(--c-black);
-	/* materials: every key has a lit top lip, an edge below it as deep as its travel,
-	   and a soft drop on the case; pressed, it moves down by its travel */
+	/* materials: a lit top lip, an edge below, a soft drop on the case, a well to sit in */
 	--edge: color-mix(in lab, var(--grey) 62%, var(--c-snow-white));
 	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 85%, transparent);
 	--drop: 0 3px 4px -2px color-mix(in lab, var(--c-sepia) 35%, transparent);
@@ -81,11 +79,9 @@
 	--bezel:
 		inset 0 2px 6px color-mix(in lab, var(--c-black) 80%, transparent), inset 0 0 0 1px color-mix(in lab, var(--c-black) 60%, transparent),
 		0 -1px 0 color-mix(in lab, var(--c-sepia) 30%, transparent), 0 1px 0 color-mix(in lab, var(--c-white) 90%, transparent);
-	--travel: 2px;
 	--orange: var(--c-vermilion);
 	--lit: var(--c-orange);
 	--blue: var(--c-ultramarine);
-	--green: var(--c-viridian);
 	--yellow: var(--c-chrome-yellow);
 	--red: var(--c-carmine);
 	--sans: 'Inter Variable', system-ui, sans-serif;
@@ -177,71 +173,6 @@ svg {
 	grid-area: editor;
 }
 
-/* keys: every button that isn't a pad or a brick */
-.icon {
-	display: grid;
-	place-items: center;
-	width: 2.2rem;
-	height: 2.2rem;
-	padding: 0;
-	border: 0;
-	border-radius: 8px;
-	--edge: color-mix(in lab, var(--grey) 55%, var(--c-black));
-	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 45%, transparent);
-	background: var(--sheen) var(--cap);
-	color: var(--ink);
-}
-/* the keys' one material: lip, edge, drop; down by their travel when pressed,
-   halfway down while latched */
-.icon,
-.key-picker,
-#play,
-.pad,
-.brick,
-.style,
-.post button[type='submit'],
-.chord-pad button {
-	box-shadow:
-		var(--hi),
-		0 var(--travel) 0 var(--edge),
-		var(--drop);
-	transition:
-		transform 50ms,
-		box-shadow 50ms;
-}
-.icon:active,
-.key-picker:active,
-#play:active,
-.pad:active,
-.brick:active,
-.style:active,
-.post button[type='submit']:active,
-.chord-pad button:active {
-	transform: translateY(var(--travel));
-	box-shadow:
-		var(--hi),
-		0 0 0 var(--edge);
-}
-.icon:hover {
-	background: var(--sheen) var(--cap-hover);
-}
-.icon[aria-pressed='true'],
-.icon[aria-expanded='true'] {
-	--edge: var(--c-black);
-	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 18%, transparent);
-	background: var(--sheen) var(--ink);
-	color: var(--c-white);
-	transform: translateY(1px);
-	box-shadow:
-		var(--hi),
-		0 1px 0 var(--edge),
-		var(--drop);
-}
-.icon.add {
-	width: 100%;
-	flex: none;
-}
-
 /* top bar */
 .top {
 	display: flex;
@@ -259,45 +190,12 @@ svg {
 	content: '.';
 	color: var(--orange);
 }
-#play {
-	flex: none;
-	width: 2.6rem;
-	height: 2.6rem;
-	border: 0;
-	border-radius: 50%;
-	--edge: color-mix(in lab, var(--c-vermilion) 65%, var(--c-black));
-	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 35%, transparent);
-	--drop: 0 4px 10px color-mix(in lab, var(--c-vermilion) 33%, transparent);
-	--travel: 3px;
-	background: radial-gradient(circle at 50% 30%, color-mix(in lab, var(--c-white) 18%, transparent), transparent 65%) var(--orange);
-	position: relative;
-}
-#play::before {
-	content: '';
-	position: absolute;
-	inset: 0;
-	margin: auto;
-	width: 0;
-	height: 0;
-	border-left: 0.75rem solid var(--c-white);
-	border-top: 0.47rem solid transparent;
-	border-bottom: 0.47rem solid transparent;
-	transform: translateX(0.12rem);
-}
-.live #play::before {
-	width: 0.7rem;
-	height: 0.7rem;
-	border: 0;
-	background: var(--c-white);
-	border-radius: 2px;
-	transform: none;
-}
 .lcd {
 	flex: 1;
 	min-width: 0;
 	height: 2.6rem;
 	display: grid;
-	grid-template-columns: minmax(6rem, 14rem) minmax(0, 1fr) auto auto;
+	grid-template-columns: minmax(5rem, 10rem) minmax(0, 1fr) auto auto;
 	align-items: center;
 	gap: 0.6rem;
 	background: var(--screen);
@@ -330,46 +228,40 @@ svg {
 	font-variant-numeric: tabular-nums;
 	white-space: nowrap;
 }
-/* the sections, each as long as it plays, where the position bar was */
-.sections {
+/* the sections, each a face as long as it plays, in one well where the position bar was */
+.lcd .sections {
 	position: relative;
-	height: 1.7rem;
+	display: block;
+	height: calc(var(--face) + 6px);
 	touch-action: none;
 }
-.section {
+.sections > .section {
+	--t: var(--dim);
 	position: absolute;
-	top: 0;
-	bottom: 0;
-	display: flex;
+	top: 3px;
+	bottom: 3px;
+	left: calc(3px + (100% - 3px) * var(--x));
+	width: calc((100% - 3px) * var(--w) - 3px);
+	height: auto;
+	min-width: 0;
 	padding: 0;
-	border: 0;
-	border-right: 2px solid var(--screen);
-	border-radius: 4px;
-	background: var(--sheen) color-mix(in lab, var(--c-white) 7%, transparent);
-	color: var(--c-french-grey);
-	font: 0.7rem var(--mono);
+	display: flex;
 	overflow: hidden;
 	cursor: grab;
-	/* a block lit along its top on the black glass, and its own inset marks over that */
-	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 10%, transparent);
-	box-shadow: var(--hi);
-}
-.section:active {
-	background-image: none;
 }
 .section span {
 	container-type: inline-size;
 	flex: 1;
 	min-width: 0;
-	line-height: 1.7rem;
-	text-align: left;
+	display: flex;
+	align-items: center;
 	white-space: nowrap;
 	overflow: hidden;
 }
 .section b {
 	display: block;
-	padding: 0 0.2rem;
-	font-size: min(0.7rem, calc((100cqi - 0.4rem) / var(--letters)));
+	padding: 0 0.3rem;
+	font-size: min(0.75rem, calc((100cqi - 0.6rem) / var(--letters)));
 	font-weight: inherit;
 }
 /* Below readable size, keep the whole name in the section's tooltip. */
@@ -379,27 +271,26 @@ svg {
 	}
 }
 .section span + span {
-	box-shadow: inset 1px 0 color-mix(in lab, var(--c-white) 10%, transparent);
+	box-shadow: inset 1px 0 color-mix(in lab, currentColor 20%, transparent);
 }
-.section:hover {
-	background: color-mix(in lab, var(--c-white) 12%, transparent);
+.sections > .here {
+	--t: var(--ink);
 }
-.section.here {
-	background: color-mix(in lab, var(--c-white) 18%, transparent);
-	color: color-mix(in lab, var(--c-french-grey) 25%, var(--c-white));
-}
-.section.on {
-	color: var(--c-white);
-}
-.section.loop {
+.sections > .loop {
 	box-shadow:
-		inset 2px 0 var(--lit),
+		inset 2px 0 var(--ink),
 		var(--hi);
 }
-.section.moved {
-	background: color-mix(in lab, var(--lit) 25%, transparent);
-	color: var(--c-white);
+.sections > .moved {
+	--f: var(--cap);
 	cursor: grabbing;
+}
+.sections > .gone {
+	opacity: 0.25;
+}
+.sections > .over {
+	outline: 2px solid var(--ink);
+	outline-offset: -2px;
 }
 .section .edge {
 	position: absolute;
@@ -410,66 +301,47 @@ svg {
 	cursor: ew-resize;
 }
 .section .edge:hover {
-	box-shadow: inset -2px 0 var(--lit);
+	box-shadow: inset -2px 0 currentColor;
 }
-.section.gone {
-	opacity: 0.25;
-}
-.section.over {
-	box-shadow:
-		inset 0 0 0 1.5px var(--lit),
-		var(--hi);
-}
-.sections.holding .section {
+.sections.holding > .section {
 	cursor: grabbing;
 }
+/* the play line: light over a black face, dark over the rest */
 .sections .head {
 	position: absolute;
-	top: -0.15rem;
-	bottom: -0.15rem;
+	top: 0;
+	bottom: 0;
+	left: calc(3px + (100% - 3px) * var(--x));
 	width: 2px;
 	margin-left: -1px;
-	background: var(--orange);
+	background: var(--key);
+	mix-blend-mode: difference;
 	border-radius: 1px;
 	pointer-events: none;
 }
-.icon.add-section {
-	width: 1.7rem;
-	height: 1.7rem;
-	background: transparent;
-	box-shadow: inset 0 0 0 1.5px color-mix(in lab, var(--c-french-grey) 16%, var(--c-black));
-	color: var(--lit);
-}
-.icon.add-section:hover {
-	box-shadow: inset 0 0 0 1.5px var(--lit);
-}
-.icon.add-section:disabled {
+.add-section:has(:disabled) {
 	visibility: hidden;
 }
-.key-picker {
-	display: flex;
-	gap: 1px;
-	border-radius: 8px;
-	background: var(--edge);
-	overflow: hidden;
+/* the twelve roots, under the root's key */
+.key-root {
+	anchor-name: --root;
 }
-.key-picker select {
-	appearance: none;
+#roots {
+	position-anchor: --root;
+	inset: auto;
+	top: anchor(bottom);
+	left: anchor(left);
+	margin: 0.4rem 0 0;
+	position-try-fallbacks: flip-block, flip-inline;
 	border: 0;
-	height: 2.2rem;
-	background: var(--sheen) var(--cap);
-	padding: 0 0.6rem;
-	font: 650 0.78rem var(--sans);
-	text-align: center;
+	box-shadow: var(--well), var(--drop);
 }
-.key-picker select:hover {
-	background: var(--sheen) var(--cap-hover);
+#roots:not(:popover-open) {
+	display: none;
 }
-.game-toggle.on {
-	--edge: color-mix(in lab, var(--c-vermilion) 65%, var(--c-black));
-	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 30%, transparent);
-	background: var(--sheen) var(--orange);
-	color: var(--c-white);
+#roots:popover-open {
+	display: grid;
+	grid-template-columns: repeat(6, auto);
 }
 
 /* the key, download, guide and feedback: behind ⋯ on a phone, in the bar otherwise,
@@ -477,7 +349,7 @@ svg {
 .more {
 	display: contents;
 }
-.more-toggle {
+.top > .more-toggle {
 	display: none;
 }
 .top > .game-toggle {
@@ -513,14 +385,14 @@ input[type='range']::-webkit-slider-thumb {
 	height: 14px;
 	margin-top: -5px;
 	border-radius: 50%;
-	background: var(--orange);
+	background: var(--ink);
 	border: 2px solid var(--c-white);
 }
 input[type='range']::-moz-range-thumb {
 	width: 12px;
 	height: 12px;
 	border-radius: 50%;
-	background: var(--orange);
+	background: var(--ink);
 	border: 2px solid var(--c-white);
 }
 
@@ -532,26 +404,7 @@ input[type='range']::-moz-range-thumb {
 	min-height: 0;
 }
 .tags {
-	display: flex;
 	flex-wrap: wrap;
-	gap: 0.25rem;
-}
-.tags button {
-	border: 0;
-	border-radius: 1rem;
-	padding: 0.2rem 0.55rem;
-	background: var(--panel);
-	box-shadow: var(--well);
-	font: 600 0.7rem var(--sans);
-	color: var(--dim);
-}
-.tags button:hover {
-	color: var(--ink);
-}
-.tags button[aria-pressed='true'] {
-	box-shadow: inset 0 1px 2px color-mix(in lab, var(--c-black) 60%, transparent);
-	background: var(--ink);
-	color: var(--c-white);
 }
 .list {
 	display: flex;
@@ -579,9 +432,11 @@ input[type='range']::-moz-range-thumb {
 .list button:hover {
 	background: var(--panel);
 }
+/* the song that plays: the keys' black face */
 .list button.on {
-	background: var(--ink);
-	color: var(--c-white);
+	background: var(--sheen), var(--ink);
+	color: var(--key);
+	box-shadow: inset 0 1px 2px color-mix(in lab, var(--c-black) 50%, transparent);
 }
 .list .entry {
 	position: relative;
@@ -615,17 +470,11 @@ input[type='range']::-moz-range-thumb {
 .list .entry:has(.on) .drop:hover {
 	color: var(--c-white);
 }
-.songs > .undo {
-	flex: none;
-	border: 0;
-	border-radius: 6px;
-	padding: 0.6rem 0.5rem;
-	background: var(--ink);
-	color: var(--c-white);
-	font: 550 0.8rem var(--sans);
+.songs > .k {
+	display: flex;
 }
-.songs > .undo:hover {
-	background: color-mix(in lab, var(--c-french-grey) 16%, var(--c-black));
+.songs > .k > button {
+	flex: 1;
 }
 .list button i {
 	flex: none;
@@ -640,10 +489,10 @@ input[type='range']::-moz-range-thumb {
 .list button.unsaved i {
 	background: var(--yellow);
 }
-.icon.unsaved {
+.k > .unsaved {
 	position: relative;
 }
-.icon.unsaved::after {
+.k > .unsaved::after {
 	/* changes not saved yet */
 	content: '';
 	position: absolute;
@@ -668,7 +517,7 @@ input[type='range']::-moz-range-thumb {
 	text-overflow: ellipsis;
 }
 /* the styles for a new song: a tray of keys over the + (or under it) */
-.icon.add {
+.add {
 	anchor-name: --add;
 }
 #styles {
@@ -692,37 +541,9 @@ input[type='range']::-moz-range-thumb {
 	grid-template-columns: repeat(3, 1fr);
 	gap: 0.35rem;
 }
-#styles .icon {
-	width: auto;
-	height: 2.6rem;
-	font: 750 0.75rem var(--sans);
-}
-.style {
-	--c: var(--orange);
-	height: 2.6rem;
-	border: 0;
-	border-radius: 8px;
-	--edge: color-mix(in lab, var(--c) 60%, var(--c-black));
-	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 30%, transparent);
-	background: var(--sheen) var(--c);
-	color: var(--c-white);
-	font: 750 0.75rem var(--sans);
-}
-.style:hover,
-.style:focus-visible {
-	background: var(--sheen) color-mix(in lab, var(--c) 85%, var(--c-white));
-}
-.style[data-style='dub'] {
-	--c: var(--c-ultramarine);
-}
-.style[data-style='cumbia'] {
-	--c: var(--c-chrome-yellow-deep);
-}
-.style[data-style='chip'] {
-	--c: var(--c-viridian);
-}
-.style[data-style='ballad'] {
-	--c: var(--c-opera);
+#styles .k > button {
+	flex: 1;
+	padding: 0 0.3rem;
 }
 
 /* the screen */
@@ -750,8 +571,8 @@ input[type='range']::-moz-range-thumb {
 	border-radius: 8px;
 }
 
-/* the chord pad, under the tape: home in the middle and biggest, a colour per
-   column of the circle of fifths, majors over their minors */
+/* the chord pad, under the tape: home in the middle and biggest, majors over
+   their minors, the far ones quieter */
 .chord-pad {
 	display: flex;
 	gap: 4px;
@@ -765,139 +586,76 @@ input[type='range']::-moz-range-thumb {
 	grid-template-columns: 0.7fr 0.85fr 1.2fr 1.2fr 1.2fr 0.85fr 0.7fr;
 	gap: 4px;
 }
-.chord-pad button {
-	--edge: var(--c-black);
-	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 12%, transparent);
-	--drop: 0 0 0 transparent;
+.chord-pad .k {
+	display: flex;
+}
+.chord-pad .k > button {
+	flex: 1;
 	min-width: 0;
-	border: 0;
-	border-radius: 8px;
+	height: 2.6rem;
 	padding: 0 0.2rem;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
-.chord-key {
-	--m: 40%;
-	min-height: 2.9rem;
-	background: var(--sheen) color-mix(in lab, var(--p) var(--m), var(--c-black));
-	color: color-mix(in lab, var(--p) 25%, var(--c-white));
-	font: 650 1rem var(--score);
+.wheel .k > button {
+	font-size: 0.95rem;
 }
-.chord-key.minor {
-	--m: 34%;
-}
-.chord-key[data-far='1'] {
-	--m: 30%;
+.wheel .k > [data-far='1'] {
+	--t: var(--dim);
 	font-size: 0.85rem;
-	color: color-mix(in lab, var(--p) 45%, var(--c-white));
 }
-.chord-key[data-far='2'] {
-	--m: 24%;
+.wheel .k > [data-far='2'] {
+	--t: var(--dim);
 	font-size: 0.75rem;
-	color: color-mix(in lab, var(--p) 60%, var(--c-white));
 }
-.chord-key.minor[data-far='1'] {
-	--m: 27%;
+.wheel .k > .home {
+	font-weight: 800;
 }
-.chord-key.minor[data-far='2'] {
-	--m: 22%;
-}
-.chord-key:hover {
-	--m: 55%;
-}
-.chord-key.home {
-	--hi: inset 0 0 0 1.5px color-mix(in lab, var(--p) 40%, var(--c-white));
-}
-.chord-key.on {
-	--m: 100%;
-	color: var(--c-white);
-}
-.offer {
-	--hi: inset 0 0 0 1.5px color-mix(in lab, var(--lit) 40%, transparent);
-	padding: 0 0.6rem !important;
-	background: none;
-	color: var(--lit);
-	font: 650 0.8rem var(--score);
-}
-.offer:hover {
-	--hi: inset 0 0 0 1.5px var(--lit);
-}
-.mods {
+.chord-pad .mods {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	gap: 4px;
-	width: 5.6rem;
+	align-content: stretch;
+	width: 7rem;
 }
-.mods button {
-	background: var(--sheen) color-mix(in lab, var(--c-french-grey) 10%, var(--c-black));
-	color: var(--c-french-grey);
-	font: 650 0.75rem var(--score);
-}
-.mods button:hover {
-	color: color-mix(in lab, var(--c-french-grey) 25%, var(--c-white));
-}
-.mods button[aria-pressed='true'] {
-	--edge: color-mix(in lab, var(--c-chrome-yellow) 55%, var(--c-black));
-	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 45%, transparent);
-	background: var(--sheen) var(--c-chrome-yellow);
-	color: var(--c-b-black);
-	transform: translateY(1px);
-	box-shadow:
-		var(--hi),
-		0 1px 0 var(--edge);
+.chord-pad .mods > button {
+	height: auto;
+	padding: 0;
 }
 
-/* loop bricks, under the tape where the chord pad goes */
+/* loop bricks, under the tape where the chord pad goes: a key each, its
+   rhythm drawn on it, inked in its voice once it's in the song */
 #bricks {
-	display: flex;
-	flex-wrap: wrap;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
 	gap: 0.35rem;
 	margin-top: 0.4rem;
 }
-.brick {
-	--c: var(--orange);
-	flex: 1 1 5.5rem;
-	border: 0;
-	--edge: color-mix(in lab, var(--c) 60%, var(--c-black));
-	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 30%, transparent);
-	border-radius: 6px;
-	padding: 0.35rem 0.5rem 0.4rem;
-	background: var(--sheen) var(--c);
-	color: var(--c-white);
-	font: 750 0.7rem var(--sans);
+#bricks .k {
+	display: flex;
+}
+#bricks .brick {
+	flex: 1;
+	padding: 0 0.5rem;
 	cursor: grab;
-	display: grid;
-	gap: 0.25rem;
-	text-align: left;
-}
-.brick[data-shelf='Bass'] {
-	--c: var(--c-ultramarine);
-}
-.brick[data-shelf='Chords'] {
-	--c: var(--c-viridian);
-}
-.brick[data-shelf='Melody'] {
-	--c: var(--c-opera);
 }
 .brick .steps {
 	display: grid;
 	grid-template-columns: repeat(16, 1fr);
 	gap: 1px;
-	height: 0.4rem;
+	width: 100%;
+	height: 0.5rem;
+	color: var(--c, var(--ink));
 }
 .brick .steps i {
-	background: color-mix(in lab, currentColor 20%, transparent);
+	background: color-mix(in lab, currentColor 15%, transparent);
 	border-radius: 1px;
 }
 .brick .steps i.x {
 	background: currentColor;
 }
 .brick .steps i.h {
-	background: color-mix(in lab, currentColor 55%, transparent);
-}
-.brick:hover {
-	filter: brightness(1.06);
+	background: color-mix(in lab, currentColor 50%, transparent);
 }
 .dragging .screen,
 .dragging .code {
@@ -937,10 +695,13 @@ input[type='range']::-moz-range-thumb {
 	color: var(--orange);
 	font-weight: 700;
 }
-.line .name[style] {
+/* a voice's name on a faded line: the score's chip, unlit (cm.css) */
+.line .name[style]:not(.chip) {
 	background: var(--c);
-	box-shadow: 0 0 0 1.5px var(--c);
-	border-radius: 2px;
+	box-shadow:
+		0 0 0 2px var(--c),
+		0 3px 0 0 color-mix(in lab, var(--c) 60%, var(--c-black));
+	border-radius: 3px;
 	font-weight: 700;
 }
 .line .inst {
@@ -1009,34 +770,9 @@ input[type='range']::-moz-range-thumb {
 #game:popover-open {
 	display: flex;
 }
-.pads {
+#game .pads {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
-	gap: 0.35rem;
-}
-.pad {
-	min-height: 2.4rem;
-	border: 0;
-	border-radius: 8px;
-	--edge: color-mix(in lab, var(--grey) 55%, var(--c-black));
-	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 45%, transparent);
-	background: var(--sheen) var(--cap);
-	font: 650 0.75rem/1 var(--sans);
-	padding: 0.35rem 0.2rem;
-}
-.pad:hover {
-	background: var(--sheen) var(--cap-hover);
-}
-.pad.on {
-	--edge: color-mix(in lab, var(--c-vermilion) 65%, var(--c-black));
-	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 30%, transparent);
-	background: var(--sheen) var(--orange);
-	color: var(--c-white);
-	transform: translateY(1px);
-	box-shadow:
-		var(--hi),
-		0 1px 0 var(--edge),
-		var(--drop);
 }
 #game:not(.on) .fader,
 #game:not(.on) .toggle {
@@ -1056,7 +792,7 @@ input[type='range']::-moz-range-thumb {
 .fader input::-webkit-slider-runnable-track {
 	height: 6px;
 	border-radius: 3px;
-	background: linear-gradient(90deg, var(--orange), var(--yellow), var(--line));
+	background: var(--line);
 }
 .fader input::-webkit-slider-thumb {
 	width: 18px;
@@ -1066,40 +802,7 @@ input[type='range']::-moz-range-thumb {
 	background: var(--ink);
 }
 .toggle {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-	font: 650 0.75rem var(--sans);
-	cursor: pointer;
-}
-.toggle input {
-	appearance: none;
-	width: 2.2rem;
-	height: 1.25rem;
-	border-radius: 1rem;
-	background: color-mix(in lab, var(--grey) 55%, var(--c-snow-white));
-	box-shadow: inset 0 1px 2px color-mix(in lab, var(--c-sepia) 35%, transparent);
-	position: relative;
-	cursor: pointer;
-	margin: 0;
-}
-.toggle input::after {
-	content: '';
-	position: absolute;
-	top: 3px;
-	left: 3px;
-	width: calc(1.25rem - 6px);
-	height: calc(1.25rem - 6px);
-	border-radius: 50%;
-	background: var(--c-white);
-	box-shadow: 0 1px 2px color-mix(in lab, var(--c-sepia) 45%, transparent);
-	transition: left 0.15s;
-}
-.toggle input:checked {
-	background: var(--orange);
-}
-.toggle input:checked::after {
-	left: calc(100% - 1.25rem + 3px);
+	align-self: start;
 }
 .post {
 	width: min(22rem, calc(100vw - 1rem));
@@ -1146,21 +849,6 @@ input[type='range']::-moz-range-thumb {
 	color: var(--dim);
 	font: 600 0.75rem var(--sans);
 }
-.post button[type='submit'] {
-	flex: none;
-	min-height: 2.2rem;
-	border: 0;
-	border-radius: 8px;
-	padding: 0.35rem 0.9rem;
-	--edge: var(--c-black);
-	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 18%, transparent);
-	background: var(--sheen) var(--ink);
-	color: var(--c-white);
-	font: 650 0.78rem var(--sans);
-}
-.post button[type='submit']:hover {
-	background: color-mix(in lab, var(--c-french-grey) 16%, var(--c-black));
-}
 .guide {
 	width: min(34rem, calc(100vw - 1rem));
 	max-height: calc(100vh - 4.5rem);
@@ -1186,14 +874,6 @@ kbd {
 
 /* touch: room for a finger, inputs at 16px so the page doesn't zoom in on them */
 @media (pointer: coarse), (max-width: 720px) {
-	.icon {
-		width: 2.75rem;
-		height: 2.75rem;
-	}
-	.key-picker select {
-		height: 2.75rem;
-		font-size: 1rem;
-	}
 	.lcd {
 		height: 3.2rem;
 	}
@@ -1201,31 +881,13 @@ kbd {
 		height: 2.4rem;
 		font-size: 1rem;
 	}
-	.sections {
-		height: 2.4rem;
-	}
-	.section span {
-		line-height: 2.4rem;
-	}
 	.section .edge {
 		width: min(1.1rem, 35%);
 		box-shadow: inset -2px 0 color-mix(in lab, var(--c-white) 19%, transparent);
 	}
-	.icon.add-section {
-		width: 2.4rem;
-		height: 2.4rem;
-	}
-	.tags button {
-		min-height: 2.5rem;
-		padding: 0 0.9rem;
-	}
 	.list button {
 		min-height: 2.75rem;
 		font-size: 0.9rem;
-	}
-	.brick,
-	.pad {
-		min-height: 2.75rem;
 	}
 	.code .cm-scroller {
 		font-size: 16px;
@@ -1277,7 +939,7 @@ kbd {
 		order: 9;
 		flex: 1 1 100%;
 	}
-	.key-picker {
+	.key-root {
 		margin-left: auto;
 	}
 }
@@ -1310,17 +972,17 @@ kbd {
 		display: contents;
 	}
 	.brand,
-	.piano-toggle {
+	.top > .piano-toggle {
 		display: none;
 	}
 	.songs-toggle,
 	.loop-toggle,
 	.pad-toggle,
 	.bricks-toggle,
-	#play,
+	.play,
 	.game-toggle,
 	.more-toggle {
-		justify-self: center;
+		place-self: center;
 	}
 	.songs-toggle {
 		grid-area: toggle;
@@ -1342,33 +1004,24 @@ kbd {
 		order: -1;
 	}
 	.chord-pad .offer,
-	.mods {
+	.chord-pad .mods {
 		flex: 1;
-		min-height: 2.75rem;
 	}
-	.mods {
+	.chord-pad .mods {
 		grid-template-columns: repeat(4, 1fr);
 	}
-	#play {
+	.chord-pad .mods > button {
+		height: var(--face);
+	}
+	.play {
 		grid-area: play;
-		width: 3.8rem;
-		height: 3.8rem;
-	}
-	#play::before {
-		border-left-width: 1.05rem;
-		border-top-width: 0.65rem;
-		border-bottom-width: 0.65rem;
-	}
-	.live #play::before {
-		width: 0.95rem;
-		height: 0.95rem;
 	}
 	.game-toggle {
 		grid-area: game;
 	}
-	.more-toggle {
+	.top > .more-toggle {
 		grid-area: more;
-		display: grid;
+		display: inline-flex;
 	}
 	.lcd {
 		grid-area: lcd;
@@ -1387,17 +1040,12 @@ kbd {
 	#time {
 		grid-area: time;
 	}
-	.sections {
+	.lcd .sections {
 		grid-area: strip;
-		height: 2.75rem;
 	}
-	.section span {
-		line-height: 2.75rem;
-	}
-	.icon.add-section {
+	.add-section {
 		grid-area: add;
-		width: 2.75rem;
-		height: 2.75rem;
+		place-self: center end;
 	}
 	.editor {
 		grid-area: main;

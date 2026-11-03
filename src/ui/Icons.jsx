@@ -53,3 +53,13 @@ export const BricksIcon = () => (
 		<path d="M14 11v6M11 14h6" />
 	</svg>
 )
+export const PlayIcon = () => (
+	<svg viewBox="0 0 20 20">
+		<path d="M6.5 4.5v11l9-5.5z" fill="currentColor" />
+	</svg>
+)
+export const StopIcon = () => (
+	<svg viewBox="0 0 20 20">
+		<rect x="5" y="5" width="10" height="10" rx="1.5" fill="currentColor" />
+	</svg>
+)

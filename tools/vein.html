@@ -26,6 +26,15 @@
 				--key: color-mix(in lab, var(--c-naples-yellow) 3%, var(--c-snow-white));
 				--edge: color-mix(in lab, var(--grey) 62%, var(--c-snow-white));
 				--dim: color-mix(in lab, var(--grey) 65%, var(--c-black));
+				/* what the jukebox's keys are made of (src/ui/kit.css) */
+				--ink: var(--c-black);
+				--panel: color-mix(in lab, var(--grey) 26%, var(--c-snow-white));
+				--sans: Inter, system-ui, sans-serif;
+				--hi: inset 0 1px 0 var(--c-snow-white);
+				--sheen: linear-gradient(color-mix(in lab, var(--c-snow-white) 16%, transparent), transparent 55%);
+				--well:
+					inset 0 1px 3px color-mix(in lab, var(--c-sepia) 22%, transparent),
+					0 1px 0 color-mix(in lab, var(--c-snow-white) 80%, transparent);
 				font-family: Inter, system-ui, sans-serif;
 				color: var(--c-black);
 				background: var(--desk);
@@ -60,7 +69,20 @@
 				justify-content: space-between;
 				margin-bottom: 24px;
 			}
+			.back {
+				margin-right: 12px;
+			}
+			.back svg {
+				width: 1.15rem;
+				height: 1.15rem;
+				fill: none;
+				stroke: currentColor;
+				stroke-width: 1.6;
+				stroke-linecap: round;
+				stroke-linejoin: round;
+			}
 			h1 {
+				flex: 1;
 				margin: 0;
 				font-size: 18px;
 				font-weight: 650;
@@ -233,6 +255,11 @@
 		<main>
 			<form aria-label="Vein controls">
 				<header>
+					<span class="k back">
+						<a href="/" title="Go back to the jukebox">
+							<svg viewBox="0 0 20 20"><path d="M16 10H4M9 5l-5 5 5 5" /></svg>
+						</a>
+					</span>
 					<h1>Vein</h1>
 					<button id="download" type="button" title="Download the current art as SVG" aria-label="Download SVG">↓ SVG</button>
 				</header>
@@ -267,6 +294,7 @@
 			<div id="art" role="img" aria-label="Generated contour art"></div>
 		</main>
 		<script type="module">
+			import '../src/ui/kit.css'
 			import { renderSVG, DEFAULTS, RATIOS } from './vein/scene.js'
 			import { PALETTES, NAMED, INKS, paletteByName } from './vein/palettes.js'
 
