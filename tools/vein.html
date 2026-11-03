@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Vein</title>
+		<style>
+			@font-face {
+				font-family: Inter;
+				font-style: normal;
+				font-weight: 100 900;
+				font-display: swap;
+				src: url('/node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2') format('woff2');
+			}
+			:root {
+				--c-naples-yellow: lab(84.6744 6.12866 46.9872);
+				--c-raw-umber: lab(41.2198 3.80537 23.9634);
+				--c-french-grey: lab(70.024 -1.25023 -9.22515);
+				--c-sepia: lab(33.2388 7.39939 11.5045);
+				--c-snow-white: lab(99.0984 -0.122539 0.363965);
+				--c-black: lab(9.38758 0.879477 -0.339045);
+				--c-vermilion: lab(51.0916 62.7477 41.8985);
+				--grey: color-mix(in lab, var(--c-raw-umber) 45%, var(--c-french-grey));
+				--desk: color-mix(in lab, var(--c-sepia) 30%, var(--c-black));
+				--case: color-mix(in lab, var(--grey) 20%, var(--c-snow-white));
+				--key: color-mix(in lab, var(--c-naples-yellow) 3%, var(--c-snow-white));
+				--edge: color-mix(in lab, var(--grey) 62%, var(--c-snow-white));
+				--dim: color-mix(in lab, var(--grey) 65%, var(--c-black));
+				font-family: Inter, system-ui, sans-serif;
+				color: var(--c-black);
+				background: var(--desk);
+			}
+			* {
+				box-sizing: border-box;
+			}
+			body {
+				margin: 0;
+				padding: 12px;
+			}
+			main {
+				display: grid;
+				grid-template-columns: 260px minmax(0, 1fr);
+				gap: 12px;
+				height: calc(100dvh - 24px);
+				padding: 12px;
+				border-radius: 18px;
+				background: linear-gradient(var(--key), var(--case) 220px);
+				box-shadow:
+					inset 0 1px 0 var(--c-snow-white),
+					0 16px 40px color-mix(in lab, var(--c-black) 65%, transparent);
+			}
+			form {
+				min-width: 0;
+				overflow-y: auto;
+				padding: 8px;
+			}
+			header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				margin-bottom: 24px;
+			}
+			h1 {
+				margin: 0;
+				font-size: 18px;
+				font-weight: 650;
+				letter-spacing: -0.04em;
+			}
+			h1::before {
+				content: '';
+				display: inline-block;
+				width: 7px;
+				height: 7px;
+				margin-right: 10px;
+				border-radius: 50%;
+				background: var(--c-vermilion);
+			}
+			label {
+				display: block;
+				font-size: 11px;
+				font-weight: 550;
+				color: var(--dim);
+			}
+			form > label {
+				margin-bottom: 16px;
+			}
+			button,
+			select,
+			input {
+				font: inherit;
+				color: var(--c-black);
+			}
+			button,
+			select,
+			input[type='number'] {
+				min-height: 36px;
+				border: 1px solid var(--edge);
+				border-radius: 6px;
+				background: var(--key);
+				box-shadow:
+					inset 0 1px 0 var(--c-snow-white),
+					0 2px 0 var(--edge),
+					0 3px 4px color-mix(in lab, var(--c-sepia) 15%, transparent);
+			}
+			button {
+				padding: 0 12px;
+				cursor: pointer;
+				font-size: 15px;
+			}
+			button:active {
+				transform: translateY(2px);
+				box-shadow: inset 0 1px 3px var(--edge);
+			}
+			button:disabled {
+				opacity: 0.45;
+				cursor: default;
+			}
+			select,
+			input[type='number'] {
+				width: 100%;
+				margin-top: 7px;
+				padding: 0 9px;
+				font-size: 12px;
+			}
+			select {
+				cursor: pointer;
+			}
+			input[type='number'] {
+				background: var(--c-black);
+				color: var(--c-naples-yellow);
+				font-variant-numeric: tabular-nums;
+				box-shadow: inset 0 1px 3px var(--desk);
+			}
+			input:invalid {
+				outline: 2px solid var(--c-vermilion);
+			}
+			:focus-visible {
+				outline: 2px solid var(--c-vermilion);
+				outline-offset: 3px;
+			}
+			.seed {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) auto;
+				gap: 6px;
+				align-items: end;
+			}
+			.pair,
+			#dials {
+				display: grid;
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+				gap: 18px 16px;
+			}
+			#dials {
+				margin-top: 26px;
+				padding-top: 20px;
+				border-top: 1px solid var(--edge);
+			}
+			output {
+				float: right;
+				font-variant-numeric: tabular-nums;
+				font-size: 10px;
+			}
+			input[type='range'] {
+				appearance: none;
+				width: 100%;
+				height: 5px;
+				margin: 18px 0 10px;
+				border-radius: 4px;
+				background: var(--dim);
+				box-shadow: 0 1px 0 var(--c-snow-white);
+				cursor: ew-resize;
+				accent-color: var(--c-vermilion);
+			}
+			input[type='range']::-webkit-slider-thumb {
+				appearance: none;
+				width: 17px;
+				height: 23px;
+				border: 1px solid var(--edge);
+				border-radius: 4px;
+				background: linear-gradient(var(--key) 43%, var(--c-vermilion) 43% 55%, var(--case) 55%);
+				box-shadow: 0 2px 2px color-mix(in lab, var(--c-black) 25%, transparent);
+			}
+			input[type='range']::-moz-range-thumb {
+				width: 17px;
+				height: 23px;
+				border: 1px solid var(--edge);
+				border-radius: 4px;
+				background: linear-gradient(var(--key) 43%, var(--c-vermilion) 43% 55%, var(--case) 55%);
+			}
+			#art {
+				min-width: 0;
+				min-height: 0;
+				padding: 16px;
+				border-radius: 9px;
+				background: var(--desk);
+				box-shadow:
+					inset 0 2px 7px var(--c-black),
+					0 1px 0 var(--c-snow-white);
+			}
+			#art svg {
+				display: block;
+				width: 100%;
+				height: 100%;
+			}
+			@media (max-width: 680px) {
+				body {
+					padding: 6px;
+				}
+				main {
+					height: auto;
+					min-height: calc(100dvh - 12px);
+					grid-template-columns: minmax(0, 1fr);
+					padding: 8px;
+				}
+				#art {
+					grid-row: 1;
+					height: 60dvh;
+					padding: 8px;
+				}
+				form {
+					overflow: visible;
+				}
+				header {
+					margin-bottom: 16px;
+				}
+				#dials {
+					grid-template-columns: repeat(3, minmax(0, 1fr));
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<form aria-label="Vein controls">
+				<header>
+					<h1>Vein</h1>
+					<button id="download" type="button" title="Download the current art as SVG" aria-label="Download SVG">↓ SVG</button>
+				</header>
+				<label>Palette<select name="palette" title="Choose a palette or a single pencil ink"></select></label>
+				<label for="seed"
+					>Seed<span class="seed"
+						><input
+							id="seed"
+							name="seed"
+							type="number"
+							min="0"
+							max="2147483647"
+							step="1"
+							value="12"
+							required
+							title="Set the seed to repeat a composition"
+						/><button id="reroll" type="button" title="Roll a new seed" aria-label="Re-roll seed">↻</button></span
+					></label
+				>
+				<div class="pair">
+					<label>Ratio<select name="ratio" title="Set the proportions of the sheet"></select></label>
+					<label
+						>Flow<select name="flow" title="Choose the direction of the contours">
+							<option value="marble">Marble</option>
+							<option value="swirl">Swirl</option>
+							<option value="iso">Iso</option>
+						</select></label
+					>
+				</div>
+				<div id="dials"></div>
+			</form>
+			<div id="art" role="img" aria-label="Generated contour art"></div>
+		</main>
+		<script type="module">
+			import { renderSVG, DEFAULTS, RATIOS } from './vein/scene.js'
+			import { PALETTES, NAMED, INKS, paletteByName } from './vein/palettes.js'
+
+			const form = document.querySelector('form')
+			const art = document.querySelector('#art')
+			const download = document.querySelector('#download')
+			const palette = form.elements.namedItem('palette')
+			for (const [label, names] of [
+				['Palettes', Object.keys(NAMED)],
+				['Vein', PALETTES.map((_, index) => `vein-${index}`)],
+				['Inks', Object.keys(INKS)],
+			]) {
+				const group = document.createElement('optgroup')
+				group.label = label
+				for (const name of names) group.append(new Option(name, name))
+				palette.append(group)
+			}
+			palette.value = 'vallotton'
+			const ratio = form.elements.namedItem('ratio')
+			for (const { id } of RATIOS) ratio.add(new Option(id, id))
+			ratio.value = DEFAULTS.ratio
+
+			const dials = [
+				['levels', 2, 24, 1, 'Set the number of contour bands'],
+				['curve', 0, 2, 0.01, 'Bend the flow into deeper folds'],
+				['scale', 0, 1, 0.01, 'Tighten the pattern across the sheet'],
+				['tiger', 0, 1, 0.01, 'Crowd the contours into tiger stripes'],
+				['edges', 0, 1, 0.01, 'Outline more bands with contrasting ink'],
+				['stars', 0, 1, 0.01, 'Scatter more stars over the ground'],
+				['tints', 0, 1, 0.01, 'Vary the lightness of each band'],
+				['runs', 0, 1, 0.01, 'Keep the same ink across more bands'],
+			]
+			for (const [name, min, max, step, title] of dials) {
+				const label = document.createElement('label')
+				label.htmlFor = name
+				label.textContent = name[0].toUpperCase() + name.slice(1)
+				const output = document.createElement('output')
+				output.htmlFor = name
+				const input = document.createElement('input')
+				Object.assign(input, { type: 'range', id: name, name, min, max, step, title, value: DEFAULTS[name] })
+				output.value = input.value
+				input.addEventListener('input', () => {
+					output.value = input.value
+				})
+				label.append(output, input)
+				document.querySelector('#dials').append(label)
+			}
+
+			let svg = ''
+			let pending = 0
+			function render() {
+				cancelAnimationFrame(pending)
+				pending = 0
+				download.disabled = !form.checkValidity()
+				if (download.disabled) return
+				const options = Object.fromEntries(new FormData(form))
+				for (const name of ['seed', ...dials.map(([name]) => name)]) options[name] = Number(options[name])
+				options.palette = paletteByName(options.palette)
+				svg = renderSVG(options)
+				art.innerHTML = svg
+			}
+			form.addEventListener('submit', (event) => event.preventDefault())
+			form.addEventListener('input', () => {
+				if (!pending) pending = requestAnimationFrame(render)
+			})
+			document.querySelector('#reroll').addEventListener('click', () => {
+				const seed = form.elements.namedItem('seed')
+				seed.value = (Number(seed.value) + 1 + (crypto.getRandomValues(new Uint32Array(1))[0] % 2147483647)) % 2147483648
+				render()
+			})
+			download.addEventListener('click', () => {
+				render()
+				if (download.disabled) return
+				const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
+				const link = document.createElement('a')
+				link.href = url
+				link.download = `vein-${palette.value}-${form.elements.namedItem('seed').value}.svg`
+				link.click()
+				setTimeout(() => URL.revokeObjectURL(url), 1000)
+			})
+			render()
+		</script>
+	</body>
+</html>
