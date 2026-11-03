@@ -3,6 +3,7 @@
 // a pattern's chord row, the way you'd type it.
 import { compile, parse } from '../score.js'
 import { prefersFlats } from '../key.js'
+import { BRICKS, brickVoice } from '../bricks.js'
 import { barAt } from './link.js'
 
 const SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
@@ -154,7 +155,11 @@ export function addPad(text) {
 	}
 	const voiceLines = lines.flatMap((l, i) => (/^voice\s/i.test(strip(l)) ? [i] : []))
 	const firstPattern = Math.min(lines.length, ...Object.values(song.patterns).map((p) => p.ln - 1))
-	const voice = `voice ${name} pad vol=0.35`
+	const voice = brickVoice(
+		BRICKS.find((b) => b.id === 'pad'),
+		name,
+		song.voices.some((v) => v.inst === 'kick'),
+	)
 	if (voiceLines.length) inserts.push([voiceLines.at(-1), voice])
 	else inserts.push([firstPattern - 1, firstPattern < lines.length ? `${voice}\n` : voice])
 	// From the bottom up, so earlier line numbers stay put.

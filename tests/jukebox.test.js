@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { compile, noteToMidi, parseKey, MELODIC, DRUMS } from '../src/score.js'
 import { mtof } from '../src/synth.js'
 import { HEAR, cueAt, join, shape, runChain, effectState, EFFECTS } from '../src/player.js'
-import { BRICKS, addBrick, brickInto, growRepeats } from '../src/bricks.js'
+import { BRICKS, addBrick, brickInto, brickVoice, growRepeats } from '../src/bricks.js'
 import { INSTRUMENTS } from '../src/instruments.js'
 import { addSection, moveSection, removeSection, repeatSection, sectionsOf } from '../src/ui/arrange.js'
 import { paint } from '../src/ui/paint.js'
@@ -602,5 +602,50 @@ describe('new songs start right', () => {
 		const taken = []
 		for (let i = 0; i < 200; i++) taken.push(newTitle(taken))
 		expect(new Set(taken.map((t) => t.toLowerCase())).size).toBe(200)
+	})
+})
+
+describe('bricks come mixed', () => {
+	const brick = (id) => BRICKS.find((b) => b.id === id)
+	const voiceOf = (line) => compile(`voice kick kick\n${line}`).voices[1]
+	const kicked = (line) => compile(`voice kick kick\n${line}\npattern A\nkick | x |\nloop A`)
+
+	test('every brick writes its sound into its voice line, and the song reads it back', () => {
+		for (const b of BRICKS) {
+			const line = brickVoice(b, 'x', true)
+			expect(
+				kicked(line).errors.filter((e) => e.line === 2),
+				b.id,
+			).toEqual([])
+			const v = voiceOf(line)
+			for (const [, k, n] of b.sound.matchAll(/(\w+)=([\d.-]+)/g)) expect(v[k], `${b.id} ${k}`).toBe(Number(n))
+		}
+	})
+
+	test('the kick sits on top, the low end is centred and dry, the hats quiet and to the side', () => {
+		const vol = (id) => voiceOf(brickVoice(brick(id), 'x', true)).vol
+		for (const b of BRICKS.filter((b) => b.inst !== 'kick')) expect(vol(b.id), b.id).toBeLessThan(vol('kick'))
+		for (const id of ['pulse', 'bounce', '808']) {
+			const v = voiceOf(brickVoice(brick(id), 'x', true))
+			expect([v.pan, v.rev], id).toEqual([0, 0])
+		}
+		expect(vol('hats')).toBeLessThan(vol('snare'))
+		expect(voiceOf(brickVoice(brick('hats'))).pan).not.toBe(0)
+		expect(voiceOf(brickVoice(brick('pad'), 'x', true)).pump).toBeGreaterThan(0.4)
+	})
+
+	test('a brick ducks under the kick only once there is one', () => {
+		const empty = 'tempo 120\npattern A\nchords | C |\n\nloop A'
+		const pad = addBrick(empty, brick('pad')).text
+		expect(pad).toContain('voice pad pad vol=0.4 rev=0.6 bright=0.8\n')
+		expect(compile(pad).errors).toEqual([])
+		const both = addBrick(pad, brick('kick')).text
+		expect(both).toContain('voice pad pad vol=0.4 rev=0.6 bright=0.8 pump=0.6\n')
+		expect(compile(both).errors).toEqual([])
+		// a voice line someone changed by hand stays theirs
+		const own = addBrick(pad.replace('vol=0.4', 'vol=0.2'), brick('kick')).text
+		expect(own).toContain('voice pad pad vol=0.2 rev=0.6 bright=0.8\n')
+		// and a brick into one pattern of a song with a kick ducks straight away
+		expect(brickInto(addBrick(empty, brick('kick')).text, brick('organ'), 'A').text).toContain('pump=0.3')
 	})
 })

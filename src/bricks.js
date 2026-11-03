@@ -6,27 +6,138 @@ import { keyOf, prefersFlats, transposeChordBody } from './key.js'
 
 // x hit, X accent, o soft, . nothing. A melodic brick plays the chord row
 // on its x steps, as much of each chord as `part` says, and - holds it.
+// `sound` is the brick's voice options, so any stack of bricks comes out mixed:
+// kick on top, bass low and centred under it, hats quiet and wide, the pad and
+// stabs ducking under the kick with `pump`.
 export const BRICKS = [
-	{ id: 'kick', shelf: 'Drums', label: '4 to the floor', voice: 'kick', inst: 'kick', vol: 0.9, steps: 'x... x... x... x...' },
-	{ id: 'break', shelf: 'Drums', label: 'Breakbeat', voice: 'kick', inst: 'kick', vol: 0.9, steps: 'x... .... ..x. .x..' },
-	{ id: 'snare', shelf: 'Drums', label: 'Backbeat', voice: 'snare', inst: 'snare', vol: 0.6, steps: '.... x... .... x...' },
-	{ id: 'clap', shelf: 'Drums', label: 'Claps', voice: 'clap', inst: 'clap', vol: 0.55, steps: '.... x... .... x..x' },
-	{ id: 'hats', shelf: 'Drums', label: 'Hi-Hats', voice: 'hat', inst: 'hat', vol: 0.4, steps: 'x.x. x.x. x.x. xxxx' },
-	{ id: 'offhat', shelf: 'Drums', label: 'Offbeat', voice: 'ohat', inst: 'ohat', vol: 0.3, steps: '..x. ..x. ..x. ..x.' },
-	{ id: 'shaker', shelf: 'Drums', label: 'Shaker', voice: 'shaker', inst: 'shaker', vol: 0.35, steps: 'xoxo xoxo xoxo xoxo' },
-	{ id: 'darbuka', shelf: 'Drums', label: 'Darbuka', voice: 'darbuka', inst: 'dum', vol: 0.7, steps: 'x... ..x. x... ....' },
-	{ id: 'cowbell', shelf: 'Drums', label: 'Cowbell', voice: 'cowbell', inst: 'cowbell', vol: 0.35, steps: 'x... x... x... x.x.' },
-	{ id: 'pulse', shelf: 'Bass', label: 'Pulse', voice: 'bass', inst: 'synbass', vol: 0.8, part: 'root', steps: 'x-.. x-.. x-.. x-x-' },
-	{ id: 'bounce', shelf: 'Bass', label: 'Bounce', voice: 'bass', inst: 'ebass', vol: 0.8, part: 'up', steps: 'x.x. x.x. x.x. x.x.' },
-	{ id: '808', shelf: 'Bass', label: '808', voice: 'b808', inst: '808', vol: 1, part: 'root', steps: 'x--- --.x -... x---' },
-	{ id: 'pad', shelf: 'Chords', label: 'Pad', voice: 'pad', inst: 'pad', vol: 0.35, part: 'chord', steps: 'x--- ---- ---- ----' },
+	{
+		id: 'kick',
+		shelf: 'Drums',
+		label: '4 to the floor',
+		voice: 'kick',
+		inst: 'kick',
+		sound: 'vol=0.95 rev=0.03',
+		steps: 'x... x... x... x...',
+	},
+	{
+		id: 'break',
+		shelf: 'Drums',
+		label: 'Breakbeat',
+		voice: 'kick',
+		inst: 'kick',
+		sound: 'vol=0.95 rev=0.03',
+		steps: 'x... .... ..x. .x..',
+	},
+	{
+		id: 'snare',
+		shelf: 'Drums',
+		label: 'Backbeat',
+		voice: 'snare',
+		inst: 'snare',
+		sound: 'vol=0.7 rev=0.3 bright=1.1',
+		steps: '.... x... .... x...',
+	},
+	{
+		id: 'clap',
+		shelf: 'Drums',
+		label: 'Claps',
+		voice: 'clap',
+		inst: 'clap',
+		sound: 'vol=0.65 rev=0.35 pan=0.1',
+		steps: '.... x... .... x..x',
+	},
+	{
+		id: 'hats',
+		shelf: 'Drums',
+		label: 'Hi-Hats',
+		voice: 'hat',
+		inst: 'hat',
+		sound: 'vol=0.34 pan=0.25 rev=0.08 bright=1.2',
+		steps: 'x.x. x.x. x.x. xxxx',
+	},
+	{
+		id: 'offhat',
+		shelf: 'Drums',
+		label: 'Offbeat',
+		voice: 'ohat',
+		inst: 'ohat',
+		sound: 'vol=0.28 pan=-0.25 rev=0.12',
+		steps: '..x. ..x. ..x. ..x.',
+	},
+	{
+		id: 'shaker',
+		shelf: 'Drums',
+		label: 'Shaker',
+		voice: 'shaker',
+		inst: 'shaker',
+		sound: 'vol=0.3 pan=0.4 rev=0.1',
+		steps: 'xoxo xoxo xoxo xoxo',
+	},
+	{
+		id: 'darbuka',
+		shelf: 'Drums',
+		label: 'Darbuka',
+		voice: 'darbuka',
+		inst: 'dum',
+		sound: 'vol=0.5 pan=-0.3 rev=0.2',
+		steps: 'x... ..x. x... ....',
+	},
+	{
+		id: 'cowbell',
+		shelf: 'Drums',
+		label: 'Cowbell',
+		voice: 'cowbell',
+		inst: 'cowbell',
+		sound: 'vol=0.28 pan=0.35 rev=0.15 echo=3 tail=0.3',
+		steps: 'x... x... x... x.x.',
+	},
+	{
+		id: 'pulse',
+		shelf: 'Bass',
+		label: 'Pulse',
+		voice: 'bass',
+		inst: 'synbass',
+		sound: 'vol=0.65 rev=0 bright=0.9 pump=0.3',
+		part: 'root',
+		steps: 'x-.. x-.. x-.. x-x-',
+	},
+	{
+		id: 'bounce',
+		shelf: 'Bass',
+		label: 'Bounce',
+		voice: 'bass',
+		inst: 'ebass',
+		sound: 'vol=0.65 rev=0 pump=0.3',
+		part: 'up',
+		steps: 'x.x. x.x. x.x. x.x.',
+	},
+	{
+		id: '808',
+		shelf: 'Bass',
+		label: '808',
+		voice: 'b808',
+		inst: '808',
+		sound: 'vol=0.6 rev=0 drive=0.4 pump=0.2',
+		part: 'root',
+		steps: 'x--- --.x -... x---',
+	},
+	{
+		id: 'pad',
+		shelf: 'Chords',
+		label: 'Pad',
+		voice: 'pad',
+		inst: 'pad',
+		sound: 'vol=0.4 rev=0.6 bright=0.8 pump=0.6',
+		part: 'chord',
+		steps: 'x--- ---- ---- ----',
+	},
 	{
 		id: 'organ',
 		shelf: 'Chords',
 		label: 'Organ stabs',
 		voice: 'organ',
 		inst: 'organ',
-		vol: 0.4,
+		sound: 'vol=0.45 pan=-0.15 rev=0.2 gate=0.5 echo=3 tail=0.35 pump=0.3',
 		part: 'chord',
 		steps: '..x. ..x. ..x. ..x.',
 	},
@@ -36,7 +147,7 @@ export const BRICKS = [
 		label: 'Arpeggio',
 		voice: 'arp',
 		inst: 'marimba',
-		vol: 0.6,
+		sound: 'vol=0.4 pan=0.3 rev=0.25 gate=0.6 pump=0.3',
 		part: 'up',
 		center: 'E5',
 		steps: 'xxxx xxxx xxxx xxxx',
@@ -47,7 +158,7 @@ export const BRICKS = [
 		label: 'Bells',
 		voice: 'bell',
 		inst: 'glock',
-		vol: 0.45,
+		sound: 'vol=0.35 pan=-0.35 rev=0.45 echo=4 tail=0.3',
 		part: 'up',
 		center: 'G5',
 		steps: 'x-.. x-.. x--- ....',
@@ -58,7 +169,7 @@ export const BRICKS = [
 		label: 'Chiptune',
 		voice: 'chip',
 		inst: 'chip',
-		vol: 0.35,
+		sound: 'vol=0.3 pan=0.2 rev=0.2 gate=0.6 bright=0.8 echo=3 tail=0.3 pump=0.2',
 		part: 'up',
 		center: 'F5',
 		steps: 'x.xx .x.x -.x. xx-.',
@@ -79,9 +190,27 @@ export function brickBar(brick, barSteps) {
 	return out
 }
 
-// The voice line that plays `brick`, as voice `name`.
-export const brickVoice = (brick, name = brick.voice) =>
-	`voice ${name} ${brick.inst} vol=${brick.vol}${brick.part && brick.part !== 'chord' ? ` part=${brick.part}` : ''}${brick.center ? ` center=${brick.center}` : ''}`
+// The voice line that plays `brick`, as voice `name`: its sound, mixed to sit
+// with any other bricks, then what it plays of the chords. It ducks under the
+// kick only once the song has one (`kicked`): pump needs a kick to follow.
+export function brickVoice(brick, name = brick.voice, kicked = false) {
+	const sound = kicked ? brick.sound : brick.sound.replace(/\s*pump=\S+/, '')
+	return `voice ${name} ${brick.inst} ${sound}${brick.part && brick.part !== 'chord' ? ` part=${brick.part}` : ''}${brick.center ? ` center=${brick.center}` : ''}`
+}
+// `lines` of `text` with each brick voice, as a brick wrote it, ducking under
+// the kick once the song has one.
+function pumped(lines) {
+	const text = lines.filter((l) => l != null).join('\n')
+	if (!parse(text).song.voices.some((v) => v.inst === 'kick')) return text
+	return text
+		.split('\n')
+		.map((l) => {
+			const [, name, inst] = /^voice\s+(\S+)\s+(\S+)/.exec(l) ?? []
+			const brick = BRICKS.find((b) => b.inst === inst && b.sound.includes('pump='))
+			return brick && l.trim() === brickVoice(brick, name) ? brickVoice(brick, name, true) : l
+		})
+		.join('\n')
+}
 
 // The key's own chord, for a chord row to start from: C, Am, F#m.
 export const tonic = (key) => transposeChordBody(key?.minor ? 'Cm' : 'C', key?.pc ?? 0, prefersFlats(key))
@@ -194,7 +323,7 @@ export function addBrick(text, brick) {
 	for (const [after, line] of inserts) lines.splice(after + 1, 0, line)
 	if (!Object.keys(song.patterns).length)
 		lines.push('', 'pattern A', ...(row ? [row] : []), `${name} | ${brickBar(brick, song.beats * song.steps)} |`, '', 'loop A')
-	return { text: lines.filter((l) => l != null).join('\n'), voice: name }
+	return { text: pumped(lines), voice: name }
 }
 
 // Whether pattern `name` of `song` plays voice `v`: its own line or one it
@@ -294,5 +423,5 @@ export function brickInto(text, brick, name) {
 	// in the order they came.
 	const ordered = inserts.map((ins, k) => [...ins, k]).sort((a, b) => b[0] - a[0] || b[2] - a[2])
 	for (const [after, l] of ordered) lines.splice(after + 1, 0, l)
-	return { text: lines.filter((l) => l != null).join('\n'), voice: v }
+	return { text: pumped(lines), voice: v }
 }

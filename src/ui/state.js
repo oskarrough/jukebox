@@ -469,7 +469,7 @@ export const jb = createRoot(() => {
 		return { pattern, bar: voices && row >= voices ? 0 : row }
 	})
 	// Plays chord `sym` on the voice that plays the chord row, or a pad.
-	const PAD = parse('voice pad pad vol=0.35').song.voices[0]
+	const PAD = parse(brickVoice(BRICKS.find((b) => b.id === 'pad'))).song.voices[0]
 	function hearChord(sym) {
 		const s = song()
 		const voice = s?.voices.find((v) => v.name === untrack(harmony)) ?? PAD
