@@ -1,0 +1,68 @@
+title    Close Shave
+about    Bright, bouncy arcade pop for dodging things by a pixel: a square-wave hook hopping over octave bass, offbeat organ stabs and a kit that never sits still. Brass and glockenspiel join for the chorus; the break winds the arpeggio up like a clock before everything drops back in.
+game     dodgethis
+tags     dodgethis
+key      C
+tempo    140
+beats    4
+steps    4
+swing    0.05
+reverb   0.2
+
+# C major, one idea: the hook is always a chord tone on the beat, so it can't clash with anything.
+voice lead  chip    vol=0.38 gate=0.75
+voice arp   chip    vol=0.2  pan=0.35 gate=0.4
+voice stab  organ   vol=0.3  pan=-0.3 gate=0.35
+voice horn  brass   vol=0.4  pan=0.25 gate=0.5 center=A4
+voice glass glock   vol=0.35 pan=-0.4
+voice bass  synbass vol=0.6  gate=0.6
+voice kick  kick    vol=0.9
+voice snare snare   vol=0.5
+voice hat   hat     vol=0.3  pan=0.2
+voice ohat  ohat    vol=0.25 pan=-0.2
+voice crash crash   vol=0.3
+
+# two bars to start the clock
+pattern intro
+arp   | C4 E4 G4 C5 E4 G4 C5 E5 G4 C5 E5 G5 C5 E5 G5 C6 | G3 B3 D4 G4 B3 D4 G4 B4 D4 G4 B4 D5 G4 B4 D5 G5 |
+kick  | _ | x... x... x... x.x. |
+hat   | _ | x.x. x.x. x.x. xxxx |
+snare | _ | .... .... .... x.xx |
+
+# the hook, C G Am F then C G F G
+pattern A
+lead  | E5 . E5 G5 . E5 . C5 . . G4 . C5 E5- . | D5 . D5 G5 . D5 . B4 . . G4 . B4 D5- . | E5 . E5 A5 . E5 . C5 . . A4 . C5 E5- . | C5 . C5 F5 . C5 . A4 . . F4 . A4 C5 A4 G4 | E5 . E5 G5 . E5 . C6 . . G5 . E5 G5 C6- | D5 . D5 G5 . D5 . B5 . . G5 . D5 G5 B5- | C5 . C5 F5 . A5 . F5 . . C5 . F5 A5 C6- | D5 G5 B5 D6 . B5 G5 D5 B4- G4- D4 G4 B4 D5 |
+stab  | . . [C] . . . [C] . . . [C] . . . [C] . | . . [G] . . . [G] . . . [G] . . . [G] . | . . [Am] . . . [Am] . . . [Am] . . . [Am] . | . . [F] . . . [F] . . . [F] . . . [F] . | . . [C] . . . [C] . . . [C] . . . [C] . | . . [G] . . . [G] . . . [G] . . . [G] . | . . [F] . . . [F] . . . [F] . . . [F] . | . . [G] . . . [G] . . . [G] . . . [G] . |
+bass  | C2 . C3 . C2 . C3 . C2 . C3 . C2 . C3 . | G1 . G2 . G1 . G2 . G1 . G2 . G1 . G2 . | A1 . A2 . A1 . A2 . A1 . A2 . A1 . A2 . | F1 . F2 . F1 . F2 . F1 . F2 . F1 . F2 C3 | C2 . C3 . C2 . C3 . C2 . C3 . C2 . C3 . | G1 . G2 . G1 . G2 . G1 . G2 . G1 . G2 . | F1 . F2 . F1 . F2 . F1 . F2 . F1 . F2 . | G1 . G2 . G1 . G2 . G1 . G2 . G2 B2 D3 G3 |
+kick  | x... x..x x... x.x. | % | % | x... x..x x... x.xx | % | % | % | x... x..x x.x. xxxx |
+snare | .... x... .... x... | % | % | .... x... .... x..x | % | % | % | .... x... x.x. xxxx |
+hat   | x.x. x.x. x.x. x.xx | % | % | % | % | % | % | % |
+crash | x............... | _ | _ | _ | _ | _ | _ | _ |
+
+# same hook, with a sparkling arpeggio on top
+pattern A2 from A
+arp   | C5 E5 G5 E5 C5 E5 G5 E5 C5 E5 G5 E5 C5 E5 G5 E5 | D5 G5 B5 G5 D5 G5 B5 G5 D5 G5 B5 G5 D5 G5 B5 G5 | C5 E5 A5 E5 C5 E5 A5 E5 C5 E5 A5 E5 C5 E5 A5 E5 | C5 F5 A5 F5 C5 F5 A5 F5 C5 F5 A5 F5 C5 F5 A5 F5 | C5 E5 G5 E5 C5 E5 G5 E5 C5 E5 G5 E5 C5 E5 G5 E5 | D5 G5 B5 G5 D5 G5 B5 G5 D5 G5 B5 G5 D5 G5 B5 G5 | C5 F5 A5 F5 C5 F5 A5 F5 C5 F5 A5 F5 C5 F5 A5 F5 | D5 G5 B5 G5 D5 G5 B5 G5 D5 G5 B5 G5 D5 G5 B5 G5 |
+ohat  | ..x. ..x. ..x. ..x. | % | % | % | % | % | % | % |
+
+# chorus: F G Em Am, F G C G, higher and held, brass underneath, glass on top
+pattern B
+lead  | A5- . A5 C6- . A5 F5- . F5 A5 C6-- | B5- . B5 D6- . B5 G5- . G5 B5 D6-- | G5- . G5 B5- . G5 E5- . E5 G5 B5-- | A5- . A5 C6- . E6 C6- . A5 C6 E6-- | A5- . A5 C6- . A5 F5- . F5 A5 C6-- | B5- . B5 D6- . B5 G5- . G5 B5 D6-- | E6- . E6 G6- . E6 C6- . C6 E6 G6-- | D6 B5 G5 B5 D6 B5 G5 B5 D6 . D6 . D6 D6 D6 . |
+horn  | [F]--- . . [F]- . [F]- [F]---- | [G]--- . . [G]- . [G]- [G]---- | [Em]--- . . [Em]- . [Em]- [Em]---- | [Am]--- . . [Am]- . [Am]- [Am]---- | [F]--- . . [F]- . [F]- [F]---- | [G]--- . . [G]- . [G]- [G]---- | [C]--- . . [C]- . [C]- [C]---- | [G]--------------- |
+glass | C6 . . . C6 . . . F6 . . . C6 . . . | D6 . . . D6 . . . G6 . . . D6 . . . | E6 . . . E6 . . . G6 . . . E6 . . . | E6 . . . E6 . . . A6 . . . E6 . . . | C6 . . . C6 . . . F6 . . . C6 . . . | D6 . . . D6 . . . G6 . . . D6 . . . | E6 . . . E6 . . . G6 . . . C7 . . . | D6 . . . B5 . . . G5 . . . D6 . . . |
+bass  | F1 . F2 . F1 . F2 . F1 . F2 . F1 . F2 . | G1 . G2 . G1 . G2 . G1 . G2 . G1 . G2 . | E1 . E2 . E1 . E2 . E1 . E2 . E1 . E2 . | A1 . A2 . A1 . A2 . A1 . A2 . A1 . A2 . | F1 . F2 . F1 . F2 . F1 . F2 . F1 . F2 . | G1 . G2 . G1 . G2 . G1 . G2 . G1 . G2 . | C2 . C3 . C2 . C3 . C2 . C3 . C2 . C3 . | G1 . G2 . G1 . G2 . G1 . G2 . G2 B2 D3 G3 |
+kick  | x... x..x x... x.x. | % | % | % | % | % | % | x... x..x x.x. xxxx |
+snare | .... x... .... x... | % | % | % | % | % | % | .... x... x.x. xxxx |
+hat   | xxxx xxxx xxxx xxxx | % | % | % | % | % | % | % |
+ohat  | ..x. ..x. ..x. ..x. | % | % | % | % | % | % | % |
+crash | x............... | _ | _ | _ | x............... | _ | _ | _ |
+
+# the break: the arpeggio climbs, the kit thins out, then it all falls back in
+pattern C
+arp   | C4 E4 G4 C5 E4 G4 C5 E5 G4 C5 E5 G5 C5 E5 G5 C6 | A3 C4 E4 A4 C4 E4 A4 C5 E4 A4 C5 E5 A4 C5 E5 A5 | F3 A3 C4 F4 A3 C4 F4 A4 C4 F4 A4 C5 F4 A4 C5 F5 | G3 B3 D4 G4 B3 D4 G4 B4 D4 G4 B4 D5 G4 B4 D5 G5 |
+bass  | C2 . . . C2 . . . C2 . . . C2 . . . | A1 . . . A1 . . . A1 . . . A1 . . . | F1 . . . F1 . . . F1 . . . F1 . . . | G1 . . . G1 . . . G1 G1 G1 G1 G1 G1 G1 G1 |
+kick  | x... x... x... x... | % | % | x... x... x.x. xxxx |
+snare | _ | _ | .... .... x.x. x.x. | x.x. x.x. xxxx xxxx |
+hat   | xxxx xxxx xxxx xxxx | % | % | % |
+
+play intro
+loop A A2 B A2 B C
