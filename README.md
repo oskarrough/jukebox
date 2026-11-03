@@ -14,7 +14,7 @@ bun test         # every song compiles and loops, plus the format and playback r
 bun run render konvoi --seconds 20  # offline WAV and levels, no audio device needed
 ```
 
-Links play straight away: `/?song=konvoi&kind=convoy&d=20&car=1`. The address bar always links to what's playing.
+Links open a song placed just so, `/?song=konvoi&kind=convoy&d=20&car=1`, and play straight away if the browser allows it; otherwise the play button waits. The address bar always links to what's playing.
 
 ## Writing songs
 
