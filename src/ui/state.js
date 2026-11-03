@@ -7,6 +7,7 @@ import { EFFECTS, SOURCES, effectState, runChain } from '../effects.js'
 import { inferKey, newTitle, setSongKey, starter, transposeBrick } from '../key.js'
 import { DRUMS, chordToMidis, compile, noteToMidi, parse, parseKey } from '../score.js'
 import { addSection as addPattern, moveSection, removeSection, repeatSection, sectionsOf } from './arrange.js'
+import { fate, neighbour, reinsert } from './discard.js'
 import { columnOf, marksFor } from './link.js'
 import { addPad, barsIn, harmonyVoice, writeChord } from './pad.js'
 import { slug } from './slug.js'
@@ -634,6 +635,64 @@ export const jb = createRoot(() => {
 		keepDrafts()
 	}
 
+	// What the × on song `n` does, if anything (see discard.js).
+	const fateOf = (n) => fate({ made: made().includes(n), unsaved: unsaved(n), canDelete: canSave })
+	// The song just sent away, kept a few seconds to bring back.
+	const [gone, setGone] = createSignal(null)
+	let goneTimer
+	// Sends song `n` away: a new song is forgotten, a saved one's edits are
+	// dropped, then its file is removed. The song open goes to the next one,
+	// stopped. Returns the song to leave the focus on.
+	function discard(n) {
+		const what = untrack(() => fateOf(n))
+		if (!what) return null
+		const open = n === untrack(name)
+		const next = neighbour(
+			untrack(shown).map((s) => s.name),
+			n,
+		)
+		const g = { what, name: n, text: texts[n], order: untrack(fileNames), at: untrack(made).indexOf(n) }
+		if (what === 'revert') setTexts((s) => void (s[n] = files()[n]))
+		else {
+			if (open && playing) stop()
+			if (what === 'forget') setMade((m) => m.filter((x) => x !== n))
+			else {
+				setFiles((f) => Object.fromEntries(Object.entries(f).filter(([k]) => k !== n)))
+				fetch(`/__delete?name=${n}`, { method: 'POST' }).catch(() => null)
+			}
+			setTexts((s) => void delete s[n])
+			lastGood.delete(n)
+			if (open && next) {
+				g.next = next
+				pick(next)
+			}
+		}
+		keepDrafts()
+		clearTimeout(goneTimer)
+		setGone(g)
+		goneTimer = setTimeout(() => setGone(null), 6000)
+		return what === 'revert' ? n : next
+	}
+	// Brings back what discard sent away, as it was; the song that opened in
+	// its place gives way if nothing else was chosen since.
+	function undo() {
+		const g = untrack(gone)
+		if (!g) return
+		clearTimeout(goneTimer)
+		setGone(null)
+		if (g.what === 'forget') setMade((m) => m.toSpliced(g.at, 0, g.name))
+		if (g.what === 'delete') {
+			setFiles((f) => reinsert(f, g.name, g.text, g.order))
+			fetch(`/__save?name=${g.name}`, { method: 'POST', body: g.text }).catch(() => null)
+		}
+		setTexts((s) => void (s[g.name] = g.text))
+		if (g.next && untrack(name) === g.next) {
+			if (playing) stop()
+			pick(g.name)
+		}
+		keepDrafts()
+	}
+
 	// A song saved into music/, or changed there by anything else, comes back
 	// from Vite as a new songs.js; take its files without reloading the page.
 	// A song with no edits here plays the new text; one with edits keeps them.
@@ -780,6 +839,10 @@ export const jb = createRoot(() => {
 		save,
 		canSave,
 		unsaved,
+		fateOf,
+		discard,
+		undo,
+		gone,
 		boot,
 	}
 })

@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process'
-import { writeFileSync } from 'node:fs'
+import { rmSync, writeFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import solid from '@solidjs/vite-plugin'
 
 // The git commit the build came from, else the day it was built; sent along with feedback.
@@ -13,13 +14,34 @@ try {
 }
 
 // While composing: the page's ⌘S writes the song straight into music/.
-// POST /__save?name=konvoi with the song's text. Dev server only.
+// POST /__save?name=konvoi with the song's text. POST /__delete?name=konvoi
+// removes the file. Dev server only.
+const songName = (req) => {
+	const name = new URL(req.url, 'http://x').searchParams.get('name') ?? ''
+	return req.method === 'POST' && /^[a-z0-9][a-z0-9-]*$/.test(name) ? name : null
+}
 const saveSongs = {
 	name: 'jukebox-save',
+	// A song deleted or made again would reload the page, as nothing imports it
+	// by name; the list of songs changed instead, which the page takes without
+	// a reload.
+	hotUpdate({ type, file }) {
+		if (type === 'update' || !file.endsWith('.song')) return
+		return [...(this.environment.moduleGraph.getModulesByFile(fileURLToPath(new URL('./src/songs.js', import.meta.url))) ?? [])]
+	},
 	configureServer(server) {
+		server.middlewares.use('/__delete', (req, res) => {
+			const name = songName(req)
+			if (!name) {
+				res.statusCode = 400
+				return res.end()
+			}
+			rmSync(new URL(`./music/${name}.song`, import.meta.url), { force: true })
+			res.end('ok')
+		})
 		server.middlewares.use('/__save', (req, res) => {
-			const name = new URL(req.url, 'http://x').searchParams.get('name') ?? ''
-			if (req.method !== 'POST' || !/^[a-z0-9][a-z0-9-]*$/.test(name)) {
+			const name = songName(req)
+			if (!name) {
 				res.statusCode = 400
 				return res.end()
 			}

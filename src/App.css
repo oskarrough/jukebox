@@ -459,6 +459,50 @@ input[type='range']::-moz-range-thumb {
 	background: var(--ink);
 	color: #fff;
 }
+.list .entry {
+	position: relative;
+	flex: none;
+	display: flex;
+	flex-direction: column;
+}
+.list button.drop {
+	position: absolute;
+	inset-block: 0;
+	right: 0;
+	display: grid;
+	place-items: center;
+	width: 2.2rem;
+	padding: 0;
+	color: var(--dim);
+	font-size: 1.1rem;
+	opacity: 0;
+}
+.list .entry:hover .drop,
+.list .entry:focus-within .drop {
+	opacity: 1;
+}
+.list button.drop:hover {
+	background: transparent;
+	color: var(--red);
+}
+.list .entry:has(.on) .drop {
+	color: #bbb;
+}
+.list .entry:has(.on) .drop:hover {
+	color: #fff;
+}
+.songs > .undo {
+	flex: none;
+	border: 0;
+	border-radius: 6px;
+	padding: 0.6rem 0.5rem;
+	background: var(--ink);
+	color: #fff;
+	font: 550 0.8rem var(--sans);
+}
+.songs > .undo:hover {
+	background: #333;
+}
 .list button i {
 	flex: none;
 	width: 0.45rem;
@@ -485,6 +529,11 @@ input[type='range']::-moz-range-thumb {
 	height: 0.4rem;
 	border-radius: 50%;
 	background: var(--yellow);
+}
+@media (hover: none) {
+	.list .entry:has(.on) .drop {
+		opacity: 1;
+	}
 }
 .live .list button.on i {
 	background: var(--orange);
@@ -941,7 +990,11 @@ input[type='range']::-moz-range-thumb {
 	margin: 2px 0 0 -0.6rem;
 	padding: 3px;
 	border: 0;
-	overflow: visible;
+	/* about eight rows, the rest a scroll away */
+	max-height: calc(8 * 1.6em + 6px);
+	max-width: min(30rem, calc(100vw - 1rem));
+	overflow: auto;
+	overscroll-behavior: contain;
 	list-style: none;
 	font: 14px/1.6 var(--score);
 	color: var(--ink);
@@ -952,9 +1005,29 @@ input[type='range']::-moz-range-thumb {
 		0 0 0 1px var(--line);
 }
 #suggest li {
+	display: flex;
+	align-items: baseline;
+	gap: 0.8rem;
 	padding: 1px 0.5rem;
 	border-radius: 5px;
 	cursor: pointer;
+}
+#suggest small {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	font: 0.72rem var(--sans);
+	color: var(--dim);
+}
+/* a group's name, as the instrument picker shows it */
+#suggest .group {
+	padding-top: 0.35rem;
+	font: 650 0.68rem/1.6 var(--sans);
+	color: var(--dim);
+	cursor: default;
+}
+#suggest .group:hover {
+	background: none;
 }
 #suggest li:hover,
 #suggest .on {
