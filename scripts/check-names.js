@@ -1,4 +1,4 @@
-// Fails when a song's file name isn't the slug of its title, .
+// Fails when a song's file name isn't the slug of its title.
 import { readFileSync, readdirSync } from 'node:fs'
 import { slug } from '../src/ui/slug.js'
 
@@ -12,8 +12,7 @@ for (const name of names) {
 		.match(/^title\s+(.+)$/m)?.[1]
 		.trim()
 	if (!title) bad.push(`${name}.song has no title`)
-	else if (slug(title) !== name)
-		bad.push(`${name}.song should be ${slug(title)}.song (title "${title}"); rename it and add the old name to ALIASES in src/aliases.js`)
+	else if (slug(title) !== name) bad.push(`${name}.song should be ${slug(title)}.song (title "${title}")`)
 }
 if (bad.length) {
 	console.error(bad.join('\n'))
