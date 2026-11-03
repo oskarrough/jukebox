@@ -24,23 +24,24 @@ One setting a line, before the first pattern.
 
 `voice <name> <instrument> <options>`, for example `voice lead flute vol=0.6 pan=-0.3`.
 
-| Option   | Range, default   | What it does                                                                       |
-| -------- | ---------------- | ---------------------------------------------------------------------------------- |
-| `vol`    | 0 to 2, 0.8      | volume                                                                             |
-| `pan`    | -1 to 1, 0       | left to right                                                                      |
-| `rev`    | 0 to 1           | send to the shared room; each instrument has its own default (808 0.04, pipe 0.55) |
-| `oct`    | -4 to 4          | shifts octaves                                                                     |
-| `trans`  | -48 to 48        | shifts semitones                                                                   |
-| `gate`   | 0.05 to 1, 1     | how much of each note sounds; 0.5 is staccato                                      |
-| `glide`  | 0.005 to 2, 0.07 | seconds a `~` slide takes                                                          |
-| `bright` | 0.1 to 4, 1      | dark to bright                                                                     |
-| `att`    | 0.001 to 4       | attack in seconds; each instrument has its own default                             |
-| `rel`    | 0.005 to 6       | release in seconds; each instrument has its own default                            |
-| `center` | a note, D4       | where chords are voiced; D2 on the low instruments (808, basses, tuba …)           |
-| `drive`  | 0 to 4, 0        | dirt, only on `808`, `logdrum` and `drive`                                         |
-| `echo`   | 0 to 16, 0       | repeats the sound every so many steps, in time with the song                       |
-| `tail`   | 0 to 0.9, 0.5    | how much of each echo comes back; repeats get darker and bounce left and right     |
-| `part`   | a word, `chord`  | what x steps play of the chord row: `chord`, `root`, `rootless`, `top` or `up`     |
+| Option   | Range, default   | What it does                                                                            |
+| -------- | ---------------- | --------------------------------------------------------------------------------------- |
+| `vol`    | 0 to 2, 0.8      | volume                                                                                  |
+| `pan`    | -1 to 1, 0       | left to right                                                                           |
+| `rev`    | 0 to 1           | send to the shared room; each instrument has its own default (808 0.04, pipe 0.55)      |
+| `oct`    | -4 to 4          | shifts octaves                                                                          |
+| `trans`  | -48 to 48        | shifts semitones                                                                        |
+| `gate`   | 0.05 to 1, 1     | how much of each note sounds; 0.5 is staccato                                           |
+| `glide`  | 0.005 to 2, 0.07 | seconds a `~` slide takes                                                               |
+| `bright` | 0.1 to 4, 1      | dark to bright                                                                          |
+| `att`    | 0.001 to 4       | attack in seconds; each instrument has its own default                                  |
+| `rel`    | 0.005 to 6       | release in seconds; each instrument has its own default                                 |
+| `center` | a note, D4       | where chords are voiced; D2 on the low instruments (808, basses, tuba …)                |
+| `drive`  | 0 to 4, 0        | dirt, only on `808`, `logdrum` and `drive`                                              |
+| `echo`   | 0 to 16, 0       | repeats the sound every so many steps, in time with the song                            |
+| `tail`   | 0 to 0.9, 0.5    | how much of each echo comes back; repeats get darker and bounce left and right          |
+| `pump`   | 0 to 1, 0        | ducks the voice on every hit of a `kick` voice and swells back over a beat; 1 is silent |
+| `part`   | a word, `chord`  | what x steps play of the chord row: `chord`, `root`, `rootless`, `top` or `up`          |
 
 Drum instruments (the Drums group) take drum lanes; every other instrument takes notes.
 
@@ -77,3 +78,4 @@ One character a step: `x` a hit, `X` an accent, `o` a soft hit, `.` a rest. Spac
 - Per voice: `bright=` darkens or opens the tone, `drive=` dirties `808`, `logdrum` and `drive`, `att=` and `rel=` shape each note, `gate=` shortens it.
 - The whole mix then runs through a gentle bass lift, a slight top cut, a compressor and a limiter. Nothing to set.
 - `echo=3` on a voice repeats it every 3 steps, in time with the song; `tail=` sets how much of each repeat comes back. `music/hermannstrasse-um-drei.song` uses it on its stab.
+- `pump=0.6` on pads, chords or bass makes the mix breathe with the kick, as in house; the song needs a voice that plays `kick`. `0.3` is a nudge, `0.6` is house, `1` cuts the voice on every hit.

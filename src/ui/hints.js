@@ -21,6 +21,7 @@ export const HINTS = {
 	drive: '0 to 4, dirt for 808, logdrum and drive',
 	echo: 'Steps between echoes, 0 to 16 (off)',
 	tail: 'How much of each echo comes back, 0 to 0.9 (0.5)',
+	pump: 'Ducks to the kick, 0 to 1 (off)',
 	part: 'What x steps play: chord, root, rootless, top or up',
 	// settings, in the head or on a pattern
 	tempo: 'Beats a minute',

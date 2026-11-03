@@ -1458,6 +1458,19 @@ function echo(S, input, out, send, { tail, pan }) {
 	}
 }
 
+// A kick at `t` pulls every pumping voice down at once, by `pump` (softer for
+// a soft hit), and lets it swell back over about a beat, `ev.bt` long.
+function pump(voices, ev, t) {
+	for (const c of voices) {
+		// hits closer than this are one duck: the swell can't start before the next dip
+		if (t - c.last < 0.05) continue
+		c.last = t
+		const g = c.duck.gain
+		g.setTargetAtTime(1 - c.v.pump * Math.min(1, ev.vel / 0.8), t, 0.004)
+		g.setTargetAtTime(1, t + 0.03, (ev.bt ?? 0.5) / 4)
+	}
+}
+
 function createSynth(ctx, dest, opts = {}) {
 	const S = { ctx, nyq: ctx.sampleRate / 2, waves: {}, ks: {} }
 	const nlen = ctx.sampleRate * 3
@@ -1562,15 +1575,19 @@ function createSynth(ctx, dest, opts = {}) {
 			const ch = song.voices.map((v) => {
 				const def = v.drum ? DRUM[v.inst] : INST[v.inst]
 				const input = G(S, v.vol * def.level)
+				// A pumping voice goes out through a gain the kick pulls down.
+				const duck = v.pump > 0 ? G(S, 1) : null
+				duck?.connect(bus)
 				const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null
 				if (pan) {
 					pan.pan.value = v.pan
-					input.connect(pan).connect(bus)
-				} else input.connect(bus)
+					input.connect(pan).connect(duck ?? bus)
+				} else input.connect(duck ?? bus)
 				const send = G(S, v.rev != null ? v.rev : def.rev)
 				input.connect(send).connect(sendBus)
-				return { v, def, input, echo: v.echo > 0 ? echo(S, input, bus, send, v) : null }
+				return { v, def, input, duck, last: -1, echo: v.echo > 0 ? echo(S, input, duck ?? bus, send, v) : null }
 			})
+			const pumping = ch.filter((c) => c.duck)
 			return {
 				bus,
 				sendBus,
@@ -1580,6 +1597,7 @@ function createSynth(ctx, dest, opts = {}) {
 					if (!c) return
 					try {
 						if (c.echo && ev.sd) c.echo.at(c.v.echo, ev.sd, t)
+						if (pumping.length && c.v.inst === 'kick') pump(pumping, ev, t)
 						if (c.v.drum) {
 							c.def.hit(S, c.input, t, ev.vel)
 							return

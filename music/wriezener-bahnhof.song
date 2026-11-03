@@ -6,9 +6,9 @@ beats    4
 steps    4
 reverb   0.45
 
-voice stab  saw      vol=0.4  pan=0.2 gate=0.6 center=F4 rev=0.6
-voice pad   pad      vol=0.3  center=F4
-voice rumb  synbass  vol=1.0
+voice stab  saw      vol=0.4  pan=0.2 gate=0.6 center=F4 rev=0.6 pump=0.5
+voice pad   pad      vol=0.3  center=F4 pump=0.7
+voice rumb  synbass  vol=1.0 pump=0.6
 voice kick  kick     vol=1.0
 voice rim   rim      vol=0.35 pan=-0.3
 voice hat   hat      vol=0.3  pan=0.3

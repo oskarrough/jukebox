@@ -71,6 +71,7 @@ export function Guide() {
 				of the chord row; <code>drive</code> 0 to 4, dirt for
 				<code>808</code>, <code>logdrum</code> and <code>drive</code>. <code>echo=3</code> repeats the sound every 3 steps, in time with the
 				song; <code>tail</code> 0 to 0.9 (0.5) is how much of each repeat comes back.
+				<code>pump=0.6</code> ducks the voice on every kick and lets it swell back over a beat, 0 to 1 (off).
 			</p>
 			<h3>Patterns and the loop</h3>
 			<p>

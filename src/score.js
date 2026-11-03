@@ -107,7 +107,24 @@ const SETTINGS = ['title', 'key', 'tempo', 'beats', 'steps', 'swing', 'reverb', 
 const PATTERN_OPTIONS = ['tempo', 'beats', 'steps', 'swing']
 
 // Every option a voice line takes, as in vol=0.8.
-const OPTIONS = ['vol', 'pan', 'rev', 'oct', 'trans', 'gate', 'glide', 'bright', 'att', 'rel', 'center', 'drive', 'echo', 'tail', 'part']
+const OPTIONS = [
+	'vol',
+	'pan',
+	'rev',
+	'oct',
+	'trans',
+	'gate',
+	'glide',
+	'bright',
+	'att',
+	'rel',
+	'center',
+	'drive',
+	'echo',
+	'tail',
+	'pump',
+	'part',
+]
 
 // What a voice plays of the chord row's chord, on its x steps: the whole
 // chord, its root (the note after / on a slash chord), the chord without its
@@ -484,6 +501,7 @@ function parse(text) {
 			drive: 0,
 			echo: 0,
 			tail: 0.5,
+			pump: 0,
 			ln,
 		}
 		for (let i = 2; i < w.length; i++) {
@@ -538,6 +556,9 @@ function parse(text) {
 				case 'tail':
 					v.tail = inRange(ln, k, val, 0, 0.9, 0.5, '0 to 0.9, how much of each echo comes back')
 					break
+				case 'pump':
+					v.pump = inRange(ln, k, val, 0, 1, 0, '0 to 1, how far the kick ducks it')
+					break
 				case 'part':
 					if (PARTS.includes(val.toLowerCase())) v.part = val.toLowerCase()
 					else err(ln, 'part takes chord, root, rootless, top or up', { kind: 'part', word: val })
@@ -559,6 +580,12 @@ function parse(text) {
 			song.voices.push(v)
 		}
 	}
+
+	// Pump follows the song's kick, so there has to be one, and it can't pump itself.
+	const kicked = song.voices.some((v) => v.inst === 'kick')
+	for (const v of song.voices)
+		if (v.pump && (v.inst === 'kick' || !kicked))
+			err(v.ln, v.inst === 'kick' ? 'A kick cannot pump itself' : 'pump needs a voice that plays kick', { kind: 'pump', word: 'pump' })
 
 	return { song, errors }
 }
@@ -872,6 +899,7 @@ function compile(text, only) {
 		vIndex[v.name] = i
 	})
 	const lastMidi = {}
+	const pumped = song.voices.some((v) => v.pump)
 
 	function timeline(refs) {
 		const events = [],
@@ -917,6 +945,8 @@ function compile(text, only) {
 						// b and st: the bar in the pattern, and the step in it
 						const ev = { t: t + t0, d, v: vi, vel: e.vel, s: sIdx, b: Math.floor(e.step / p.barSteps), st: e.step % p.barSteps }
 						if (voice.echo) ev.sd = stepDur
+						// a kick tells the voices that pump how long a beat is
+						if (pumped && voice.inst === 'kick') ev.bt = 60 / p.tempo
 						if (!voice.drum) {
 							ev.m = e.notes.map((n) => n + voice.trans + ref.trans)
 							ev.d = Math.max(0.02, d * voice.gate)
