@@ -253,10 +253,12 @@ export const jb = createRoot(() => {
 	)
 
 	// The caret moved to `at`. When you moved it, a stopped song waits at the
-	// bar you're in, to play from there.
+	// bar you're in, to play from there; a change drawn on the roll moves it
+	// too, but the roll holds still.
+	let drawing = false
 	function follow(at, byHand) {
 		setCaret(at)
-		const first = byHand && !playing ? marksFor(untrack(song), at).first : null
+		const first = byHand && !playing && !drawing ? marksFor(untrack(song), at).first : null
 		if (first != null) seek(first)
 	}
 	// Where the score's caret should go next: { ln, col }.
@@ -400,6 +402,16 @@ export const jb = createRoot(() => {
 			area.blur()
 		}
 		setText(next)
+	}
+
+	// Writes a change drawn on the roll into the score as one edit, and puts
+	// the caret on line `ln` at `col`, where it landed.
+	function draw(next, ln, col) {
+		drawing = true
+		rewrite(next)
+		drawing = false
+		flush()
+		reveal(ln, col)
 	}
 
 	// Gives voice `name` the instrument `inst`, keeping its options.
@@ -645,6 +657,7 @@ export const jb = createRoot(() => {
 		looping,
 		toggleLoop,
 		audition,
+		draw,
 		hearInstrument,
 		hearBrick,
 		stopSample,

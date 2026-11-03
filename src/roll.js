@@ -24,8 +24,9 @@ function range(song) {
 		let hi = 0
 		for (const tl of [song.intro, song.loop])
 			for (const e of tl.events) if (e.m) for (const m of e.m) [lo, hi] = [Math.min(lo, m), Math.max(hi, m)]
-		const melodic = lo <= hi
-		if (!melodic) [lo, hi] = [48, 72]
+		// a melodic voice with nothing written yet still gets room for notes
+		const melodic = lo <= hi || song.voices.some((v) => !v.drum)
+		if (lo > hi) [lo, hi] = [48, 72]
 		const drums = song.voices.flatMap((v, i) => (v.drum ? [i] : []))
 		ranges.set(song, { lo: Math.floor(lo) - 2, hi: Math.ceil(hi) + 2, melodic, drums, colors: voiceColors(song) })
 	}
@@ -33,9 +34,10 @@ function range(song) {
 }
 
 // Where everything goes on a `W`×`H` roll of `song` at `at` seconds from its
-// start (past its length means it has looped).
-function layout(song, at, W, H) {
-	const { lo, hi, melodic, drums, colors } = range(song)
+// start (past its length means it has looped), its pitches and lanes those
+// of `frame`, so a song being edited holds still.
+function layout(song, at, W, H, frame = song) {
+	const { lo, hi, melodic, drums, colors } = range(frame)
 	const span = W < 500 ? 4.5 : 7 // seconds across
 	const pre = span * 0.22 // of them already played
 	const pps = W / span
@@ -80,29 +82,46 @@ function layout(song, at, W, H) {
 	}
 }
 
-// What's under `x`,`y` on the roll: the moment, and the note or the pattern
-// name there if any, as { t, event, section } with times from the song's start.
-export function hitRoll(canvas, song, at, x, y) {
-	const L = layout(song, at, canvas.clientWidth, canvas.clientHeight)
+// What's under `x`,`y` on the roll: the moment `t` from the song's start,
+// the pitch there `m` (a midi number with a fraction) or the drum `lane` (a
+// voice's index), and the note there, else the pattern name, if any:
+// { event, section, pitch, end }, the note's `pitch` the one under `y` and
+// `end` when `x` is at its end.
+export function hitRoll(canvas, song, at, x, y, frame) {
+	const L = layout(song, at, canvas.clientWidth, canvas.clientHeight, frame)
 	const t = Math.max(0, L.tOf(x))
 	const near = (t0, w) => x >= L.xOf(t0) - 3 && x <= L.xOf(t0) + w + 3
+	const inLanes = L.drums.length && y >= L.drumTop - 2
+	const place = {
+		t,
+		m: L.melodic && !inLanes ? L.hi + 0.5 - (y - 6) / L.noteH : null,
+		lane: inLanes ? (L.drums[Math.min(L.drums.length - 1, Math.floor((y - L.drumTop) / L.laneH))] ?? null) : null,
+	}
+	// a thin note is still a finger wide to grab
+	const slop = Math.max(2, (8 - L.noteH) / 2)
+	let label = null
 	for (const [tl, off] of L.windows) {
 		const s = tl.sections.find((s) => t >= off + s.start && t < off + s.start + s.dur)
-		if (s && y < 20 && near(off + s.start, 40)) return { t, section: s }
+		if (s && y < 20 && near(off + s.start, 40)) label ??= s
 		for (const e of tl.events) {
 			const v = song.voices[e.v]
 			const top = v.drum ? L.drumTop + L.drums.indexOf(e.v) * L.laneH : null
-			const hit = v.drum ? y >= top && y <= top + L.laneH : e.m.some((m) => y >= L.yOf(m) - 2 && y <= L.yOf(m) + L.noteH + 2)
-			if (hit && near(off + e.t, e.d * L.pps)) return { t, event: e, section: tl.sections[e.s] }
+			const pitch = v.drum ? null : e.m.find((m) => y >= L.yOf(m) - slop && y <= L.yOf(m) + L.noteH + slop)
+			const hit = v.drum ? y >= top && y <= top + L.laneH : pitch != null
+			const w = Math.max(2, e.d * L.pps - 1)
+			if (hit && near(off + e.t, w))
+				return { ...place, event: e, section: tl.sections[e.s], pitch, end: !v.drum && w > 14 && x > L.xOf(off + e.t) + w - 6 }
 		}
 	}
-	return { t }
+	return label ? { ...place, section: label } : place
 }
 
 // Draws `song` at `at` seconds from its start onto `canvas`, with the voices
-// named in `muted` faded and the bars in `marks` (from marksFor) lit. Returns
-// which voices are sounding at `at`, by index.
-export function drawRoll(canvas, song, at, muted, marks) {
+// named in `muted` faded and the bars in `marks` (from marksFor) lit, and the
+// outline of a note about to be written, `ghost` ({ t, d, v, m }; no `m` on a
+// drum), if any. With `frame`, its pitches and lanes. Returns which voices
+// are sounding at `at`, by index.
+export function drawRoll(canvas, song, at, muted, marks, ghost, frame) {
 	const dpr = window.devicePixelRatio || 1
 	const W = canvas.clientWidth
 	const H = canvas.clientHeight
@@ -114,7 +133,7 @@ export function drawRoll(canvas, song, at, muted, marks) {
 	g.setTransform(dpr, 0, 0, dpr, 0, 0)
 	g.fillStyle = '#0b0b0b'
 	g.fillRect(0, 0, W, H)
-	const { lo, hi, melodic, drums, colors, pps, x0, a, z, windows, laneH, drumTop, noteH, yOf } = layout(song, at, W, H)
+	const { lo, hi, melodic, drums, colors, pps, x0, a, z, windows, laneH, drumTop, noteH, yOf } = layout(song, at, W, H, frame)
 
 	// a faint line at every C
 	g.fillStyle = '#262626'
@@ -178,6 +197,16 @@ export function drawRoll(canvas, song, at, muted, marks) {
 				for (const m of e.m) g.fillRect(Math.round(x), Math.round(yOf(m)), 2, h)
 			}
 		}
+	}
+	if (ghost) {
+		const lane = drums.indexOf(ghost.v)
+		const x = Math.round(x0 + (ghost.t - at) * pps) + 0.5
+		const y = ghost.m == null ? Math.round(drumTop + lane * laneH) + 1.5 : Math.round(yOf(ghost.m)) + 0.5
+		const h = ghost.m == null ? Math.round(laneH) - 4 : Math.max(2, Math.round(noteH) - 1)
+		g.globalAlpha = 0.9
+		g.strokeStyle = colors[ghost.v]
+		g.lineWidth = 1
+		g.strokeRect(x, y, Math.max(2, Math.round(ghost.d * pps) - 2), h)
 	}
 	g.globalAlpha = 1
 	g.fillStyle = '#ffd96b'
