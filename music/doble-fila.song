@@ -1,0 +1,90 @@
+title    Doble fila
+about    Cumbia meets reggaeton in Karl-Marx-Straße traffic: an accordion call, guiro and hand drums over dembow, with a bass-led detour before the hook comes home.
+key      Dm
+tempo    100
+beats    4
+steps    4
+reverb   0.16
+street   Karl-Marx-Straße
+at       autoradio
+tags     nkgta cumbia reggaeton
+
+voice hook   accordion vol=0.68 pan=-0.12 gate=0.72 bright=0.9 rev=0.12
+voice reply  marimba   vol=0.36 pan=0.25 gate=0.65 rev=0.12
+voice chops  guitar    vol=0.38 pan=0.3 gate=0.45 bright=0.85 rev=0.08
+voice bass   ebass     vol=0.48 gate=0.78 bright=0.8 rev=0.02
+voice kick   kick      vol=0.52 rev=0
+voice snare  snare     vol=0.5 rev=0.05
+voice scrape guiro     vol=0.36 pan=-0.35 rev=0.04
+voice palm   conga     vol=0.42 pan=0.25 rev=0.08
+voice low    tumba     vol=0.32 pan=-0.2 rev=0.08
+voice fill   timbale   vol=0.27 pan=0.18 rev=0.1
+
+# Four-bar station ident: the hook arrives immediately, the engine in bar three.
+pattern intro
+hook   | D5- . A4 F5- . D5 A4- .. F4- A4- | C5- A4- G4 F4 E4- D4--- .... | _ | .... .... E5- C#5- A4- G4- |
+chops  | .. D4+F4- .... .. D4+F4- .... | % | .. D4+F4- .. D4+F4- .. D4+F4- .. D4+F4- | .. C#4+G4- .. C#4+G4- .. C#4+G4- .... |
+bass   | _ | _ | D2-- . A2- D3- .. D2-- A1- . | A1-- . E2- A2- .. A1-- C#2- . |
+scrape | X... ..x. X... ..x. | % | % | % |
+low    | .... x... .... x... | % | % | .... x... .... x.x. |
+kick   | _ | _ | X... .... X... .... | X... .... X... .... |
+fill   | _ | _ | _ | .... .... .... oxox |
+
+# Eight-bar verse: Dm / C / Bb / A7, two bars each. Dembow stays dry and straight.
+pattern paseo
+hook   | D5- . A4 F5- . D5 A4- .. F4- A4- | C5- A4- G4 F4 E4- D4--- .. A4- | C5- . G4 E5- . C5 G4- .. E4- G4- | Bb4- G4- F4 E4 D4- C4--- .. G4- |
+hook   | D5- . A4 F5- . D5 Bb4- .. A4- F4- | D5- F5- D5 C5 Bb4- F4--- .... | E5- . C#5 A4- . G4 E4- .. G4- A4- | C#5- E5- G5- E5- C#5--- .. A4- |
+chops  | .. D4+F4- .. D4+F4- .. D4+F4- .. D4+F4- | % | .. C4+E4- .. C4+E4- .. C4+E4- .. C4+E4- | % |
+chops  | .. Bb3+D4- .. Bb3+D4- .. Bb3+D4- .. Bb3+D4- | % | .. C#4+G4- .. C#4+G4- .. C#4+G4- .. C#4+G4- | % |
+bass   | D2-- . A2- D3- .. D2-- A1- . | D2-- . A2- D3- .. D2-- B1- . | C2-- . G2- C3- .. C2-- G1- . | C2-- . G2- C3- .. C2-- A1- . |
+bass   | Bb1-- . F2- Bb2- .. Bb1-- F1- . | Bb1-- . F2- Bb2- .. Bb1-- G#1- . | A1-- . E2- A2- .. A1-- E2- . | A1-- . E2- A2- .. A1-- C#2- . |
+kick   | X... .... x... .... | % | % | X... .... x... ..o. | X... .... x... .... | % | % | X... .... x... .... |
+snare  | .... ..X. .... X... | % | % | % | % | % | % | .... ..X. .... X..o |
+scrape | X... ..x. X... ..x. | % | % | % | % | % | % | % |
+palm   | ...o ..x. ...o ..X. | % | % | ...o ..x. .o.o ..X. | ...o ..x. ...o ..X. | % | % | ...o ..x. .... xxX. |
+low    | .... x... .... x... | % | % | % | % | % | % | .... x... .... x... |
+
+# Same question, a different answer; leave space for a little wooden echo.
+pattern vuelta from paseo
+hook@2 | C5- A4- G4 F4 E4- D4--- .... |
+hook@4 | Bb4- G4- F4 E4 D4- C4--- .... |
+hook@6 | F5- D5- Bb4- A4- F4--- .... |
+hook@8 | E5- C#5- A4- G4- E4--- .... |
+reply  | _ | .... .... .... F5- A5- | _ | .... .... .... E5- G5- | _ | .... .... .... D5- F5- | _ | .... .... .... E5- C#5- |
+fill   | _ | _ | _ | _ | _ | _ | _ | .... .... .... oxoX |
+
+# The chorus lifts into longer phrases, not a doubled wall of instruments.
+pattern ventanas from paseo
+hook   | A5--- F5- D5- F5-- E5 D5- .. | F5- E5- D5--- A4--- .... | G5--- E5- C5- E5-- D5 C5- .. | E5- D5- C5--- G4--- .... |
+hook   | F5--- D5- Bb4- D5-- C5 Bb4- .. | D5- F5- Bb5--- A5- F5- D5- .. | E5--- C#5- A4- G4-- A4 C#5- .. | E5- G5- E5--- C#5--- .... |
+reply  | _ | .... .... .... D5- F5- | _ | .... .... .... C5- E5- | _ | .... .... .... Bb4- D5- | _ | .... .... .... A4- C#5- |
+fill   | _ | _ | _ | .... .... .... x..o | _ | _ | _ | .... .... ..ox oxoX |
+
+# Four bars under the railway: the bass borrows the hook's syncopation.
+pattern debajo
+bass   | D2- . A1 F2- . D2 A1- .. F2- A2- | D2-- . A2- D3- .. D2-- C2- . | Bb1- . F2 D2- . Bb1 F1- .. D2- F2- | A1-- . E2- A2- .. A1-- C#2- . |
+chops  | .. D4+F4- .... .. D4+F4- .... | % | .. Bb3+D4- .... .. Bb3+D4- .... | .. C#4+G4- .... .. C#4+G4- .... |
+kick   | X... .... x... .... | % | % | X... .... .... .... |
+scrape | X... ..o. X... ..o. | % | % | X... ..o. .... .... |
+low    | .... x... .... x... | % | % | .... x... .... x... |
+fill   | _ | _ | _ | .... .... oxox x.X. |
+
+pattern regreso from vuelta
+hook@1 | D5- . A4 F5- . D5 A4- .. F4- A4- |
+hook@5 | F5- . D5 Bb5- . F5 D5- .. Bb4- D5- |
+low@8 | .... x... .... x.x. |
+
+# Four-bar turnaround, still dancing: A7 leads back into Dm without an ending.
+pattern semaforo
+hook   | D5- . A4 F5- . D5 Bb4- .. A4- F4- | D5--- F5- D5- Bb4--- .... | E5- . C#5 A4- . G4 E4- .. G4- A4- | C#5--- .... .... E5- C#5- |
+reply  | _ | .... .... .... D5- F5- | _ | _ |
+chops  | .. Bb3+D4- .. Bb3+D4- .. Bb3+D4- .. Bb3+D4- | % | .. C#4+G4- .. C#4+G4- .. C#4+G4- .. C#4+G4- | % |
+bass   | Bb1-- . F2- Bb2- .. Bb1-- F1- . | Bb1-- . F2- Bb2- .. Bb1-- G#1- . | A1-- . E2- A2- .. A1-- E2- . | A1-- . E2- A2- .. A1-- C#2- . |
+kick   | X... .... x... .... | % | % | % |
+snare  | .... ..X. .... X... | % | % | % |
+scrape | X... ..x. X... ..x. | % | % | % |
+palm   | ...o ..x. ...o ..X. | % | % | ...o ..x. .... ..x. |
+low    | .... x... .... x... | % | % | % |
+
+play intro
+loop paseo vuelta ventanas debajo regreso semaforo
