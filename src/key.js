@@ -181,15 +181,10 @@ export function starter(key = 'C', { title = 'New song', tag = '', style = '' } 
 	return `${head.join('\n')}\n${made?.text ?? 'tempo    100\nbeats    4\nsteps    4\n'}`
 }
 
-// A name for a new song, two short words, that no song has yet.
-const FIRST = ['Velvet', 'Paper', 'Neon', 'Lazy', 'Golden', 'Quiet', 'Static', 'Little', 'Silver', 'Hollow', 'Sunday', 'Electric']
-const SECOND = ['Moon', 'Engine', 'Garden', 'River', 'Echo', 'Signal', 'Parade', 'Weather', 'Island', 'Machine', 'Window', 'Planet']
-
-export function newTitle(taken = [], random = Math.random) {
+// A name for a new song: Untitled, then Untitled 2, 3 … until you name it.
+export function newTitle(taken = []) {
 	const used = new Set(taken.map((t) => t.toLowerCase()))
-	const free = FIRST.flatMap((a) => SECOND.map((b) => `${a} ${b}`)).filter((t) => !used.has(t.toLowerCase()))
-	if (free.length) return free[Math.floor(random() * free.length)]
-	let n = 2
-	while (used.has(`new song ${n}`)) n++
-	return `New song ${n}`
+	let title = 'Untitled'
+	for (let n = 2; used.has(title.toLowerCase()); n++) title = `Untitled ${n}`
+	return title
 }

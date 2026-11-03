@@ -594,10 +594,10 @@ describe('new songs start right', () => {
 		expect(compile(starter('C', { tag: 'wip' })).tags).toEqual(['wip'])
 	})
 
-	test('a new song gets its own title, never one a song has', () => {
-		const a = newTitle([], () => 0)
-		expect(a.split(' ')).toHaveLength(2)
-		expect(newTitle([a], () => 0)).not.toBe(a)
+	test('a new song is Untitled until you name it, never a title a song has', () => {
+		const a = newTitle([])
+		expect(a).toBe('Untitled')
+		expect(newTitle([a])).toBe('Untitled 2')
 		expect(compile(starter('C', { title: a })).title).toBe(a)
 		const taken = []
 		for (let i = 0; i < 200; i++) taken.push(newTitle(taken))
