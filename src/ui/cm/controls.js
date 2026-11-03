@@ -42,8 +42,10 @@ export function scrub(value, by, name) {
 
 // What's at column `col` of `line`, for the pointer: an instrument
 // { start, voice, inst }, or something with a few words on it { start, tip },
-// or null. `names` are the song's voices, `drums` a Set of its drum voices.
-export function hintAt(line, col, names, drums) {
+// or a voice's name, both; or null. `names` are the song's voices, `drums` a
+// Set of its drum voices, `insts` each voice's instrument and `muted` a Set of
+// those switched off.
+export function hintAt(line, col, names, drums, { insts = {}, muted = new Set() } = {}) {
 	let start = 0
 	let piece = null
 	for (const p of paint(line, names)) {
@@ -55,6 +57,9 @@ export function hintAt(line, col, names, drums) {
 	}
 	if (!piece) return null
 	const kind = piece[0]
+	const voice = piece[2]
+	if (kind === 'name' && voice && insts[voice])
+		return { start, voice, inst: insts[voice], tip: `${muted.has(voice) ? 'Unmute' : 'Mute'} ${voice} (⌥-click or hold to solo)` }
 	if (kind === 'inst') return { start, voice: /^\s*voice\s+(\S+)/i.exec(line)[1], inst: piece[1].toLowerCase() }
 	const music = /^\s*(\w+)(@\d+)?\s*\|/.exec(line)
 	if (music) {

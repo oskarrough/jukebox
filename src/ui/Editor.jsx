@@ -1,5 +1,7 @@
 // The score, in CodeMirror: the song's text, with live controls drawn from
-// it. Drag a number to change it as you hear it, click an instrument to swap
+// it. Each voice's name is its channel: it lights while the voice plays, a
+// click mutes it, ⌥-click or a long press solos it, pointing at it plays it.
+// Drag a number to change it as you hear it, click an instrument to swap
 // it, tap a drum step's pad, click a chord to open the chord pad on its bar.
 // ⌥↑/↓ or an ⌥-drag nudges the note, number or drum step there. With the
 // piano on, the keyboard plays notes and writes them in: in time while the
@@ -7,7 +9,7 @@
 // still work.
 import { createEffect, createMemo, flush, onSettled, untrack } from 'solid-js'
 import { Annotation, EditorState, Prec, Transaction } from '@codemirror/state'
-import { EditorView, hoverTooltip, keymap, drawSelection } from '@codemirror/view'
+import { EditorView, closeHoverTooltips, hoverTooltip, keymap, drawSelection } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap, isolateHistory, undo } from '@codemirror/commands'
 import {
 	acceptCompletion,
@@ -52,6 +54,9 @@ export function Editor() {
 			names: voices.map((v) => v.name),
 			colors: Object.fromEntries(voices.map((v, i) => [v.name, jb.colors()[i]])),
 			drums: new Set(voices.filter((v) => v.drum).map((v) => v.name)),
+			insts: Object.fromEntries(voices.map((v) => [v.name, v.inst])),
+			muted: new Set(voices.map((v) => v.name).filter(jb.isMuted)),
+			fresh: jb.fresh(),
 			key: jb.key(),
 		}
 	})
@@ -192,8 +197,8 @@ export function Editor() {
 	const hovers = hoverTooltip(
 		(v, pos) => {
 			const line = v.state.doc.lineAt(pos)
-			const { names, drums } = v.state.field(info)
-			const h = hintAt(line.text, pos - line.from, names, drums)
+			const { names, drums, insts, muted } = v.state.field(info)
+			const h = hintAt(line.text, pos - line.from, names, drums, { insts, muted })
 			if (!h?.tip) return null
 			return {
 				pos: line.from + h.start,
@@ -215,8 +220,8 @@ export function Editor() {
 	function rest(v, e) {
 		const pos = v.posAtCoords({ x: e.clientX, y: e.clientY })
 		const line = pos == null ? null : v.state.doc.lineAt(pos)
-		const { names, drums } = v.state.field(info)
-		const h = line && hintAt(line.text, pos - line.from, names, drums)
+		const { names, drums, insts, muted } = v.state.field(info)
+		const h = line && hintAt(line.text, pos - line.from, names, drums, { insts, muted })
 		const id = h?.inst ? `${line.number}:${h.start}` : null
 		if (id === resting) return
 		resting = id
@@ -384,7 +389,37 @@ export function Editor() {
 		}),
 	)
 
+	// A voice's name: a click mutes it, ⌥-click solos it. A finger has no ⌥:
+	// holding solos, and the lift that follows isn't a tap.
+	function channel(v, e, el) {
+		if (e.button || e.metaKey || e.ctrlKey || e.shiftKey) return false
+		const voice = el.dataset.voice
+		e.preventDefault()
+		v.dispatch({ effects: closeHoverTooltips })
+		if (e.pointerType !== 'touch') {
+			jb.toggleVoice(voice, e.altKey)
+			return true
+		}
+		let soloed = false
+		const timer = setTimeout(() => {
+			soloed = true
+			navigator.vibrate?.(10)
+			jb.toggleVoice(voice, true)
+		}, 450)
+		const up = (u) => {
+			clearTimeout(timer)
+			removeEventListener('pointerup', up)
+			removeEventListener('pointercancel', up)
+			if (!soloed && u.type === 'pointerup') jb.toggleVoice(voice, false)
+		}
+		addEventListener('pointerup', up)
+		addEventListener('pointercancel', up)
+		return true
+	}
+
 	function pointerDown(e, v) {
+		const chip = e.target.closest?.('.chip')
+		if (chip) return channel(v, e, chip)
 		if (e.altKey && !e.button && !e.metaKey && !e.ctrlKey) return nudgeDrag(v, e)
 		if (e.button || e.altKey || e.metaKey || e.ctrlKey || e.shiftKey) return false
 		const el = e.target.closest?.('.num, .pad, .inst, .chord')
@@ -494,6 +529,7 @@ export function Editor() {
 				EditorView.domEventHandlers({
 					pointerdown: pointerDown,
 					pointermove: (e, v) => !e.buttons && rest(v, e),
+					contextmenu: (e) => !!e.target.closest?.('.chip') && e.pointerType === 'touch' && (e.preventDefault(), true),
 					pointerleave: () => {
 						clearTimeout(waiting)
 						resting = null
@@ -524,6 +560,8 @@ export function Editor() {
 	})
 
 	createEffect(song, (s) => view?.dispatch({ effects: setInfo.of(s) }))
+	// How loud each voice is right now lights its name, without redrawing the score.
+	createEffect(jb.levels, (levels) => levels.forEach((l, i) => host?.style.setProperty(`--a${i}`, l.toFixed(2))))
 
 	// Another song gets a score of its own, with its own undo; the same song
 	// changed elsewhere (saved, discarded, undone) takes the change as an edit.

@@ -5,7 +5,7 @@ import { createEffect, createMemo, createRoot, createSignal, createStore, flush,
 import { BRICKS, addBrick, brickBar, brickInto } from '../bricks.js'
 import { EFFECTS, SOURCES, effectState, runChain } from '../effects.js'
 import { inferKey, newTitle, setSongKey, starter, transposeBrick } from '../key.js'
-import { DRUMS, chordToMidis, compile, noteToMidi, parse, parseKey } from '../score.js'
+import { chordToMidis, compile, noteToMidi, parse, parseKey } from '../score.js'
 import { addSection as addPattern, moveSection, removeSection, repeatSection, sectionsOf } from './arrange.js'
 import { fate, neighbour, reinsert } from './discard.js'
 import { columnOf, marksFor } from './link.js'
@@ -148,7 +148,12 @@ export const jb = createRoot(() => {
 	}
 
 	const [songsOpen, setSongsOpen] = createSignal(true)
-	const [bricksOpen, setBricksOpen] = createSignal(false)
+	// The one way in that's open beside the score, OP-1 style: the piano,
+	// the chord pad or the loop bricks; or none.
+	const [tool, setTool] = createSignal(null)
+	const toggleTool = (t) => setTool((on) => (on === t ? null : t))
+	const bricksOpen = () => tool() === 'bricks'
+	const toggleBricks = () => toggleTool('bricks')
 	// The voice a brick just added, to make it pop once.
 	const [fresh, setFresh] = createSignal(null)
 	const [dragging, setDragging] = createSignal(false)
@@ -344,37 +349,6 @@ export const jb = createRoot(() => {
 		sampling = null
 	}
 
-	// Plays voice `name` as `inst`: a few notes up the song's key, where the
-	// voice plays, or a few hits on a drum.
-	function hearInstrument(name, inst) {
-		const s = song()
-		const i = s?.voices.findIndex((v) => v.name === name) ?? -1
-		if (i < 0) return
-		const voice = { ...s.voices[i], inst, drum: DRUMS.includes(inst) }
-		const step = 60 / s.tempo / s.steps
-		if (voice.drum) {
-			const hits = [
-				[0, 1.05],
-				[2, 0.42],
-				[3, 0.6],
-				[4, 0.8],
-			]
-			return sample(
-				voice,
-				hits.map(([n, vel]) => ({ t: n * step, d: step, vel })),
-			)
-		}
-		const ms = [...s.intro.events, ...s.loop.events].filter((e) => e.v === i).flatMap((e) => e.m)
-		const mid = ms.length ? Math.round(ms.reduce((a, b) => a + b, 0) / ms.length) : 60
-		const { pc, minor } = key()
-		const root = mid - 6 + ((((pc - mid + 6) % 12) + 12) % 12)
-		const up = [0, minor ? 3 : 4, 7, 12]
-		sample(
-			voice,
-			up.map((n, k) => ({ t: k * 2 * step, d: (k === 3 ? 6 : 2) * step * voice.gate, vel: 0.8, m: [root + n] })),
-		)
-	}
-
 	// Plays loop brick `id` once, in the song's key and tempo.
 	function hearBrick(id) {
 		const brick = BRICKS.find((b) => b.id === id)
@@ -415,18 +389,6 @@ export const jb = createRoot(() => {
 		reveal(ln, col)
 	}
 
-	// Gives voice `name` the instrument `inst`, keeping its options.
-	function swap(name, inst) {
-		const t = score()
-		const v = parse(t).song.voiceMap[name]
-		if (!v) return
-		const lines = t.split('\n')
-		const m = /^(\s*voice\s+\S+\s+)(\S+)/i.exec(lines[v.ln - 1])
-		if (!m) return
-		const start = lines.slice(0, v.ln - 1).reduce((n, l) => n + l.length + 1, 0) + m[1].length
-		rewrite(t.slice(0, start) + inst + t.slice(start + m[2].length))
-	}
-
 	// Plays the song from section `s` (from sections), its pattern where the
 	// caret is, so ⌘L loops it.
 	function playSection(s) {
@@ -455,13 +417,13 @@ export const jb = createRoot(() => {
 
 	// The chord pad: open or not, what its modifier makes of a chord, and a bar
 	// picked for its next tap ({ pattern, bar }), on the tape or by the last tap.
-	const [padOpen, setPadOpen] = createSignal(false)
+	const padOpen = () => tool() === 'pad'
 	const [mod, setMod] = createSignal(null)
 	const [picked, setPicked] = createSignal(null)
-	const togglePad = () => setPadOpen((on) => !on)
+	const togglePad = () => toggleTool('pad')
 	function pickBar(pattern, bar) {
 		setPicked({ pattern, bar })
-		setPadOpen(true)
+		setTool('pad')
 	}
 	// The voice that plays the chord row, if any.
 	const harmony = createMemo(() => harmonyVoice(text()))
@@ -529,9 +491,9 @@ export const jb = createRoot(() => {
 	}
 
 	// The piano: the computer keyboard plays notes into the score.
-	const [piano, setPiano] = createSignal(false)
+	const piano = () => tool() === 'piano'
 	function togglePiano() {
-		setPiano((on) => !on)
+		toggleTool('piano')
 		editor?.focus()
 	}
 
@@ -565,7 +527,7 @@ export const jb = createRoot(() => {
 		setMade((m) => [...m, n])
 		setTexts((s) => void (s[n] = blank))
 		keepDrafts()
-		setBricksOpen(true)
+		setTool('bricks')
 		pick(n)
 		requestAnimationFrame(() => editor?.focus(true))
 	}
@@ -787,10 +749,8 @@ export const jb = createRoot(() => {
 		toggleLoop,
 		audition,
 		draw,
-		hearInstrument,
 		hearBrick,
 		stopSample,
-		swap,
 		piano,
 		togglePiano,
 		padOpen,
@@ -812,7 +772,7 @@ export const jb = createRoot(() => {
 		songsOpen,
 		setSongsOpen,
 		bricksOpen,
-		setBricksOpen,
+		toggleBricks,
 		fresh,
 		dragging,
 		setDragging,

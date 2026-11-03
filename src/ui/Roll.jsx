@@ -16,6 +16,7 @@ import { prefersFlats, transposeToken } from '../key.js'
 import { addNote, blocked, moveNote, nameOf, noteAt, placeAt, removeNote, setHit, snap, stretchNote, timeAt } from './draw.js'
 import { jb } from './state.js'
 import { ChordPad } from './ChordPad.jsx'
+import { Bricks } from './Bricks.jsx'
 
 const TIPS = {
 	note: 'Find in the score; drag to move or stretch, double-click to delete',
@@ -305,6 +306,9 @@ export function Roll() {
 			/>
 			<Show when={jb.padOpen()}>
 				<ChordPad />
+			</Show>
+			<Show when={jb.bricksOpen()}>
+				<Bricks />
 			</Show>
 		</section>
 	)

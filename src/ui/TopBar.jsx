@@ -1,11 +1,11 @@
-// The top bar: songs toggle, play, loop one pattern, the piano, the chord pad, the display with title, sections and time,
+// The top bar: songs toggle, play, loop one pattern, then the piano, the chord pad and the loop bricks (one open at a time), the display with title, sections and time,
 // the key, download, the game's sound and the guide. On a phone the display is on top and the
 // controls in a row at the bottom, the key, download, guide and feedback behind ⋯.
 import { For, flush } from 'solid-js'
 import { KEY_ROOTS } from '../key.js'
 import { jb } from './state.js'
 import { Sections } from './Sections.jsx'
-import { DownloadIcon, FeedbackIcon, GuideIcon, LoopIcon, PianoIcon, SidebarIcon, SpeakerIcon } from './Icons.jsx'
+import { BricksIcon, DownloadIcon, FeedbackIcon, GuideIcon, LoopIcon, PianoIcon, SidebarIcon, SpeakerIcon } from './Icons.jsx'
 
 const MoreIcon = () => (
 	<svg viewBox="0 0 20 20">
@@ -66,6 +66,15 @@ export function TopBar() {
 				onClick={jb.togglePad}
 			>
 				<ChordIcon />
+			</button>
+			<button
+				class="icon bricks-toggle"
+				type="button"
+				aria-pressed={String(jb.bricksOpen())}
+				title={jb.bricksOpen() ? 'Hide the loop bricks' : 'Drop loop bricks into the song'}
+				onClick={jb.toggleBricks}
+			>
+				<BricksIcon />
 			</button>
 			<Display />
 			<button class="icon more-toggle" type="button" popovertarget="more" title="Open key, download, guide and feedback">

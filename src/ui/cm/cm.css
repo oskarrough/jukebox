@@ -165,3 +165,23 @@
 	background: var(--red);
 	font: 11.5px var(--mono);
 }
+
+/* a voice's name is its channel: lit as loud as the voice is right now, faint and struck through when muted */
+.cm .line .chip {
+	cursor: pointer;
+	box-shadow:
+		0 0 0 1.5px var(--c),
+		0 0 calc(var(--a) * 8px) calc(var(--a) * 2px) var(--c);
+	filter: brightness(calc(1 + var(--a) * 0.12));
+	user-select: none;
+	-webkit-touch-callout: none;
+}
+.cm .line .chip.muted {
+	background: transparent;
+	box-shadow: inset 0 0 0 1.5px color-mix(in lab, var(--c) 50%, transparent);
+	color: var(--faint);
+	text-decoration: line-through;
+}
+.cm .line .chip.fresh {
+	outline: 2px solid var(--yellow);
+}

@@ -57,3 +57,15 @@ describe('what the pointer is over', () => {
 test('a pad flips a rest to a hit and a hit to a rest', () => {
 	expect(['.', 'o', 'x', 'X'].map(flip)).toEqual(['x', '.', '.', '.'])
 })
+
+test("a voice's name says it mutes, and plays its instrument", () => {
+	const chips = { insts: { saz: 'saz' }, muted: new Set(['keys']) }
+	expect(hintAt('voice saz saz vol=0.8', 7, ['saz'], new Set(), chips)).toEqual({
+		start: 6,
+		voice: 'saz',
+		inst: 'saz',
+		tip: 'Mute saz (⌥-click or hold to solo)',
+	})
+	expect(hintAt('saz | D4 |', 1, ['saz'], new Set(), chips).inst).toBe('saz')
+	expect(hintAt('keys | C4 |', 1, ['keys'], new Set(), { ...chips, insts: { keys: 'rhodes' } }).tip).toMatch(/^Unmute keys/)
+})

@@ -16,20 +16,25 @@ import { numbersIn } from './controls.js'
 // colours, which are drums, and its key.
 export const setInfo = StateEffect.define()
 export const info = StateField.define({
-	create: () => ({ names: [], colors: {}, drums: new Set(), key: null }),
+	create: () => ({ names: [], colors: {}, drums: new Set(), insts: {}, muted: new Set(), fresh: null, key: null }),
 	update: (v, tr) => tr.effects.find((e) => e.is(setInfo))?.value ?? v,
 })
 
 const MUSIC = /^\s*(\w+)(@\d+)?\s*\|/
 const marks = new Map()
-// One mark per look, made once: `cls`, and the voice colour `c`.
-function markOf(cls, c, hit) {
-	const id = `${cls}|${c ?? ''}|${hit ?? ''}`
+// One mark per look, made once: `cls`, the voice colour `c`, a drum step's
+// `hit`, and for a voice's name, the voice and its place `i` in the song.
+function markOf(cls, c, hit, voice, i) {
+	const id = `${cls}|${c ?? ''}|${hit ?? ''}|${voice ?? ''}|${i ?? ''}`
 	let m = marks.get(id)
 	if (!m) {
 		const attributes = {}
 		if (c) attributes.style = `--c: ${c}`
 		if (hit) attributes['data-hit'] = hit
+		if (voice) {
+			attributes['data-voice'] = voice
+			attributes.style += `; --a: var(--a${i}, 0)`
+		}
 		marks.set(id, (m = Decoration.mark({ class: cls, attributes })))
 	}
 	return m
@@ -40,7 +45,7 @@ const HERE = Decoration.line({ class: 'line here' })
 // The painted lines in view.
 function paintView(view) {
 	const { state } = view
-	const { names, colors, drums } = state.field(info)
+	const { names, colors, drums, muted, fresh } = state.field(info)
 	const head = state.selection.main.head
 	const caretLine = state.doc.lineAt(head).number
 	const ruled = view.hasFocus && state.selection.main.empty ? ruler(state.doc.toString(), head) : null
@@ -56,6 +61,9 @@ function paintView(view) {
 				const c = voice ? colors[voice] : null
 				if (drum && col > line.text.indexOf('|') && (kind === 'note' || kind === 'rest')) {
 					for (let i = 0; i < text.length; i++) out.push(markOf(`${kind} pad`, c, text[i]).range(at + col + i, at + col + i + 1))
+				} else if (kind === 'name' && c) {
+					const cls = `name chip${muted.has(voice) ? ' muted' : ''}${fresh === voice ? ' fresh' : ''}`
+					out.push(markOf(cls, c, null, voice, names.indexOf(voice)).range(at + col, at + col + text.length))
 				} else if (kind !== 'space') out.push(markOf(kind, c).range(at + col, at + col + text.length))
 				col += text.length
 			}
