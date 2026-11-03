@@ -135,16 +135,26 @@ export function setSongKey(text, next) {
 	return upsertKeyLine(transposeScore(text, semis, key), key)
 }
 
+// Bricks are written in C minor. In a major key their minor third, sixth and
+// seventh (Eb, Ab, Bb) and minor chords go major; minor keys keep them.
+const MINOR_STEPS = [3, 8, 10]
+
 export function transposeBrick(brick, key) {
 	const semis = (key?.pc || 0) - (KEY_C.pc || 0)
-	if (!brick.notes || !semis) return brick
+	const major = key && !key.minor
+	if (!brick.notes || (!semis && !major)) return brick
 	const flats = prefersFlats(key)
 	return {
 		...brick,
 		notes: brick.notes.map((n) => {
-			if (n[0] === '[') return `[${transposeChordBody(n.slice(1, -1), semis, flats)}]`
-			if (T_NOTE.test(n) && /[A-Ga-g]/.test(n)) return transposeNoteName(n, semis, flats)
-			return n
+			if (n[0] === '[') {
+				const sym = n.slice(1, -1)
+				return `[${transposeChordBody(major && /^[A-G][#b]?m$/.test(sym) ? sym.slice(0, -1) : sym, semis, flats)}]`
+			}
+			if (!T_NOTE.test(n) || !/[A-Ga-g]/.test(n)) return n
+			const midi = noteToMidi(n)
+			const up = major && midi != null && MINOR_STEPS.includes(((midi % 12) + 12) % 12) ? 1 : 0
+			return transposeNoteName(n, semis + up, flats)
 		}),
 	}
 }

@@ -107,13 +107,13 @@ export function brickBar(brick, barSteps) {
 const MUSIC = /^([A-Za-z_]\w*)(?:@\d+)?\s*\|/
 const strip = (line) => line.replace(/(^|\s)#.*$/, '').trim()
 
-// The song `text` with `brick` added: a new voice, and a line of it in every
-// pattern, as many bars long as the pattern.
+// The song `text` with `brick` added: a voice, and a line of it in every
+// pattern, as many bars long as the pattern. A song that already has the
+// brick's voice gets that voice's lines and instrument swapped instead.
 export function addBrick(text, brick) {
 	const { song } = parse(text)
 	brick = transposeBrick(brick, keyOf(text, song))
-	let name = brick.voice
-	for (let k = 2; song.voiceMap[name]; k++) name = `${brick.voice}${k}`
+	const name = brick.voice
 	const lines = text.split('\n')
 	const inserts = [] // [after line index, text]
 	const barsOf = (p) => Math.max(0, ...Object.values(p.raw).map((ls) => ls.reduce((n, l) => n + l.bars.length, 0)))
@@ -122,24 +122,35 @@ export function addBrick(text, brick) {
 		const steps = p.opts.steps || song.steps
 		const bars = barsOf(p) || (p.from && song.patterns[p.from] ? barsOf(song.patterns[p.from]) : 0) || 1
 		let last = p.ln - 1
+		let own = -1 // the voice's first line in this pattern
 		for (let i = p.ln; i < lines.length; i++) {
-			const l = strip(lines[i])
+			const l = strip(lines[i] ?? '')
 			if (!l) continue
-			if (MUSIC.test(l)) last = i
-			else if (!/^mute\b/i.test(l)) break
+			const m = MUSIC.exec(l)
+			if (!m && !/^mute\b/i.test(l)) break
+			if (!m) continue
+			last = i
+			if (m[1] !== name) continue
+			if (own < 0) own = i
+			else lines[i] = null
 		}
-		const bar = brickBar(brick, beats * steps)
-		inserts.push([last, `${name.padEnd(4)} | ${[bar, ...Array(bars - 1).fill('%')].join(' | ')} |`])
+		const line = `${name.padEnd(4)} | ${[brickBar(brick, beats * steps), ...Array(bars - 1).fill('%')].join(' | ')} |`
+		if (own >= 0) lines[own] = line
+		else if (!(song.voiceMap[name] && p.from)) inserts.push([last, line])
 	}
-	const voiceLines = lines.flatMap((l, i) => (/^voice\s/i.test(strip(l)) ? [i] : []))
-	const firstPattern = Object.values(song.patterns).reduce((m, p) => Math.min(m, p.ln - 1), lines.length)
-	const voiceAt = voiceLines.length ? voiceLines[voiceLines.length - 1] : firstPattern - 1
-	inserts.push([voiceAt, `voice ${name} ${brick.inst} vol=${brick.vol}`])
+	const voice = `voice ${name} ${brick.inst} vol=${brick.vol}`
+	const declared = lines.findIndex((l) => l != null && new RegExp(`^voice\\s+${name}\\s`, 'i').test(strip(l)))
+	if (song.voiceMap[name] && declared >= 0) lines[declared] = voice
+	else {
+		const voiceLines = lines.flatMap((l, i) => (l != null && /^voice\s/i.test(strip(l)) ? [i] : []))
+		const firstPattern = Object.values(song.patterns).reduce((m, p) => Math.min(m, p.ln - 1), lines.length)
+		inserts.push([voiceLines.length ? voiceLines[voiceLines.length - 1] : firstPattern - 1, voice])
+	}
 	// From the bottom up, so earlier line numbers stay put; the voice line goes
 	// above any pattern line at the same place.
 	inserts.sort((a, b) => b[0] - a[0] || (a[1].startsWith('voice') ? 1 : -1))
 	for (const [after, line] of inserts) lines.splice(after + 1, 0, line)
 	if (!Object.keys(song.patterns).length)
 		lines.push('', 'pattern A', `${name} | ${brickBar(brick, song.beats * song.steps)} |`, '', 'loop A')
-	return { text: lines.join('\n'), voice: name }
+	return { text: lines.filter((l) => l != null).join('\n'), voice: name }
 }

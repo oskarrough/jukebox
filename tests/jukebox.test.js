@@ -121,9 +121,44 @@ describe('loop bricks', () => {
 		for (const brick of BRICKS) expect(compile(addBrick(text, brick).text).errors).toEqual([])
 	})
 
-	test('a second brick of the same kind gets its own voice', () => {
-		const once = addBrick(STARTER_ISH, BRICKS[0]).text
-		expect(addBrick(once, BRICKS[0]).voice).toBe('kick3')
+	test('a brick for a part the song has replaces it instead of piling up', () => {
+		const pulse = BRICKS.find((b) => b.id === 'pulse')
+		const bass = addBrick('voice a sine\npattern A\na | C4 |\nloop A', pulse).text
+		const again = addBrick(bass, pulse)
+		expect(again.voice).toBe('bass')
+		expect(again.text).toBe(bass)
+		const brk = addBrick(
+			STARTER_ISH,
+			BRICKS.find((b) => b.id === 'break'),
+		)
+		expect(brk.voice).toBe('kick')
+		expect(brk.text).not.toMatch(/kick2/)
+		expect(brk.text.match(/^kick\s*\|/gm)).toHaveLength(1)
+		expect(brk.text).toMatch(/x\.\.\. \.\.\.\. \.\.x\. \.x\.\./)
+		const other = addBrick(
+			bass,
+			BRICKS.find((b) => b.id === '808'),
+		)
+		expect(other.voice).toBe('b808')
+		expect(other.text).toMatch(/^voice bass /m)
+		const bounce = addBrick(
+			bass,
+			BRICKS.find((b) => b.id === 'bounce'),
+		).text
+		expect(compile(bounce).voices.find((v) => v.name === 'bass').inst).toBe('ebass')
+	})
+
+	test('a brick in a major key sounds major', () => {
+		const song = (key) => `key ${key}\nvoice a sine\npattern A\na | C4 |\nloop A`
+		const pad = BRICKS.find((b) => b.id === 'pad')
+		const arp = BRICKS.find((b) => b.id === 'arp')
+		expect(addBrick(song('E'), pad).text).toMatch(/\[E\]/)
+		expect(addBrick(song('E'), pad).text).not.toMatch(/\[Em\]/)
+		expect(addBrick(song('Em'), pad).text).toMatch(/\[Em\]/)
+		expect(addBrick(song('C'), pad).text).toMatch(/\[C\]/)
+		const third = (text) => /^arp\s*\|\s*(\S+) (\S+) (\S+)/m.exec(text).slice(1, 4)
+		expect(third(addBrick(song('E'), arp).text)).toEqual(['E5', 'G#5', 'B5'])
+		expect(third(addBrick(song('Em'), arp).text)).toEqual(['E5', 'G5', 'B5'])
 	})
 })
 
