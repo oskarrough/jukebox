@@ -1,5 +1,6 @@
 #:schema node_modules/wrangler/config-schema.json
 name = "jukebox"
+account_id = "b29de5cf62555d67d57242aeddc91344"
 compatibility_date = "2026-10-10"
 
 [[routes]]
