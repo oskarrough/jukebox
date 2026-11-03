@@ -10,7 +10,6 @@ import { columnOf, marksFor } from './link.js'
 import { slug } from './slug.js'
 import { voiceColors } from '../roll.js'
 import { AHEAD, begin, end, feed, synthFor, tune } from '../player.js'
-import { ALIASES } from '../aliases.js'
 import { NAMES, SONGS } from '../songs.js'
 
 // Hearing the song as written: every device bypassed.
@@ -434,8 +433,7 @@ export const jb = createRoot(() => {
 		const fit = () => setSongsOpen(!narrow.matches)
 		fit()
 		narrow.addEventListener('change', fit)
-		const asking = ALIASES[asked.get('song')] ?? asked.get('song')
-		const wanted = names().includes(asking) ? asking : null
+		const wanted = names().includes(asked.get('song')) ? asked.get('song') : null
 		// After the page has settled: picking a song flushes, which can't happen
 		// while it settles. It only plays if the browser lets sound start
 		// before a click; otherwise it waits on the play button.
