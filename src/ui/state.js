@@ -18,6 +18,9 @@ import { NAMES, SONGS } from '../songs.js'
 // Hearing the song as written: every device bypassed.
 const DRY = Object.fromEntries(EFFECTS.map((d) => [d.id, { on: false }]))
 
+// How much of a starter style you hear when you point at it, in seconds.
+const TASTE = 4
+
 // Compiling is the slow part; the same text compiles once, and once more
 // looping just its pattern `only`.
 const compiled = new Map()
@@ -320,29 +323,25 @@ export const jb = createRoot(() => {
 		preview.session.play(ev, at)
 	}
 
-	// A short phrase on one voice, to hear an instrument or a brick before
-	// choosing it: quieter over the song if it's playing. A new one cuts the last.
+	// A short phrase on some voices, to hear an instrument, a brick or a style
+	// before choosing it: quieter over the song if it's playing. A new one cuts
+	// the last.
 	let sampling = null
-	function sample(voice, events) {
+	function sample(voices, events, reverb = nowPlaying()?.reverb) {
 		context ??= new AudioContext()
 		synth ??= synthFor(context, context.destination)
 		context.resume()
 		stopSample()
 		const notes = { events, sections: [], dur: 0 }
 		const quiet = { events: [], sections: [], dur: 0 }
-		sampling = begin(
-			synth,
-			context,
-			{ kind: 'radio', since: 0 },
-			{ voices: [voice], intro: notes, loop: quiet, reverb: nowPlaying()?.reverb },
-		)
+		sampling = begin(synth, context, { kind: 'radio', since: 0 }, { voices, intro: notes, loop: quiet, reverb })
 		const { level, wet, cutoff } = runChain(DRY)
 		const down = playing ? 0.4 : 0.6
 		sampling.level.gain.value = level * down
 		sampling.wet.gain.value = wet * down
 		sampling.tone.frequency.value = cutoff
 		const at = context.currentTime + 0.02
-		for (const e of events) sampling.session.play({ ...e, v: 0 }, at + e.t)
+		for (const e of events) sampling.session.play({ ...e, v: e.v ?? 0 }, at + e.t)
 	}
 	function stopSample() {
 		if (sampling) end(sampling, context, 0.02)
@@ -359,7 +358,7 @@ export const jb = createRoot(() => {
 		const one = compileText(
 			`tempo ${tempo}\nbeats ${beats}\nsteps ${steps}\nvoice ${b.voice} ${b.inst} vol=${b.vol}\npattern A\n${b.voice} | ${brickBar(b, beats * steps)} |\nloop A`,
 		)
-		if (one.voices[0]) sample(one.voices[0], one.loop.events)
+		if (one.voices[0]) sample([one.voices[0]], one.loop.events)
 	}
 
 	// The score as it stands in the editor, a keystroke ahead of `text`.
@@ -466,7 +465,7 @@ export const jb = createRoot(() => {
 		const m = chordToMidis(sym, voice.center)
 		if (!m) return
 		const beat = 60 / (s?.tempo ?? 100)
-		sample(voice, [{ t: 0, d: 4 * beat * voice.gate, vel: 0.8, m: m.map((n) => n + voice.trans) }])
+		sample([voice], [{ t: 0, d: 4 * beat * voice.gate, vel: 0.8, m: m.map((n) => n + voice.trans) }])
 	}
 	// Writes chord `sym` where the next chord goes, as one edit. Stopped, the
 	// tap after goes in the bar after it.
@@ -517,12 +516,28 @@ export const jb = createRoot(() => {
 		flush()
 	}
 
-	function create() {
+	// The first few seconds of a style, quietly, to choose by ear.
+	let tasting = null
+	function hearStyle(id) {
+		const made = compileText(starter('C', { style: id }))
+		const events = made.loop.events.filter((e) => e.t < TASTE)
+		sample(made.voices, events, made.reverb)
+		clearTimeout(tasting)
+		tasting = setTimeout(stopSample, TASTE * 1000 + 600)
+	}
+	function stopStyle() {
+		clearTimeout(tasting)
+		stopSample()
+	}
+
+	// A new song, blank or in one of the starter styles.
+	function create(style = '') {
+		stopStyle()
 		let n = 'new'
 		for (let i = 2; names().includes(n); i++) n = `new-${i}`
 		// Filtered by a tag, the song starts with it.
 		const title = newTitle(songs().map((s) => s.song?.title ?? s.name))
-		const blank = starter('C', { title, tag: untrack(tag) ?? '' })
+		const blank = starter('C', { title, tag: untrack(tag) ?? '', style })
 		if (playing) stop()
 		setMade((m) => [...m, n])
 		setTexts((s) => void (s[n] = blank))
@@ -750,6 +765,8 @@ export const jb = createRoot(() => {
 		audition,
 		draw,
 		hearBrick,
+		hearStyle,
+		stopStyle,
 		stopSample,
 		piano,
 		togglePiano,

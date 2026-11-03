@@ -194,6 +194,7 @@ svg {
 #play,
 .pad,
 .brick,
+.style,
 .post button[type='submit'],
 .chord-pad button {
 	box-shadow:
@@ -209,6 +210,7 @@ svg {
 #play:active,
 .pad:active,
 .brick:active,
+.style:active,
 .post button[type='submit']:active,
 .chord-pad button:active {
 	transform: translateY(var(--travel));
@@ -655,6 +657,60 @@ input[type='range']::-moz-range-thumb {
 .list button span {
 	overflow: hidden;
 	text-overflow: ellipsis;
+}
+/* the styles for a new song: a tray of keys over the + */
+.icon.add {
+	anchor-name: --add;
+}
+#styles {
+	position-anchor: --add;
+	inset: auto;
+	bottom: anchor(top);
+	left: anchor(left);
+	width: anchor-size(width);
+	margin: 0 0 0.4rem;
+	padding: 0.4rem;
+	border: 0;
+	border-radius: var(--r);
+	background: var(--panel);
+	box-shadow: var(--well), var(--drop);
+	overflow: visible;
+}
+#styles:popover-open {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 0.35rem;
+}
+#styles .icon {
+	width: auto;
+	height: 2.6rem;
+}
+.style {
+	--c: var(--orange);
+	height: 2.6rem;
+	border: 0;
+	border-radius: 8px;
+	--edge: color-mix(in lab, var(--c) 60%, var(--c-black));
+	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 30%, transparent);
+	background: var(--sheen) var(--c);
+	color: var(--c-white);
+	font: 750 0.75rem var(--sans);
+}
+.style:hover,
+.style:focus-visible {
+	background: var(--sheen) color-mix(in lab, var(--c) 85%, var(--c-white));
+}
+.style[data-style='dub'] {
+	--c: var(--c-ultramarine);
+}
+.style[data-style='cumbia'] {
+	--c: var(--c-chrome-yellow-deep);
+}
+.style[data-style='chip'] {
+	--c: var(--c-viridian);
+}
+.style[data-style='ballad'] {
+	--c: var(--c-opera);
 }
 
 /* the screen */
