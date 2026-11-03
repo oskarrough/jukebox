@@ -6,12 +6,21 @@
 import { prefersFlats, transposeNoteName } from '../key.js'
 import { noteToMidi } from '../score.js'
 
-const HOME = ['KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyJ', 'KeyK', 'KeyL', 'Semicolon', 'Quote']
+export const HOME = ['KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyJ', 'KeyK', 'KeyL', 'Semicolon', 'Quote']
 // Each sits between HOME[i] and HOME[i + 1].
-const ABOVE = ['KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyY', 'KeyU', 'KeyI', 'KeyO', 'KeyP', 'BracketLeft']
+export const ABOVE = ['KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyY', 'KeyU', 'KeyI', 'KeyO', 'KeyP', 'BracketLeft']
 const MAJOR = [0, 2, 4, 5, 7, 9, 11]
 const MINOR = [0, 2, 3, 5, 7, 8, 10]
 export const OCTAVE_KEYS = { KeyZ: -1, KeyX: 1 }
+export const keyLabel = (code) => ({ Semicolon: ';', Quote: "'", BracketLeft: '[' })[code] ?? code.replace('Key', '')
+
+// The visible keyboard uses exactly the mapping the computer keys play.
+export function pianoKeys(octave, key) {
+	return HOME.flatMap((code, i) => [
+		{ code, note: noteOf(code, octave, key), column: i, above: false },
+		...(ABOVE[i] && noteOf(ABOVE[i], octave, key) ? [{ code: ABOVE[i], note: noteOf(ABOVE[i], octave, key), column: i, above: true }] : []),
+	])
+}
 
 // Semitones above the keynote of the scale's `i`th note, from 0.
 const degree = (i, minor) => (minor ? MINOR : MAJOR)[i % 7] + 12 * Math.floor(i / 7)

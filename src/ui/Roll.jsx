@@ -17,6 +17,7 @@ import { addNote, blocked, moveNote, nameOf, noteAt, placeAt, removeNote, setHit
 import { jb } from './state.js'
 import { ChordPad } from './ChordPad.jsx'
 import { Bricks } from './Bricks.jsx'
+import { Piano, VoicePicker } from './Piano.jsx'
 
 const TIPS = {
 	note: 'Find in the score; drag to move or stretch, double-click to delete',
@@ -28,13 +29,13 @@ const TIPS = {
 
 export function Roll() {
 	let canvas
+	let brush
 	// What a drag is doing, and the song as it will be: plain variables, read
 	// by the frame as it draws, not signals.
 	let drag = null
 	let preview = null
 	let ghost = null
-	// The voice last touched on the roll, and how long the last note drawn was.
-	let last = null
+	// How long the last note drawn was.
 	let length = 0
 
 	onSettled(() => {
@@ -66,11 +67,9 @@ export function Roll() {
 		const box = canvas.getBoundingClientRect()
 		return hitRoll(canvas, song, jb.elapsed(), e.clientX - box.left, e.clientY - box.top, frame)
 	}
-	// The melodic voice a click adds to: the caret's, the last touched, or the first.
-	const voiceFor = (song) => {
-		const ok = (name) => song.voices.find((v) => v.name === name && !v.drum)
-		return ok(jb.caret()?.voice) ?? ok(last) ?? song.voices.find((v) => !v.drum)
-	}
+	// The brush never silently follows the caret or a different voice's note.
+	const voiceFor = (song) => song.voices.find((v) => v.name === jb.activeVoice() && !v.drum)
+	const ownEvent = (song, hit) => hit.event && (song.voices[hit.event.v].drum || song.voices[hit.event.v].name === jb.activeVoice())
 	const sectionOf = (song, place) => song[place.tl].sections[place.i]
 	const stepOf = (sec) => 60 / sec.tempo / sec.steps
 	// Where an event on the roll is in the song, from the moment clicked.
@@ -127,11 +126,11 @@ export function Roll() {
 		if (!cur) return say('pointer', 'Jump here, and to the note in the score')
 		const hit = hitAt(e, cur.song)
 		if (hit.bar) return say('pointer', TIPS.chord)
-		if (hit.event) {
+		if (ownEvent(cur.song, hit)) {
 			const drum = cur.song.voices[hit.event.v].drum
 			return say(drum ? 'pointer' : hit.end ? 'ew-resize' : 'grab', drum ? TIPS.hit : TIPS.note)
 		}
-		if (hit.section) return say('pointer', TIPS.jump)
+		if (hit.section && !hit.event) return say('pointer', TIPS.jump)
 		if (hit.lane != null) {
 			const place = placeAt(cur.text, cur.song, hit.t)
 			const v = cur.song.voices[hit.lane]
@@ -146,12 +145,15 @@ export function Roll() {
 		if (add.blocked) return refuse(cur, add.place, v)
 		ghost = add.ghost
 		say('crosshair', `Add a note to ${v.name}`)
+		brush.hidden = false
+		brush.style.setProperty('--p', jb.colors()[cur.song.voices.indexOf(v)])
 	}
 	function refuse(cur, place, v) {
 		const why = place && blocked(cur.text, cur.song, place, v.name)
 		say('not-allowed', why === 'muted' ? `Unmute ${v.name} in this pattern to draw here` : TIPS.broken)
 	}
 	function say(cursor, tip) {
+		brush.hidden = true
 		canvas.style.cursor = cursor
 		if (canvas.title !== tip) canvas.title = tip
 	}
@@ -171,14 +173,13 @@ export function Roll() {
 		if (hit.bar) return jb.pickBar(hit.bar.section.name, hit.bar.b)
 		if (!cur || (hit.section && !hit.event)) return jump(hit)
 		const start = { ...cur, x: e.clientX, y: e.clientY, moved: false, next: null, key: null }
-		if (hit.event) {
+		if (ownEvent(cur.song, hit)) {
 			const v = cur.song.voices[hit.event.v]
 			const place = placeOf(cur.song, hit)
 			if (v.drum) drag = { ...start, kind: 'hits', v }
 			else {
 				const note = noteAt(cur.text, cur.song, place, v.name)
 				if (!note) return jump(hit)
-				last = v.name
 				const s = shift(cur.song, place, v)
 				const at = timeAt(cur.text, cur.song, place)
 				drag = {
@@ -199,7 +200,6 @@ export function Roll() {
 			const add = v && adding(cur, hit, v)
 			if (!add) return jump(hit)
 			if (add.blocked) return
-			last = v.name
 			drag = { ...start, kind: 'add', v, from: add.place }
 		}
 		ghost = null
@@ -209,6 +209,8 @@ export function Roll() {
 
 	// Works out what the drag has got to, shows it and plays it.
 	function move(e) {
+		brush.style.left = `${e.clientX}px`
+		brush.style.top = `${e.clientY}px`
 		if (!drag) return hover(e)
 		const d = drag
 		if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 3) d.moved = true
@@ -281,7 +283,7 @@ export function Roll() {
 		if (!cur) return
 		const hit = hitAt(e, cur.song)
 		const v = hit.event && cur.song.voices[hit.event.v]
-		if (!v || v.drum) return
+		if (!v || v.drum || v.name !== jb.activeVoice()) return
 		const out = removeNote(cur.text, cur.song, placeOf(cur.song, hit), v.name)
 		if (out) jb.draw(out.text, out.ln, out.col)
 	}
@@ -300,10 +302,15 @@ export function Roll() {
 					drag = preview = null
 				}}
 				onPointerLeave={() => {
+					brush.hidden = true
 					if (!drag) ghost = null
 				}}
 				onDblClick={remove}
 			/>
+			<span class="tape-brush" ref={brush} hidden aria-hidden="true" />
+			<Show when={jb.piano()} fallback={<VoicePicker />}>
+				<Piano />
+			</Show>
 			<Show when={jb.padOpen()}>
 				<ChordPad />
 			</Show>

@@ -53,7 +53,9 @@ export function TopBar() {
 				class="icon piano-toggle"
 				type="button"
 				aria-pressed={String(jb.piano())}
-				title={jb.piano() ? 'Type text again (⌘K)' : 'Play and write notes from the keyboard, Z X for octaves (⌘K)'}
+				aria-controls="piano"
+				aria-expanded={String(jb.piano())}
+				title={jb.piano() ? 'Hide the piano (⌘K)' : 'Play and write notes on the piano (⌘K)'}
 				onClick={jb.togglePiano}
 			>
 				<PianoIcon />

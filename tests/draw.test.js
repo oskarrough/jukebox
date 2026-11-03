@@ -153,3 +153,24 @@ describe('the tape and the clock', () => {
 		expect(out.text.split('\n')[out.ln - 2]).toStartWith('neyhi')
 	})
 })
+
+describe('drawing with a chosen voice', () => {
+	const text = 'key C\nvoice pad pad\nvoice bass ebass\npattern A\npad | [C]--------------- |\nbass | _ |\nloop A'
+
+	test('drawing bass over the pad leaves its whole-bar chord intact', () => {
+		const out = ok(addNote(text, compile(text), at('loop', 0, 0, 2), 'bass', 48, 7, parseKey('C')))
+		expect(changed(text, out)).toEqual(['bass | .. C3------ ....... |'])
+		expect(out.text).toContain('pad | [C]--------------- |')
+		const pad = compile(out.text).loop.events.find((e) => e.v === 0)
+		expect(pad.m).toHaveLength(3)
+		expect(pad.d).toBe(compile(text).loop.events[0].d)
+	})
+
+	test('moving, stretching and deleting the bass never edits the pad', () => {
+		const drawn = ok(addNote(text, compile(text), at('loop', 0, 0, 2), 'bass', 48, 4, parseKey('C'))).text
+		const moved = ok(moveNote(drawn, compile(drawn), at('loop', 0, 0, 2), at('loop', 0, 0, 4), 'bass', 2, parseKey('C'))).text
+		const stretched = ok(stretchNote(moved, compile(moved), at('loop', 0, 0, 4), 'bass', 8)).text
+		const removed = ok(removeNote(stretched, compile(stretched), at('loop', 0, 0, 4), 'bass')).text
+		for (const t of [drawn, moved, stretched, removed]) expect(t).toContain('pad | [C]--------------- |')
+	})
+})

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { compile, parseKey } from '../src/score.js'
-import { noteOf, octaveAt } from '../src/ui/keyboard.js'
-import { barText, cellsOf, moment, place, record, stepNote } from '../src/ui/record.js'
+import { noteOf, octaveAt, pianoKeys } from '../src/ui/keyboard.js'
+import { barText, cellsOf, moment, place, record, recordStep, stepNote } from '../src/ui/record.js'
 
 const head = 'tempo 120\nbeats 4\nsteps 4\nvoice bass ebass\nvoice lead square\nvoice kick kick\n'
 // At 120 a step is 0.125 s and a bar of 16 two seconds.
@@ -132,5 +132,56 @@ describe('writing while stopped', () => {
 		const t = `${head}pattern A\nlead | .. |\nloop A`
 		const r = stepNote(t, at(t, 9), 'A4', { beats: 4, steps: 4 })
 		expect(line(r.text, 'lead')).toBe('lead | .. A4- .... .... .... |')
+	})
+})
+
+describe('the visible piano and its chosen voice', () => {
+	const text = 'key C\ntempo 120\nvoice pad pad\nvoice bass ebass\npattern A\npad | [C]--------------- |\nbass | _ |\nloop A'
+
+	test('every visible key plays its labelled note in the chosen scale', () => {
+		for (const name of ['C', 'Dm', 'F#']) {
+			const key = parseKey(name)
+			const keys = pianoKeys(3, key)
+			expect(keys.filter((k) => !k.above)).toHaveLength(11)
+			for (const k of keys) {
+				expect(k.note).toBe(noteOf(k.code, 3, key))
+				expect(k.note).not.toBeNull()
+			}
+		}
+	})
+
+	test('step entry writes the chosen bass, leaving the pad chord whole', () => {
+		let out = { text, step: 0 }
+		for (const note of ['C3', 'D3', 'E3', 'F3', 'G3']) {
+			out = recordStep(out.text, { voice: 'bass', pattern: 'A', step: out.step, note })
+			expect(line(out.text, 'pad')).toBe('pad | [C]--------------- |')
+			expect(compile(out.text).errors).toEqual([])
+		}
+		expect(line(out.text, 'bass')).toBe('bass | G3--- D3--- E3--- F3--- |')
+		expect(compile(out.text).loop.sections[0].bars).toBe(1)
+	})
+
+	test('live punch-in leaves every other voice unchanged', () => {
+		const out = record(text, compile(text), { voice: 'bass', from: STEP * 2, to: STEP * 6, note: 'C3' })
+		expect(line(out.text, 'pad')).toBe(line(text, 'pad'))
+		expect(line(out.text, 'bass')).toBe('bass | .. C3--- .. .... .... |')
+		expect(compile(out.text).errors).toEqual([])
+	})
+
+	test('punching an inherited bar adds a patch, never rewrites the source', () => {
+		const t = text.replace('bass | _ |\nloop A', 'bass | C2--------------- |\npattern B from A\nloop A B')
+		const out = record(t, compile(t), { voice: 'bass', from: 2 + 2 * STEP, to: 2 + 4 * STEP, note: 'D2' })
+		expect(out.text).toContain('bass | C2--------------- |')
+		expect(out.text).toContain('bass@1 | C2- D2- .... .... .... |')
+		expect(line(out.text, 'pad')).toBe(line(t, 'pad'))
+		expect(compile(out.text).errors).toEqual([])
+	})
+
+	test('extending a short inherited line leaves the source pattern alone', () => {
+		const t = text.replace('pad | [C]--------------- |', 'pad | [C]--------------- | % |').replace('loop A', 'pattern B from A\nloop A B')
+		const out = record(t, compile(t), { voice: 'bass', from: 6, to: 6 + STEP, note: 'D2' })
+		expect(out.text).toContain('bass | _ |')
+		expect(out.text).toContain('bass@2 | D2 ... .... .... .... |')
+		expect(compile(out.text).errors).toEqual([])
 	})
 })

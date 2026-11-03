@@ -3,7 +3,8 @@
 // playing then, and lasts the steps you held it; it replaces what was in
 // those steps, so a take over a line rewrites it rather than piling up. While
 // it's stopped, a note goes in at the caret and lasts to the next beat.
-import { barAt, caretAt } from './link.js'
+import { compile } from '../score.js'
+import { barAt, caretAt, columnOf } from './link.js'
 import { stepsOf } from './ruler.js'
 
 const NOTE = '[A-Ga-g](?:##|bb|#|b|q)?[0-8]'
@@ -101,6 +102,7 @@ export function record(text, song, { voice, from, to, note, chord }) {
 	if (!m) return null
 	const { s, step } = m
 	const size = s.beats * s.steps
+	if (!song.voices.some((v) => v.name === voice && !v.drum)) return null
 	const lines = text.split('\n')
 	let added = null
 	let where = s.where?.[voice]?.map((w) => ({ ...w }))
@@ -122,22 +124,46 @@ export function record(text, song, { voice, from, to, note, chord }) {
 	while (where.length <= bar) {
 		const last = where.at(-1)
 		if (last.k < 0) return null
+		let end = s.ln
+		while (end < lines.length && !/^\s*(pattern|play|loop)\b/i.test(lines[end])) end++
+		if (last.ln <= s.ln || last.ln > end) {
+			lines.splice(end, 0, `${voice}@${where.length + 1} |${barText(Array(size).fill('.'), s.steps)}|`)
+			for (const source of where) if (source.ln > end) source.ln++
+			where.push({ ln: end + 1, k: 0 })
+			added ??= end + 1
+			continue
+		}
 		const line = lines[last.ln - 1].trimEnd()
 		lines[last.ln - 1] = `${line}${line.endsWith('|') ? '' : ' |'}${barText(Array(size).fill('.'), s.steps)}|`
 		where.push({ ln: last.ln, k: last.k + 1 })
 	}
-	// Rewrites bar `b` through `fn`, if it's written anywhere; whether it is.
+	// Resolve repeated bars through the section's source map, not just the
+	// preceding bar on this line (which may itself be a patch or a repeat).
+	const read = (b) => {
+		const w = where[b]
+		const found = w && w.k >= 0 && barAt(lines[w.ln - 1], w.k)
+		return found ? cellsOf(found.text, size, found.text.trim() === '%' && b > 0 ? read(b - 1) : null) : null
+	}
+	// Rewrites inherited bars as local patches; the source pattern stays put.
 	const edit = (b, fn) => {
 		const w = where[b]
 		const line = w && w.k >= 0 ? lines[w.ln - 1] : null
 		const found = line != null && barAt(line, w.k)
 		if (!found) return false
-		const prev = w.k > 0 ? barAt(line, w.k - 1) : null
-		const cells = cellsOf(found.text, size, prev && cellsOf(prev.text, size))
+		const cells = read(b)
 		const next = fn(cells)
 		if (next.join() === cells.join()) return true
-		const close = line.indexOf('|', found.start) < 0 ? '|' : ''
-		lines[w.ln - 1] = line.slice(0, found.start) + barText(next, s.steps) + close + line.slice(found.end)
+		let end = s.ln
+		while (end < lines.length && !/^\s*(pattern|play|loop)\b/i.test(lines[end])) end++
+		if (w.ln <= s.ln || w.ln > end) {
+			lines.splice(end, 0, `${voice}@${b + 1} |${barText(next, s.steps)}|`)
+			for (const source of where) if (source.ln > end) source.ln++
+			where[b] = { ln: end + 1, k: 0 }
+			added ??= end + 1
+		} else {
+			const close = line.indexOf('|', found.start) < 0 ? '|' : ''
+			lines[w.ln - 1] = line.slice(0, found.start) + barText(next, s.steps) + close + line.slice(found.end)
+		}
 		return true
 	}
 	let left = Math.min(Math.max(1, Math.round((to - from) / m.stepDur)), s.bars * size - step)
@@ -153,7 +179,23 @@ export function record(text, song, { voice, from, to, note, chord }) {
 			break
 		}
 	}
-	return { text: lines.join('\n'), added }
+	const w = where[bar]
+	return { text: lines.join('\n'), added, ln: w.ln, col: columnOf(lines[w.ln - 1], w.k, step % size, false) }
+}
+
+// Step entry uses the chosen voice, never whichever line the caret left
+// behind. A full pattern wraps instead of quietly growing another bar.
+export function recordStep(text, { voice, pattern, step = 0, note }) {
+	const song = compile(text, pattern)
+	if (song.errors.length) return null
+	const s = song.loop.sections[0]
+	if (!s) return null
+	const total = s.bars * s.beats * s.steps
+	step = ((step % total) + total) % total
+	const len = s.steps - (step % s.steps)
+	const dur = 60 / s.tempo / s.steps
+	const out = record(text, song, { voice, from: step * dur, to: (step + len) * dur, note })
+	return out && { ...out, step: (step + len) % total }
 }
 
 // Writes `note` at the caret `pos` on a voice's line, stopped: it lasts to
