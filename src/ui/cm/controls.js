@@ -30,6 +30,10 @@ export function numbersIn(line) {
 	return [{ start, end: start + m[3].length, name: m[1].toLowerCase() }]
 }
 
+// The steps a drag of `dx` right and `dy` down moves a number: right or up is
+// more, a step every few pixels.
+export const drift = (dx, dy) => Math.round((dx - dy) / 6)
+
 // Number `value` (as written) of option `name`, moved `by` steps of its last
 // digit, written with as many decimals.
 export function scrub(value, by, name) {

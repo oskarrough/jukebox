@@ -3,14 +3,12 @@
 // click mutes it, ⌥-click or a long press solos it, pointing at it plays it.
 // Drag a number to change it as you hear it, click an instrument to swap
 // it, tap a drum step's pad, click a chord to open the chord pad on its bar.
-// ⌥↑/↓ or an ⌥-drag nudges the note, number or drum step there. With the
-// piano on, the keyboard plays notes and writes them in: in time while the
-// song plays, else at the caret. Each writes text, so ⌘Z, saving and agents
-// still work.
-import { createEffect, createMemo, flush, onSettled, untrack } from 'solid-js'
-import { Annotation, EditorState, Prec, Transaction } from '@codemirror/state'
+// ⌥↑/↓ or an ⌥-drag nudges the note, number or drum step there. Each writes
+// text, so ⌘Z, saving and agents still work.
+import { createEffect, createMemo, onSettled, untrack } from 'solid-js'
+import { Annotation, EditorState, Transaction } from '@codemirror/state'
 import { EditorView, closeHoverTooltips, hoverTooltip, keymap, drawSelection } from '@codemirror/view'
-import { defaultKeymap, history, historyKeymap, isolateHistory, undo } from '@codemirror/commands'
+import { defaultKeymap, history, historyKeymap, isolateHistory } from '@codemirror/commands'
 import {
 	acceptCompletion,
 	autocompletion,
@@ -18,6 +16,8 @@ import {
 	completionStatus,
 	currentCompletions,
 	insertCompletionText,
+	selectedCompletionIndex,
+	setSelectedCompletion,
 	moveCompletionSelection,
 	selectedCompletion,
 	startCompletion,
@@ -28,11 +28,10 @@ import { caretAt } from './link.js'
 import { nudge } from './nudge.js'
 import { sample, suggest } from './complete.js'
 import { mistakes } from './lint.js'
-import { OCTAVE_KEYS, noteOf, octaveAt } from './keyboard.js'
-import { moment, record, sizeOf, stepNote } from './record.js'
-import { compile, parse } from '../score.js'
-import { flip, hintAt, numbersIn, scrub } from './cm/controls.js'
-import { ghost, ghostAt, info, notes, painted, setInfo } from './cm/look.js'
+import { compile } from '../score.js'
+import { inherited } from './cm/meaning.js'
+import { drift, flip, hintAt, numbersIn, scrub } from './cm/controls.js'
+import { ghost, ghostAt, info, meaning, notes, painted, setInfo } from './cm/look.js'
 import './cm/cm.css'
 
 // A caret put somewhere by the roll, not by hand.
@@ -128,16 +127,6 @@ export function Editor() {
 		queueMicrotask(() => startCompletion(v))
 		return true
 	}
-	// Puts `next` in place of the score as one edit, and the caret at `caret`.
-	function put(next, caret) {
-		const t = text()
-		let a = 0
-		while (a < t.length && t[a] === next[a]) a++
-		let z = 0
-		while (z < t.length - a && z < next.length - a && t[t.length - 1 - z] === next[next.length - 1 - z]) z++
-		write(a, t.length - z, next.slice(a, next.length - z), caret)
-	}
-
 	// ⌥↑/↓ nudges the note, number or drum step at the caret, and plays it.
 	const nudging = (dir, big) => (v) => {
 		const pos = v.state.selection.main.head
@@ -229,7 +218,7 @@ export function Editor() {
 		if (id) waiting = setTimeout(() => hear(text(), h.voice, h.inst), 200)
 	}
 
-	// Drags a number left or right, a step of its last digit every few
+	// Drags a number right or up for more, a step of its last digit every few
 	// pixels; the song hears it as it goes, and the whole drag undoes as one.
 	// A click without a drag just puts the caret there.
 	function drag(v, e, el) {
@@ -243,7 +232,7 @@ export function Editor() {
 		let heard = 0
 		e.preventDefault()
 		const move = (m) => {
-			const to = scrub(was, Math.round((m.clientX - e.clientX) / 6), n.name)
+			const to = scrub(was, drift(m.clientX - e.clientX, m.clientY - e.clientY), n.name)
 			if (to === now) return
 			v.dispatch({ changes: { from, to: from + now.length, insert: to }, annotations: Transaction.addToHistory.of(false) })
 			now = to
@@ -297,98 +286,6 @@ export function Editor() {
 		return true
 	}
 
-	// The piano: a key plays its note on the voice the caret is in. On a
-	// melodic voice's line, while the song plays, what you play is recorded
-	// in time when you let go; stopped, it's written in at the caret. Z and X
-	// move an octave from the line's.
-	let octave = null
-	// Keys held down, by code: the note, its voice, and when in the song.
-	const held = new Map()
-	// The take being recorded: the score before it, as it was last written,
-	// and the last note's moment, for a chord. Undone as one.
-	let take = null
-	createEffect(
-		() => jb.piano(),
-		() => {
-			octave = null
-			take = null
-		},
-	)
-	createEffect(
-		() => jb.live(),
-		(on) => {
-			if (on) return
-			for (const code of [...held.keys()]) release(code)
-			take = null
-		},
-	)
-	function playKey(e) {
-		const t = text()
-		const pos = view.state.selection.main.head
-		const key = untrack(song).key
-		if (e.code in OCTAVE_KEYS) {
-			octave = Math.max(0, Math.min(8, (octave ?? octaveAt(t, pos, key) ?? 4) + OCTAVE_KEYS[e.code]))
-			return true
-		}
-		const note = noteOf(e.code, octave ?? octaveAt(t, pos, key) ?? 4, key)
-		if (!note) return false
-		if (e.repeat) return true
-		const at = caretAt(t, pos)
-		const voices = parse(t).song.voices
-		const voice = voices.find((v) => v.name === at.voice) ?? voices.find((v) => !v.drum)
-		if (!voice) return true
-		jb.audition(t, voice.name, voice.drum ? 'x' : note)
-		if (voice.drum || at.voice !== voice.name) return true
-		if (jb.live()) {
-			held.set(e.code, { note, voice: voice.name, from: jb.elapsed() })
-			return true
-		}
-		const whole = jb.whole() ?? jb.song()
-		const r = stepNote(t, pos, note, whole ? sizeOf(whole, at.pattern) : { beats: 4, steps: 4 })
-		if (r) put(r.text, r.caret)
-		return true
-	}
-	// Writes the held key `code` into the take, as long as it was held.
-	function release(code) {
-		const h = held.get(code)
-		held.delete(code)
-		const playing = jb.nowPlaying()
-		const m = h && playing && moment(playing, h.from)
-		if (!m) return
-		const to = jb.live() ? jb.elapsed() : h.from
-		const id = `${m.s.name}:${m.s.start}:${m.step}`
-		const chord = take?.id === id && Math.abs(h.from - take.from) < m.stepDur
-		const r = record(text(), playing, { voice: h.voice, from: h.from, to, note: h.note, chord })
-		if (!r) return
-		// The caret stays where it was, a line down if one went in above it.
-		const before = text().slice(0, view.state.selection.main.head).split('\n')
-		const ln = before.length + (r.added && r.added <= before.length ? 1 : 0)
-		const lines = r.text.split('\n')
-		const caret = lines.slice(0, ln - 1).join('\n').length + (ln > 1 ? 1 : 0) + Math.min(before.at(-1).length, lines[ln - 1].length)
-		// The take so far comes out and goes back in with this note, so ⌘Z undoes it whole.
-		if (take?.last === text()) undo(view)
-		if (take?.base !== text()) take = { base: text() }
-		put(r.text, caret)
-		Object.assign(take, { last: text(), id, from: h.from })
-		clearTimeout(typing)
-		sent = text()
-		jb.setText(sent)
-		flush()
-	}
-	const piano = Prec.highest(
-		EditorView.domEventHandlers({
-			keydown: (e) => {
-				if (!jb.piano() || e.metaKey || e.ctrlKey || e.altKey || !playKey(e)) return false
-				e.preventDefault()
-				return true
-			},
-			keyup: (e) => void (held.has(e.code) && release(e.code)),
-			blur: () => {
-				for (const code of [...held.keys()]) release(code)
-			},
-		}),
-	)
-
 	// A voice's name: a click mutes it, ⌥-click solos it. A finger has no ⌥:
 	// holding solos, and the lift that follows isn't a tap.
 	function channel(v, e, el) {
@@ -417,16 +314,37 @@ export function Editor() {
 		return true
 	}
 
+	// A click on a line the pattern gets from the one it starts from makes it
+	// a line of its own, solid, with the caret where you clicked; a drum step
+	// flips as it does.
+	function realize(v, e, row) {
+		const block = row.closest('.inherited')
+		const at = v.posAtDOM(block)
+		const found = inherited(text()).find((b) => b.at === at)?.lines[row.dataset.i]
+		if (!found) return false
+		e.preventDefault()
+		const hit = e.target.closest?.('[data-col]')
+		const col = Number(hit?.dataset.col ?? found.text.length)
+		const step = hit?.matches('.step')
+		const line = step ? found.text.slice(0, col) + flip(found.text[col]) + found.text.slice(col + 1) : found.text
+		v.focus()
+		write(at, at, '\n' + line, at + 1 + col + (step ? 1 : 0))
+		if (step && found.text[col] === '.') jb.audition(text(), found.voice, 'x')
+		return true
+	}
+
 	function pointerDown(e, v) {
 		const chip = e.target.closest?.('.chip')
 		if (chip) return channel(v, e, chip)
+		const faded = e.target.closest?.('.inherited .line')
+		if (faded && !e.button) return realize(v, e, faded)
 		if (e.altKey && !e.button && !e.metaKey && !e.ctrlKey) return nudgeDrag(v, e)
 		if (e.button || e.altKey || e.metaKey || e.ctrlKey || e.shiftKey) return false
-		const el = e.target.closest?.('.num, .pad, .inst, .chord')
+		const el = e.target.closest?.('.num, .step, .inst, .chord')
 		if (!el) return false
 		if (el.matches('.num')) return drag(v, e, el)
 		const pos = v.posAtDOM(el)
-		if (el.matches('.pad')) {
+		if (el.matches('.step')) {
 			e.preventDefault()
 			v.focus()
 			const step = v.state.sliceDoc(pos, pos + 1)
@@ -493,8 +411,14 @@ export function Editor() {
 		}
 		if (c !== picked) {
 			picked = c
-			const line = u.state.doc.lineAt(u.state.selection.main.head).text
-			if (c?.inst && !hush) hear(text(), /^\s*voice\s+(\S+)/i.exec(line)?.[1] ?? 'v', c.label)
+			if (c?.inst && !hush) {
+				// The line as it would read with this instrument, so it's a voice to hear.
+				const line = u.state.doc.lineAt(u.state.selection.main.head)
+				const name = /^\s*voice\s+(\S+)/i.exec(line.text)?.[1] ?? 'v'
+				const rest = /^\s*voice\s+\S+\s+\S+(\s.*)$/i.exec(line.text)?.[1] ?? ''
+				const t = text()
+				hear(t.slice(0, line.from) + `voice ${name} ${c.label}${rest}` + t.slice(line.to), name, c.label)
+			}
 		}
 	})
 
@@ -518,8 +442,8 @@ export function Editor() {
 						(b) => !PAGE_KEYS.has(b.key),
 					),
 				),
-				piano,
 				painted,
+				meaning,
 				ghost,
 				lint,
 				notes,
@@ -544,6 +468,13 @@ export function Editor() {
 	onSettled(() => {
 		shown = untrack(jb.name)
 		view = new EditorView({ parent: host, state: stateOf(untrack(jb.text)) })
+		// Pointing at a suggestion picks it, so it's the one lit, and an instrument plays.
+		view.dom.addEventListener('mouseover', (e) => {
+			const li = e.target.closest?.('.cm-tooltip-autocomplete li')
+			if (!li) return
+			const i = [...li.parentNode.children].filter((c) => c.tagName === 'LI').indexOf(li)
+			if (i >= 0 && i !== selectedCompletionIndex(view.state)) view.dispatch({ effects: setSelectedCompletion(i) })
+		})
 		useEditor({
 			value: text,
 			replace: (from, to, insert) => write(from, to, insert),

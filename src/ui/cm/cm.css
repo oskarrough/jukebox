@@ -63,12 +63,12 @@
 
 /* live controls: numbers to drag, instruments and chords to click, drum steps as pads */
 .cm .num {
-	cursor: ew-resize;
+	cursor: all-scroll;
 	border-bottom: 1px dotted var(--dim);
 }
 .scrubbing,
 .scrubbing * {
-	cursor: ew-resize !important;
+	cursor: all-scroll !important;
 	user-select: none;
 }
 .cm .inst {
@@ -77,29 +77,39 @@
 .cm .chord {
 	cursor: pointer;
 }
-/* each pad is its step and a hair either side */
-.cm .line .pad {
-	padding: 0.15em 0;
-	border-inline: 1px solid transparent;
+/* each step is one character of the score and nothing wider: one character of the score, so bars line up with the text around them.
+   It is taller than the text, and its hit area taller still */
+.cm .line .step {
+	--gap: inset 1px 0 var(--key), inset -1px 0 var(--key);
+	position: relative;
+	padding: 0.2em 0;
 	border-radius: 3px;
-	background: var(--panel) padding-box;
+	background: var(--panel);
+	box-shadow: var(--gap);
 	color: transparent;
 	cursor: pointer;
 }
-.cm .line .pad[data-hit='o'] {
-	background: color-mix(in srgb, var(--c) 45%, var(--panel)) padding-box;
+.cm .line .step::after {
+	content: '';
+	position: absolute;
+	inset: -0.45em 0;
 }
-.cm .line .pad[data-hit='x'],
-.cm .line .pad[data-hit='X'] {
-	background: var(--c) padding-box;
+.cm .line .step[data-hit='o'] {
+	background: color-mix(in srgb, var(--c) 45%, var(--panel));
 }
-.cm .line .pad[data-hit='X'] {
-	box-shadow: inset 0 -3px color-mix(in lab, var(--c-black) 40%, transparent);
+.cm .line .step[data-hit='x'],
+.cm .line .step[data-hit='X'] {
+	background: var(--c);
 }
-.cm .line.here .pad {
+.cm .line .step[data-hit='X'] {
+	box-shadow:
+		var(--gap),
+		inset 0 -3px color-mix(in lab, var(--c-black) 40%, transparent);
+}
+.cm .line.here .step {
 	color: var(--ink);
 }
-.cm .line .pad:hover {
+.cm .line .step:hover {
 	filter: brightness(0.92);
 }
 
@@ -122,8 +132,7 @@
 	padding: 1px 0.5rem;
 	border-radius: 5px;
 }
-.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected],
-.cm-tooltip.cm-tooltip-autocomplete > ul > li:hover {
+.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected] {
 	background: var(--panel);
 	color: var(--ink);
 }
@@ -184,4 +193,26 @@
 }
 .cm .line .chip.fresh {
 	outline: 2px solid var(--yellow);
+}
+
+/* lines a pattern gets from the one it starts from: faded, until you touch one */
+.cm .inherited {
+	opacity: 0.4;
+	cursor: pointer;
+}
+.cm .inherited .line {
+	padding: 0 0.7rem;
+	min-height: 1.6em;
+	white-space: pre-wrap;
+}
+/* a % or _ drawn as the bar it means */
+.cm .again {
+	opacity: 0.35;
+}
+.cm .again.silent {
+	opacity: 0.25;
+	box-shadow: inset 0 -1px 0 var(--dim);
+}
+.cm .again .step {
+	color: transparent;
 }

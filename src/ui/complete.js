@@ -8,7 +8,7 @@
 import { CHORDS, DRUMS, LOW, MELODIC, OPTIONS, PARTS, PATTERN_OPTIONS, SETTINGS, noteToMidi, parse } from '../score.js'
 import { prefersFlats, transposeNoteName } from '../key.js'
 import { INSTRUMENTS as SOUNDS } from '../instruments.js'
-import { HINTS } from './hints.js'
+import { HINTS, START } from './hints.js'
 
 export const INSTRUMENTS = [...MELODIC, ...DRUMS]
 // The instruments in the guide's order, each with its group and how it sounds.
@@ -107,7 +107,7 @@ export function suggest(text, pos, key, all = false) {
 		return word || blank
 			? offer(
 					OPTIONS.filter((o) => !new RegExp(`\\s${o}=`, 'i').test(before) && !(o === 'part' && DRUMS.includes(m[1].toLowerCase()))),
-					(w) => w + '=',
+					(w) => `${w}=${START[w] ?? ''}`,
 					{ say: told, free: true },
 				)
 			: null
@@ -118,7 +118,9 @@ export function suggest(text, pos, key, all = false) {
 		return blank ? offer([others.at(-1), ...others].filter(Boolean), undefined, { likely: true }) : null
 	}
 	if (/^\s*pattern\s+\S+\s/i.test(before))
-		return word || blank ? offer(['from', ...PATTERN_OPTIONS], (w) => w + (w === 'from' ? ' ' : '='), { say: told, free: true }) : null
+		return word || blank
+			? offer(['from', ...PATTERN_OPTIONS], (w) => (w === 'from' ? 'from ' : `${w}=${START[w]}`), { say: told, free: true })
+			: null
 	if ((m = /^\s*(play|loop)\s(.*?)\w*$/i.exec(before))) {
 		if (word) return offer(patterns)
 		if (!blank) return null

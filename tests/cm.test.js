@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { flip, hintAt, numbersIn, scrub } from '../src/ui/cm/controls.js'
+import { drift, flip, hintAt, numbersIn, scrub } from '../src/ui/cm/controls.js'
+import { OPTIONS } from '../src/score.js'
+import { START } from '../src/ui/hints.js'
+import { suggest } from '../src/ui/complete.js'
+import { inherited, repeats } from '../src/ui/cm/meaning.js'
 
 describe('numbers you can drag', () => {
 	test("a voice's options", () => {
@@ -44,7 +48,7 @@ describe('what the pointer is over', () => {
 		expect(hintAt('voice keys rhodes vol=0.4', 13, names, drums)).toEqual({ start: 11, voice: 'keys', inst: 'rhodes' })
 	})
 	test('an option, a chord, a drum bar', () => {
-		expect(hintAt('voice keys rhodes vol=0.4', 19, names, drums).tip).toMatch(/^Volume/)
+		expect(hintAt('voice keys rhodes vol=0.4', 19, names, drums).tip).toMatch(/loud/)
 		expect(hintAt('chords | Dm9 |', 10, names, drums).tip).toBe('D3 F3 A3 C4 E4')
 		expect(hintAt('kick | x... x... |', 9, names, drums)).toEqual({ start: 7, tip: expect.stringMatching(/hit/) })
 	})
@@ -68,4 +72,60 @@ test("a voice's name says it mutes, and plays its instrument", () => {
 	})
 	expect(hintAt('saz | D4 |', 1, ['saz'], new Set(), chips).inst).toBe('saz')
 	expect(hintAt('keys | C4 |', 1, ['keys'], new Set(), { ...chips, insts: { keys: 'rhodes' } }).tip).toMatch(/^Unmute keys/)
+})
+
+describe('the shorthand, said plainly', () => {
+	const song = [
+		'pattern A',
+		'chords | C | F |',
+		'kick | x... |',
+		'keys | C4 |',
+		'',
+		'pattern A2 from A',
+		'kick | x.x. |',
+		'',
+		'loop A A2',
+	].join('\n')
+	test('a pattern built on another shows the lines it does not write', () => {
+		const r = inherited(song)
+		expect(r.map((b) => [b.name, b.lines.map((l) => l.voice)])).toEqual([['A2', ['chords', 'keys']]])
+		expect(song.slice(r[0].at - 13, r[0].at)).toBe('kick | x.x. |')
+	})
+	test('a muted voice or a chain', () => {
+		const t = song.replace('loop', 'mute keys\n\npattern A3 from A2\n\nloop')
+		expect(inherited(t).map((b) => [b.name, b.lines.map((l) => l.voice)])).toEqual([
+			['A2', ['chords']],
+			['A3', ['chords', 'kick']],
+		])
+	})
+	test('a % is the bar before it, a _ is silence', () => {
+		const t = 'kick | x... | % | _ | %\nkeys | C4 D4 | %'
+		expect(repeats(t).map((r) => [t.slice(r.from, r.to), r.silent, r.bar, r.voice])).toEqual([
+			['%', false, 'x...', 'kick'],
+			['_', true, 'x...', 'kick'],
+			['%', true, 'x...', 'kick'],
+			['%', false, 'C4 D4', 'keys'],
+		])
+	})
+	test('a bar carries on to the next line', () => {
+		const t = 'kick | x... |\n| %'
+		expect(repeats(t).map((r) => r.bar)).toEqual(['x...'])
+	})
+})
+
+describe('what an option starts at', () => {
+	test('every option goes in with a value to drag', () => {
+		for (const o of OPTIONS) if (o !== 'part') expect(START[o]).toMatch(/^-?[\d.]+$|^[A-G]/)
+		expect(START.echo).toBe('3')
+	})
+	test('suggestions write them in', () => {
+		const s = suggest('voice keys rhodes ', 18, { letter: 'C', acc: '', pc: 0 }, true)
+		expect(s.items.find((i) => i.word === 'echo').insert).toBe('echo=3')
+		expect(s.items.find((i) => i.word === 'pan').insert).toBe('pan=0.0')
+	})
+	test('up drags a number up, like a knob', () => {
+		expect(drift(0, -12)).toBe(2)
+		expect(drift(12, 0)).toBe(2)
+		expect(drift(6, 6)).toBe(0)
+	})
 })
