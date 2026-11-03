@@ -8,7 +8,7 @@ import { INSTRUMENTS } from '../src/instruments.js'
 import { addSection, moveSection, removeSection, repeatSection, sectionsOf } from '../src/ui/arrange.js'
 import { paint } from '../src/ui/paint.js'
 import { caretAt, columnOf, marksFor } from '../src/ui/link.js'
-import { nudge, stepsOf, toggleStep } from '../src/ui/nudge.js'
+import { nudge } from '../src/ui/nudge.js'
 import { suggest } from '../src/ui/complete.js'
 import { HINTS } from '../src/ui/hints.js'
 import { inferKey, keyOf, setSongKey, starter, transposeScore } from '../src/key.js'
@@ -383,14 +383,6 @@ kick | x... .o.. X... .... |`
 		expect(go('x... .o', 1)).toContain('kick | X...')
 		expect(go('.o..', 1, false, 1)).toContain('.x..')
 		expect(go('X...', 1)).toBeNull()
-	})
-
-	test('pads switch steps, keeping the spacing or writing out % and _', () => {
-		const line = 'kick | x... .... | % | _ |'
-		expect(stepsOf(line, 1, 8)).toEqual([...'x.......'])
-		const r = toggleStep(line, 0, 4, 8)
-		expect(line.slice(0, r.start) + r.to + line.slice(r.end)).toBe('kick | x... x... | % | _ |')
-		expect(toggleStep(line, 2, 0, 8).to).toBe(' x....... ')
 	})
 })
 

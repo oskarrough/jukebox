@@ -1,8 +1,7 @@
 // Nudging what's under the caret, with ⌥↑/↓ or an ⌥-drag: a note moves a
 // semitone (an octave when `big`), a number by its last digit (ten of them),
-// a drum step from . to o to x to X. And the step pads' toggle.
+// a drum step from . to o to x to X.
 import { prefersFlats, transposeNoteName, transposeToken } from '../key.js'
-import { barAt } from './link.js'
 
 const MUSIC = /^(\s*)([A-Za-z_]\w*)(?:@\d+)?\s*\|/
 const DRUM_STEPS = '.oxX'
@@ -60,31 +59,4 @@ export function nudge(text, pos, dir, big, drums, key) {
 		return at(a, z, to)
 	}
 	return null
-}
-
-// Step `i` of bar `k` on drum line `line`, switched on or off: { start, end,
-// to } replacing the whole bar, its % or _ written out first. `steps` is how
-// many steps a bar holds.
-export function toggleStep(line, k, i, steps) {
-	const bar = barAt(line, k)
-	if (!bar) return null
-	const hits = stepsOf(line, k, steps)
-	hits[i] = hits[i] === '.' ? 'x' : '.'
-	// Keep the bar's spacing when it already spells out every step.
-	let to
-	if (bar.text.replace(/\s/g, '').length === steps) {
-		let n = 0
-		to = bar.text.replace(/\S/g, () => hits[n++])
-	} else to = ` ${hits.join('')} `
-	return { start: bar.start, end: bar.end, to }
-}
-
-// The steps of bar `k` on a drum line, as characters, with % and _ worked out.
-export function stepsOf(line, k, steps) {
-	const bar = barAt(line, k)
-	if (!bar) return []
-	const s = bar.text.replace(/\s/g, '')
-	if (s === '%' && k > 0) return stepsOf(line, k - 1, steps)
-	if (s === '%' || s === '_' || s === '=') return Array(steps).fill('.')
-	return [...s.padEnd(steps, '.').slice(0, steps)]
 }

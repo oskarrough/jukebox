@@ -1,7 +1,8 @@
 // How the score looks in CodeMirror: each voice in its roll colour, the bars,
 // rests and comments as paint.js splits them; the beat ruler in the bar being
 // written; numbers you can drag, drum steps as pads; the rest of the likeliest
-// suggestion faint after the caret; and a line's mistake told at its end.
+// suggestion faint after the caret; and a line's mistake told at its end,
+// with a red edge on the line.
 import { StateEffect, StateField } from '@codemirror/state'
 import { Decoration, ViewPlugin, WidgetType } from '@codemirror/view'
 import { completionStatus, selectedCompletion } from '@codemirror/autocomplete'
@@ -128,7 +129,8 @@ export const ghost = ViewPlugin.fromClass(
 )
 
 // A line's mistake, told at its end: the first it can fix, else the first;
-// a click on its fix puts it in.
+// a click on its fix puts it in. The line gets a red edge.
+const WRONG = Decoration.line({ class: 'wrong' })
 class Note extends WidgetType {
 	constructor(d) {
 		super()
@@ -178,7 +180,10 @@ export const notes = ViewPlugin.fromClass(
 				const was = told.get(ln)
 				if (!was || (!was.actions?.length && d.actions?.length)) told.set(ln, d)
 			})
-			const out = [...told].map(([ln, d]) => Decoration.widget({ widget: new Note(d), side: 2 }).range(state.doc.line(ln).to))
+			const out = [...told].flatMap(([ln, d]) => {
+				const line = state.doc.line(ln)
+				return [WRONG.range(line.from), Decoration.widget({ widget: new Note(d), side: 2 }).range(line.to)]
+			})
 			return Decoration.set(out, true)
 		}
 	},
