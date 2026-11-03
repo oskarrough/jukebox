@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { compile, parseKey } from '../src/score.js'
 import { starter } from '../src/key.js'
+import { growRepeats } from '../src/bricks.js'
 import { addPad, barsOf, harmonyVoice, padChords, writeChord } from '../src/ui/pad.js'
 
 const rowOf = (text, name = 'A') => compile(text, name).loop.sections[0].chords.map((c) => c.sym)
@@ -77,6 +78,21 @@ describe('a chord tapped in', () => {
 		expect(out.text.split('\n')[3]).toBe('chords@3 | Dm | F |')
 		expect(rowOf(out.text, 'A')).toEqual(['C', 'F', 'G', 'C'])
 		expect(rowOf(out.text, 'B')).toEqual(['C', 'F', 'Dm', 'F'])
+	})
+})
+
+describe('tapping a progression', () => {
+	test('each tap the next bar, and the bricks follow across them all', () => {
+		let t =
+			'key C\nvoice kick kick\nvoice pad pad vol=0.35\npattern A\nchords | C |\nkick | x... x... x... x... |\npad  | x--- ---- ---- ---- |\nloop A'
+		;['Am', 'F', 'G', 'C'].forEach((sym, bar) => {
+			const was = t
+			t = growRepeats(ok(writeChord(t, 'A', bar, sym)).text, was)
+		})
+		expect(t).toContain('chords | Am | F | G | C |')
+		expect(t).toContain('kick | x... x... x... x... | % | % | % |')
+		expect(t).toContain('pad  | x--- ---- ---- ---- | % | % | % |')
+		expect(barsOf(t, 'A')).toEqual({ row: 4, voices: 4 })
 	})
 })
 

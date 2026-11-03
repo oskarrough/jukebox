@@ -2,9 +2,9 @@
 // its text as you edit it, what's muted, how the game would place it, and
 // the audio playing it. Components read the signals and call the actions.
 import { createEffect, createMemo, createRoot, createSignal, createStore, flush, untrack } from 'solid-js'
-import { BRICKS, addBrick, brickBar, brickInto } from '../bricks.js'
+import { BRICKS, addBrick, brickBar, brickInto, brickVoice, growRepeats, tonic } from '../bricks.js'
 import { EFFECTS, SOURCES, effectState, runChain } from '../effects.js'
-import { inferKey, newTitle, setSongKey, starter, transposeBrick } from '../key.js'
+import { inferKey, newTitle, setSongKey, starter } from '../key.js'
 import { chordToMidis, compile, noteToMidi, parse, parseKey } from '../score.js'
 import { addSection as addPattern, moveSection, removeSection, repeatSection, sectionsOf } from './arrange.js'
 import { fate, neighbour, reinsert } from './discard.js'
@@ -83,11 +83,11 @@ export const jb = createRoot(() => {
 		keepDrafts()
 	}
 
-	// Where the caret is in the score (from caretAt), and whether the song
-	// loops just the pattern it's in.
+	// Where the caret is in the score (from caretAt), and the pattern the song
+	// loops, if it loops one: the one the caret was in when you asked.
 	const [caret, setCaret] = createSignal(null)
-	const [looping, setLooping] = createSignal(false)
-	const only = createMemo(() => (looping() ? (caret()?.pattern ?? null) : null))
+	const [only, setOnly] = createSignal(null)
+	const looping = () => !!only()
 
 	// The score as it stands, errors and all, and each song as it last played.
 	const parsed = createMemo(() => compileText(text()))
@@ -107,6 +107,13 @@ export const jb = createRoot(() => {
 	const marks = createMemo(() => marksFor(song(), caret()))
 	const songs = createMemo(() => names().map((n) => ({ name: n, song: songOf(n), made: made().includes(n) })))
 	const colors = createMemo(() => (song() ? voiceColors(song()) : []))
+	// The voice the piano and the tape's brush play into: the one you chose,
+	// else the song's first melodic voice.
+	const [chosenVoice, chooseVoice] = createSignal(null)
+	const activeVoice = createMemo(() => {
+		const voices = song()?.voices ?? []
+		return (voices.find((v) => v.name === chosenVoice() && !v.drum) ?? voices.find((v) => !v.drum))?.name ?? null
+	})
 	const key = createMemo(() => {
 		const s = song()
 		return (s && (s.key || inferKey(s))) || parseKey('C')
@@ -253,7 +260,7 @@ export const jb = createRoot(() => {
 			if (!playing) setPos(Math.min(from, length(s)))
 		},
 	)
-	// Looping, the caret moving to another pattern loops that one from its top.
+	// Looping another pattern plays it from its top.
 	createEffect(
 		() => only(),
 		(o) => {
@@ -267,15 +274,9 @@ export const jb = createRoot(() => {
 		},
 	)
 
-	// The caret moved to `at`. When you moved it, a stopped song waits at the
-	// bar you're in, to play from there; a change drawn on the roll moves it
-	// too, but the roll holds still.
-	let drawing = false
-	function follow(at, byHand) {
-		setCaret(at)
-		const first = byHand && !playing && !drawing ? marksFor(untrack(song), at).first : null
-		if (first != null) seek(first)
-	}
+	// The caret moved to `at`. Playing stays where it is: only Play, a
+	// section or the tape moves it.
+	const follow = (at) => setCaret(at)
 	// Where the score's caret should go next: { ln, col }.
 	const [wanted, setWanted] = createSignal(null)
 	const reveal = (ln, col = 0) => setWanted({ ln, col })
@@ -353,10 +354,11 @@ export const jb = createRoot(() => {
 		const brick = BRICKS.find((b) => b.id === id)
 		const s = song()
 		if (!brick) return
-		const b = transposeBrick(brick, key())
 		const [tempo, beats, steps] = [s?.tempo ?? 120, s?.beats ?? 4, s?.steps ?? 4]
+		// A melodic brick on the chord sounding now, or the key's own.
+		const row = brick.part ? `chords | ${untrack(chordNow) ?? tonic(key())} |\n` : ''
 		const one = compileText(
-			`tempo ${tempo}\nbeats ${beats}\nsteps ${steps}\nvoice ${b.voice} ${b.inst} vol=${b.vol}\npattern A\n${b.voice} | ${brickBar(b, beats * steps)} |\nloop A`,
+			`tempo ${tempo}\nbeats ${beats}\nsteps ${steps}\n${brickVoice(brick)}\npattern A\n${row}${brick.voice} | ${brickBar(brick, beats * steps)} |\nloop A`,
 		)
 		if (one.voices[0]) sample([one.voices[0]], one.loop.events)
 	}
@@ -377,22 +379,31 @@ export const jb = createRoot(() => {
 		}
 		setText(next)
 	}
+	// What you typed: a pattern it made longer takes its bricks along, as an
+	// edit of its own.
+	function typed(t) {
+		const was = text()
+		setText(t)
+		if (compileText(t).errors.length) return
+		const grown = growRepeats(t, was)
+		if (grown !== t) rewrite(grown)
+	}
 
 	// Writes a change drawn on the roll into the score as one edit, and puts
 	// the caret on line `ln` at `col`, where it landed.
 	function draw(next, ln, col) {
-		drawing = true
 		rewrite(next)
-		drawing = false
 		flush()
 		reveal(ln, col)
 	}
 
 	// Plays the song from section `s` (from sections), its pattern where the
-	// caret is, so ⌘L loops it.
+	// caret is; looping, it loops that one instead.
 	function playSection(s) {
 		reveal(s.ln)
 		if (!untrack(only)) seek(s.start)
+		else if (untrack(only) !== s.name) setOnly(s.name)
+		else seek(0)
 		if (!playing) play()
 	}
 	// Moves section `from` to the gap before `to`, or copies it there.
@@ -411,7 +422,7 @@ export const jb = createRoot(() => {
 		rewrite(next)
 		flush()
 		const s = untrack(sections).all.findLast((s) => s.name === added)
-		if (s) playSection(s)
+		if (s) reveal(s.ln)
 	}
 
 	// The chord pad: open or not, what its modifier makes of a chord, and a bar
@@ -451,8 +462,11 @@ export const jb = createRoot(() => {
 		const here = live() ? sectionAt(nowPlaying(), pos()) : null
 		const pattern =
 			here?.sec.name ?? [caret()?.pattern, sectionAt(nowPlaying(), pos())?.sec.name].find((n) => names.includes(n)) ?? names[0]
+		// A bar the last tap left, while you keep tapping: two bars' wait and
+		// it goes back to the bar playing.
 		const pick = picked()
-		if (pick?.pattern === pattern) return pick
+		const stale = here && pick?.at != null && performance.now() - pick.at > 2000 * here.sec.barDur
+		if (pick?.pattern === pattern && !stale) return pick
 		if (here) return { pattern, bar: here.bar }
 		const { row, voices } = barsIn(compileText(text(), pattern).loop.sections[0])
 		return { pattern, bar: voices && row >= voices ? 0 : row }
@@ -467,17 +481,16 @@ export const jb = createRoot(() => {
 		const beat = 60 / (s?.tempo ?? 100)
 		sample([voice], [{ t: 0, d: 4 * beat * voice.gate, vel: 0.8, m: m.map((n) => n + voice.trans) }])
 	}
-	// Writes chord `sym` where the next chord goes, as one edit. Stopped, the
-	// tap after goes in the bar after it.
+	// Writes chord `sym` where the next chord goes, as one edit, and the
+	// pattern's bricks grow with it. The tap after goes in the bar after it.
 	function tapChord(sym) {
 		const at = untrack(target)
-		const out = writeChord(score(), at.pattern, at.bar, sym)
+		const was = score()
+		const out = writeChord(was, at.pattern, at.bar, sym)
 		if (!out) return
-		draw(out.text, out.ln, out.col)
+		draw(growRepeats(out.text, was), out.ln, out.col)
 		const pattern = at.pattern ?? parse(out.text).song.patternOrder[0]
-		const { voices } = barsIn(compileText(out.text, pattern).loop.sections[0])
-		const next = at.bar + 1
-		setPicked(playing || !voices ? null : { pattern, bar: next < voices ? next : 0 })
+		setPicked({ pattern, bar: at.bar + 1, at: playing ? performance.now() : null })
 	}
 	// A pad that plays the chord row, in every pattern.
 	function addChordVoice() {
@@ -485,8 +498,6 @@ export const jb = createRoot(() => {
 		rewrite(next)
 		setFresh(voice)
 		setTimeout(() => setFresh(null), 600)
-		flush()
-		if (!playing) play()
 	}
 
 	// The piano: the computer keyboard plays notes into the score.
@@ -500,7 +511,7 @@ export const jb = createRoot(() => {
 	// goes on from where that pattern first comes.
 	function toggleLoop() {
 		const was = untrack(only)
-		setLooping((on) => !on)
+		setOnly(was ? null : (untrack(caret)?.pattern ?? sectionAt(untrack(nowPlaying), untrack(pos))?.sec.name ?? null))
 		flush()
 		const first = was ? marksFor(untrack(song), { pattern: was, k: -1 }).first : 0
 		seek(first ?? 0)
@@ -508,6 +519,7 @@ export const jb = createRoot(() => {
 
 	function pick(n) {
 		setName(n)
+		chooseVoice(null)
 		setPicked(null)
 		from = 0
 		setPos(0)
@@ -557,8 +569,6 @@ export const jb = createRoot(() => {
 		rewrite(next)
 		setFresh(voice)
 		setTimeout(() => setFresh(null), 600)
-		flush()
-		if (!playing) play()
 	}
 
 	// Gives the song a new title, as one edit in the score.
@@ -734,7 +744,7 @@ export const jb = createRoot(() => {
 	return {
 		name,
 		text,
-		setText,
+		setText: typed,
 		parsed,
 		song,
 		whole,
@@ -747,6 +757,9 @@ export const jb = createRoot(() => {
 		addSection,
 		shown,
 		colors,
+		activeVoice,
+		chooseVoice,
+		score,
 		key,
 		tag,
 		setTag,

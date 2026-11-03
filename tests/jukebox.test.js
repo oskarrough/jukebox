@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { compile, noteToMidi, parseKey, MELODIC, DRUMS } from '../src/score.js'
 import { mtof } from '../src/synth.js'
 import { HEAR, cueAt, join, shape, runChain, effectState, EFFECTS } from '../src/player.js'
-import { BRICKS, addBrick, brickInto } from '../src/bricks.js'
+import { BRICKS, addBrick, brickInto, growRepeats } from '../src/bricks.js'
 import { INSTRUMENTS } from '../src/instruments.js'
 import { addSection, moveSection, removeSection, repeatSection, sectionsOf } from '../src/ui/arrange.js'
 import { paint } from '../src/ui/paint.js'
@@ -159,13 +159,60 @@ describe('loop bricks', () => {
 		const song = (key) => `key ${key}\nvoice a sine\npattern A\na | C4 |\nloop A`
 		const pad = BRICKS.find((b) => b.id === 'pad')
 		const arp = BRICKS.find((b) => b.id === 'arp')
-		expect(addBrick(song('E'), pad).text).toMatch(/\[E\]/)
-		expect(addBrick(song('E'), pad).text).not.toMatch(/\[Em\]/)
-		expect(addBrick(song('Em'), pad).text).toMatch(/\[Em\]/)
-		expect(addBrick(song('C'), pad).text).toMatch(/\[C\]/)
-		const third = (text) => /^arp\s*\|\s*(\S+) (\S+) (\S+)/m.exec(text).slice(1, 4)
-		expect(third(addBrick(song('E'), arp).text)).toEqual(['E5', 'G#5', 'B5'])
-		expect(third(addBrick(song('Em'), arp).text)).toEqual(['E5', 'G5', 'B5'])
+		expect(addBrick(song('E'), pad).text).toMatch(/^chords \| E \|$/m)
+		expect(addBrick(song('Em'), pad).text).toMatch(/^chords \| Em \|$/m)
+		expect(addBrick(song('Eb'), pad).text).toMatch(/^chords \| Eb \|$/m)
+		const third = (text) => {
+			const s = compile(text)
+			const v = s.voices.findIndex((v) => v.name === 'arp')
+			return s.loop.events
+				.filter((e) => e.v === v)
+				.slice(0, 3)
+				.flatMap((e) => e.m)
+		}
+		expect(third(addBrick(song('E'), arp).text)).toEqual([76, 80, 83])
+		expect(third(addBrick(song('Em'), arp).text)).toEqual([76, 79, 83])
+	})
+})
+
+describe('bricks grow with the song', () => {
+	const brick = (id) => BRICKS.find((b) => b.id === id)
+	const lineOf = (t, v) => t.split('\n').find((l) => l.startsWith(`${v} `) || l.startsWith(`${v}|`))
+
+	test('a melodic brick plays the chord row, and brings the key’s chord if there is none', () => {
+		let t = addBrick('key Am\nvoice kick kick\npattern A\nkick | x... x... x... x... |\nloop A', brick('pad')).text
+		expect(t).toContain('pattern A\nchords | Am |\nkick')
+		t = addBrick(t, brick('arp')).text
+		expect(t.match(/^chords/gm)).toHaveLength(1)
+		expect(compile(t).errors).toEqual([])
+		const into = brickInto(
+			'voice kick kick\npattern A\nkick | x... x... x... x... |\npattern B\nkick | x... x... x... x... |\nloop A B',
+			brick('pulse'),
+			'B',
+		).text
+		expect(into).toContain('pattern B\nchords | C |\n')
+		expect(compile(into).errors).toEqual([])
+	})
+
+	test('a brick fills every bar of its pattern, the chord row too', () => {
+		const t = addBrick('voice kick kick\npattern A\nchords | C | Am | F | G |\nloop A', brick('pad')).text
+		expect(lineOf(t, 'pad')).toBe('pad  | x--- ---- ---- ---- | % | % | % |')
+	})
+
+	test('a longer pattern takes its bricks along', () => {
+		let t = 'voice kick kick\npattern A\nchords | C |\nloop A'
+		for (const id of ['kick', 'hats', 'pad', 'arp', '808']) t = addBrick(t, brick(id)).text
+		const longer = t.replace('chords | C |', 'chords | C | Am | F | G |')
+		const grown = growRepeats(longer, t)
+		for (const v of ['kick', 'hat', 'pad', 'arp', 'b808']) expect(lineOf(grown, v)).toMatch(/\| % \| % \| % \|$/)
+		const song = compile(grown)
+		const pad = song.voices.findIndex((v) => v.name === 'pad')
+		expect(song.loop.events.filter((e) => e.v === pad).map((e) => e.m[0] % 12)).toEqual([0, 0, 0, 11])
+		// Nothing longer, nothing grows: undoing a grow stays undone.
+		expect(growRepeats(longer, longer)).toBe(longer)
+		// A line of notes, or one that changes from bar to bar, is left as written.
+		const own = 'voice a sine\nvoice kick kick\npattern A\na | C4 D4 E4 F4 |\nkick | x... | .x.. |\nchords | C | F |\nloop A'
+		expect(growRepeats(own)).toBe(own)
 	})
 })
 
@@ -248,11 +295,12 @@ describe('song key', () => {
 		expect(inG).toMatch(/^key\s+G$/m)
 		expect(inG).not.toMatch(/^(voice|pattern)\s/m)
 		const pulse = BRICKS.find((b) => b.id === 'pulse')
-		const { text } = addBrick('key G\nvoice a sine\npattern A\na | G4 |\nloop A', pulse)
-		expect(text).toMatch(/G2/)
-		expect(text).not.toMatch(/C2/)
-		const { text: inC } = addBrick('key C\nvoice a sine\npattern A\na | C4 |\nloop A', pulse)
-		expect(inC).toMatch(/C2/)
+		const root = (text) =>
+			compile(text)
+				.loop.events.find((e) => e.v === 1)
+				.m.map((n) => n % 12)
+		expect(root(addBrick('key G\nvoice a sine\npattern A\na | G4 |\nloop A', pulse).text)).toEqual([7])
+		expect(root(addBrick('key C\nvoice a sine\npattern A\na | C4 |\nloop A', pulse).text)).toEqual([0])
 	})
 
 	test('changing key transposes notes and chords in the score', () => {
@@ -520,7 +568,7 @@ describe('arranging sections', () => {
 		// Another instrument for the same part gets its own voice, in place of the old one there.
 		t = brickInto(t, brick('pulse'), 'A3').text
 		t = brickInto(t, brick('bounce'), 'A3').text
-		expect(heard(t).A3).toEqual(['bass2', 'kick'])
+		expect(heard(t).A3).toEqual(['bass2', 'chords', 'kick'])
 		expect(compile(t).voices.find((v) => v.name === 'bass2').inst).toBe('ebass')
 		// A mute of the brick's voice in that pattern goes.
 		expect(heard(brickInto(KONVOI, brick('arp'), 'A2').text).A2).toContain('arp')
