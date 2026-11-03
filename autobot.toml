@@ -1,3 +1,9 @@
-# Settings for arbe-file-as-issues: user feedback from the jukebox's inkast list becomes GitHub issues.
+# Settings for arbe-file-as-issues, arbe-create-threads-from-issues and arbe-autobot.
 repo = "oskarrough/jukebox"
-inbox = { inkast = "bje7gakd", key = "~/.config/inkast/jukebox.env", label = "user-feedback" }
+inbox = { inkast = "psmy9pmw", key = "~/.config/inkast/jukebox.env", label = "player-feedback" }
+bb = { project = "proj_cd6wmkac89", machine = "office-linux" }
+orchestrator = "pi openai-codex/gpt-6.1-sol low"
+fix = "claude-code claude-opus-5-5 medium"
+verify = "claude-code claude-opus-5-5 medium"
+max_threads = 3
+lookback = "2 hours" # schedule interval plus overlap

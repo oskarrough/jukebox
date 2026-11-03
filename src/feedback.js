@@ -1,6 +1,6 @@
 // Quick feedback from the jukebox: one text box, sent to the inkast list.
 // The write URL is public by design; anyone can add to the list, nobody can read it.
-export const INKAST = 'https://inkast.0sk.ar/bje7gakd'
+export const INKAST = 'https://inkast.0sk.ar/psmy9pmw'
 export const MAX_TEXT = 2000
 
 export function shortAgent(ua, touch = false) {
