@@ -1,0 +1,73 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Kit</title>
+<script type="module">
+	import '@fontsource-variable/inter'
+	import '@fontsource/ia-writer-mono/400.css'
+	import '../src/App.css'
+	import '../src/ui/kit.css'
+</script>
+<style>
+	.case {
+		max-width: 46rem;
+		margin: 2rem auto;
+		padding: 1.6rem 1.8rem;
+		display: grid;
+		gap: 1.6rem;
+		border-radius: var(--r);
+		background: var(--body);
+		box-shadow: var(--hi), var(--drop);
+	}
+	.row {
+		display: flex;
+		gap: 0.6rem;
+		align-items: center;
+		flex-wrap: wrap;
+	}
+	h2 {
+		margin: 0 0 0.6rem;
+		font: 600 0.65rem var(--sans);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--dim);
+	}
+</style>
+<div class="case">
+	<div>
+		<h2>Key</h2>
+		<div class="row">
+			<span class="k"><button class="go">▶</button></span>
+			<span class="k"><button>⟲</button></span>
+			<span class="k"><button class="on">♪</button></span>
+			<span class="k"><button>⊞</button></span>
+			<span class="k"><button>+</button></span>
+			<span class="k"><button>Backbeat</button></span>
+		</div>
+	</div>
+	<div>
+		<h2>Segment</h2>
+		<div class="row">
+			<span class="seg"><button class="on">nkgta</button><button>dodgethis</button><button>cumbia</button></span>
+			<span class="seg"><button>C</button><button class="on">D</button><button>E</button></span>
+			<span class="seg"><button>maj</button><button class="on">min</button></span>
+		</div>
+	</div>
+	<div>
+		<h2>Chip</h2>
+		<div class="row">
+			<button class="chip" style="--c: var(--c-chrome-yellow)">stab</button>
+			<button class="chip" style="--c: var(--c-light-blue)">sub</button>
+			<button class="chip on" style="--c: var(--c-emerald-green)">kick</button>
+			<button class="chip off" style="--c: var(--c-pink)">rim</button>
+		</div>
+	</div>
+	<div>
+		<h2>Together</h2>
+		<div class="row">
+			<span class="k"><button class="go">▶</button></span>
+			<span class="seg"><button class="on">♪</button><button>⊞</button></span>
+			<span class="seg"><button>C</button><button class="on">D</button></span>
+			<button class="chip" style="--c: var(--c-chrome-yellow)">stab</button>
+		</div>
+	</div>
+</div>

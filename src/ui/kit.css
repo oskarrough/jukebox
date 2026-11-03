@@ -1,0 +1,73 @@
+/* The controls. A key is a face sitting in a well, like one segment on its own;
+   a segment is several faces sharing a well; a chip is a small face in its
+   voice's ink. On is a black face. Nothing moves when it turns on. */
+.k,
+.seg {
+	display: inline-flex;
+	gap: 3px;
+	padding: 3px;
+	border-radius: 11px;
+	background: var(--panel);
+	box-shadow: var(--well);
+}
+.k > button,
+.seg > button {
+	--f: var(--key);
+	--t: var(--ink);
+	all: unset;
+	box-sizing: border-box;
+	display: inline-grid;
+	place-items: center;
+	height: 1.85rem;
+	min-width: 1.85rem;
+	padding: 0 0.7rem;
+	border-radius: 8px;
+	font: 600 0.8rem var(--sans);
+	color: var(--t);
+	background: var(--sheen), var(--f);
+	box-shadow:
+		var(--hi),
+		0 1px 0 var(--edge);
+	cursor: pointer;
+}
+.k > button:hover,
+.seg > button:hover {
+	--f: color-mix(in lab, var(--key) 90%, var(--grey));
+}
+.k > button:active,
+.seg > button:active {
+	box-shadow: inset 0 1px 2px color-mix(in lab, var(--c-black) 30%, transparent);
+}
+.k > .on,
+.seg > .on,
+.seg > .on:hover {
+	--f: var(--ink);
+	--t: var(--key);
+	box-shadow: inset 0 1px 2px color-mix(in lab, var(--c-black) 50%, transparent);
+}
+.k > .go {
+	--f: var(--c-chrome-yellow);
+	--t: var(--ink);
+}
+.chip {
+	all: unset;
+	display: inline-grid;
+	place-items: center;
+	height: 1.4rem;
+	padding: 0 0.4rem;
+	border-radius: 5px;
+	font: 600 0.8rem var(--sans);
+	color: var(--ink);
+	background: var(--c);
+	box-shadow: 0 1px 0 color-mix(in lab, var(--c) 60%, var(--c-black));
+	cursor: pointer;
+}
+.chip.on {
+	outline: 2px solid var(--ink);
+	outline-offset: 1px;
+}
+.chip.off {
+	background: none;
+	box-shadow: inset 0 0 0 1.5px var(--c);
+	opacity: 0.6;
+}

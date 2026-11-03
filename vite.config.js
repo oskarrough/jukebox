@@ -30,10 +30,17 @@ const saveSongs = {
 		return [...(this.environment.moduleGraph.getModulesByFile(fileURLToPath(new URL('./src/songs.js', import.meta.url))) ?? [])]
 	},
 	configureServer(server) {
-		// Serve the standalone tool before Solid's page handler takes the URL.
-		server.middlewares.use((req, res, next) => {
-			if (!['GET', 'HEAD'].includes(req.method) || new URL(req.url, 'http://x').pathname !== '/tools/vein.html') return next()
-			const page = readFileSync(new URL('./tools/vein.html', import.meta.url))
+		// Serve the standalone pages in tools/ before Solid's page handler takes the URL.
+		server.middlewares.use(async (req, res, next) => {
+			const { pathname: path, search } = new URL(req.url, 'http://x')
+			if (!['GET', 'HEAD'].includes(req.method) || search || !/^\/tools\/[\w-]+\.html$/.test(path)) return next()
+			let page
+			try {
+				page = readFileSync(new URL(`.${path}`, import.meta.url), 'utf8')
+			} catch {
+				return next()
+			}
+			page = await server.transformIndexHtml(path, page)
 			res.setHeader('Content-Type', 'text/html; charset=utf-8')
 			res.end(req.method === 'HEAD' ? undefined : page)
 		})
