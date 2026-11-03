@@ -1,4 +1,4 @@
-// A file name from a song's title: "Noch nicht am Feld" is noch-nicht-am-feld.
+// A file name from a song's title: "Karl-Marx-Straße" is karl-marx-strasse.
 export const slug = (title) =>
 	title
 		.replace(/ß/g, 'ss')
