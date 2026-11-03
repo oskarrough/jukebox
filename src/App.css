@@ -64,6 +64,8 @@
 	--body: color-mix(in lab, var(--grey) 14%, color-mix(in lab, var(--c-naples-yellow) 6%, var(--c-snow-white)));
 	--panel: color-mix(in lab, var(--grey) 26%, var(--c-snow-white));
 	--key: color-mix(in lab, var(--c-naples-yellow) 3%, var(--c-snow-white));
+	--cap: color-mix(in lab, var(--grey) 70%, var(--c-snow-white));
+	--cap-hover: color-mix(in lab, var(--grey) 55%, var(--c-snow-white));
 	--ink: var(--c-b-black);
 	--dim: color-mix(in lab, var(--grey) 75%, var(--c-black));
 	--line: color-mix(in lab, var(--grey) 42%, var(--c-snow-white));
@@ -184,7 +186,9 @@ svg {
 	padding: 0;
 	border: 0;
 	border-radius: 8px;
-	background: var(--key);
+	--edge: color-mix(in lab, var(--grey) 55%, var(--c-black));
+	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 45%, transparent);
+	background: var(--sheen) var(--cap);
 	color: var(--ink);
 }
 /* the keys' one material: lip, edge, drop; down by their travel when pressed,
@@ -219,7 +223,7 @@ svg {
 		0 0 0 var(--edge);
 }
 .icon:hover {
-	background: var(--c-white);
+	background: var(--sheen) var(--cap-hover);
 }
 .icon[aria-pressed='true'],
 .icon[aria-expanded='true'] {
@@ -236,13 +240,6 @@ svg {
 .icon.add {
 	width: 100%;
 	flex: none;
-	background: transparent;
-	box-shadow: inset 0 0 0 1.5px var(--line);
-	color: var(--dim);
-}
-.icon.add:hover {
-	color: var(--ink);
-	box-shadow: inset 0 0 0 1.5px var(--dim);
 }
 
 /* top bar */
@@ -460,13 +457,13 @@ svg {
 	appearance: none;
 	border: 0;
 	height: 2.2rem;
-	background: var(--key);
+	background: var(--sheen) var(--cap);
 	padding: 0 0.6rem;
 	font: 650 0.78rem var(--sans);
 	text-align: center;
 }
 .key-picker select:hover {
-	background: var(--c-white);
+	background: var(--sheen) var(--cap-hover);
 }
 .game-toggle.on {
 	--edge: color-mix(in lab, var(--c-vermilion) 65%, var(--c-black));
@@ -670,7 +667,7 @@ input[type='range']::-moz-range-thumb {
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
-/* the styles for a new song: a tray of keys over the + */
+/* the styles for a new song: a tray of keys over the + (or under it) */
 .icon.add {
 	anchor-name: --add;
 }
@@ -681,6 +678,8 @@ input[type='range']::-moz-range-thumb {
 	left: anchor(left);
 	width: anchor-size(width);
 	margin: 0 0 0.4rem;
+	/* below the + when there's no room above it */
+	position-try-fallbacks: flip-block;
 	padding: 0.4rem;
 	border: 0;
 	border-radius: var(--r);
@@ -1019,12 +1018,14 @@ input[type='range']::-moz-range-thumb {
 	min-height: 2.4rem;
 	border: 0;
 	border-radius: 8px;
-	background: var(--key);
+	--edge: color-mix(in lab, var(--grey) 55%, var(--c-black));
+	--hi: inset 0 1px 0 color-mix(in lab, var(--c-white) 45%, transparent);
+	background: var(--sheen) var(--cap);
 	font: 650 0.75rem/1 var(--sans);
 	padding: 0.35rem 0.2rem;
 }
 .pad:hover {
-	background: var(--c-white);
+	background: var(--sheen) var(--cap-hover);
 }
 .pad.on {
 	--edge: color-mix(in lab, var(--c-vermilion) 65%, var(--c-black));
