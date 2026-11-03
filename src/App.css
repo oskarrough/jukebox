@@ -15,7 +15,7 @@
 	--yellow: #ffcf2e;
 	--red: #d6341a;
 	--sans: 'Inter Variable', system-ui, sans-serif;
-	--score: 'iA Writer Quattro', var(--mono);
+	--score: 'iA Writer Mono', var(--mono);
 	--mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
 	--r: 12px;
 	--side: 14rem;

@@ -13,9 +13,9 @@ import { GamePanel } from './ui/GamePanel.jsx'
 import { Guide } from './ui/Guide.jsx'
 import { Feedback } from './ui/Feedback.jsx'
 import '@fontsource-variable/inter'
-import '@fontsource/ia-writer-quattro/400.css'
-import '@fontsource/ia-writer-quattro/400-italic.css'
-import '@fontsource/ia-writer-quattro/700.css'
+import '@fontsource/ia-writer-mono/400.css'
+import '@fontsource/ia-writer-mono/400-italic.css'
+import '@fontsource/ia-writer-mono/700.css'
 import './App.css'
 
 export default function App() {
