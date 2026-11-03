@@ -168,34 +168,19 @@ export function transposeBrick(brick, key) {
 	}
 }
 
-// A new song: a blank canvas in C (or the key you give it) with only its head.
-// Tagged with `tag` when you're looking at one; a tag that is a game also says
-// which game it's for. Otherwise it's an NK GTA song.
-export function starter(key = 'C', { title = 'New song', tag = '', game = '' } = {}) {
+// A new song: a blank canvas in C (or the key you give it) with only its head,
+// tagged with `tag` when you're looking at one.
+export function starter(key = 'C', { title = 'New song', tag = '' } = {}) {
 	const k = typeof key === 'string' ? parseKey(key) : key
 	const head = [`title    ${title}`]
-	if (game) head.push(`game     ${game}`)
-	head.push(`tags     ${tag || 'nkgta'}`, `key      ${k?.name ?? 'C'}`)
+	if (tag) head.push(`tags     ${tag}`)
+	head.push(`key      ${k?.name ?? 'C'}`)
 	return `${head.join('\n')}\ntempo    100\nbeats    4\nsteps    4\n`
 }
 
-// A name for a new song, two short words from around Berlin, that no song
-// has yet.
-const FIRST = [
-	'Späti',
-	'Kiez',
-	'Kotti',
-	'Hinterhof',
-	'Ringbahn',
-	'Spree',
-	'Currywurst',
-	'Mauerpark',
-	'Nachtbus',
-	'Flohmarkt',
-	'Altbau',
-	'Tresor',
-]
-const SECOND = ['Blues', 'Schicht', 'Express', 'Runde', 'Fahrt', 'Kater', 'Dub', 'Gedicht', 'Lied', 'Pause', 'Rausch', 'Walzer']
+// A name for a new song, two short words, that no song has yet.
+const FIRST = ['Velvet', 'Paper', 'Neon', 'Lazy', 'Golden', 'Quiet', 'Static', 'Little', 'Silver', 'Hollow', 'Sunday', 'Electric']
+const SECOND = ['Moon', 'Engine', 'Garden', 'River', 'Echo', 'Signal', 'Parade', 'Weather', 'Island', 'Machine', 'Window', 'Planet']
 
 export function newTitle(taken = [], random = Math.random) {
 	const used = new Set(taken.map((t) => t.toLowerCase()))

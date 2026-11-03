@@ -558,11 +558,9 @@ export const jb = createRoot(() => {
 	function create() {
 		let n = 'new'
 		for (let i = 2; names().includes(n); i++) n = `new-${i}`
-		// Filtered by a tag, the song starts with it, and with its game if it is one.
-		const t = untrack(tag) ?? ''
-		const game = songs().some((s) => s.song?.game === t) ? t : ''
+		// Filtered by a tag, the song starts with it.
 		const title = newTitle(songs().map((s) => s.song?.title ?? s.name))
-		const blank = starter('C', { title, tag: t, game })
+		const blank = starter('C', { title, tag: untrack(tag) ?? '' })
 		if (playing) stop()
 		setMade((m) => [...m, n])
 		setTexts((s) => void (s[n] = blank))

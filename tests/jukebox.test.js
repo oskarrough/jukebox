@@ -506,15 +506,10 @@ describe('arranging sections', () => {
 import { newTitle } from '../src/key.js'
 
 describe('new songs start right', () => {
-	test('a new song is NK GTA unless a tag says otherwise', () => {
-		expect(compile(starter('C')).tags).toEqual(['nkgta'])
+	test('a new song has no tags unless you are looking at one', () => {
+		expect(compile(starter('C')).tags).toEqual([])
 		expect(compile(starter('C')).game).toBe('')
-		const tagged = compile(starter('C', { tag: 'wip' }))
-		expect(tagged.tags).toEqual(['wip'])
-		expect(tagged.game).toBe('')
-		const game = compile(starter('C', { tag: 'dodgethis', game: 'dodgethis' }))
-		expect(game.tags).toEqual(['dodgethis'])
-		expect(game.game).toBe('dodgethis')
+		expect(compile(starter('C', { tag: 'wip' })).tags).toEqual(['wip'])
 	})
 
 	test('a new song gets its own title, never one a song has', () => {

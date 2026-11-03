@@ -37,7 +37,7 @@ describe('the pad', () => {
 
 describe('a chord tapped in', () => {
 	test('starts a new song with a pattern and its row', () => {
-		const t = starter('C', { title: 'Kiez Dub' })
+		const t = starter('C', { title: 'Velvet Echo' })
 		let out = ok(writeChord(t, 'A', 0, 'Am'))
 		expect(out.text.endsWith('\npattern A\nchords | Am |\n\nloop A\n')).toBe(true)
 		expect(out.text.split('\n')[out.ln - 1].slice(out.col, out.col + 2)).toBe('Am')
