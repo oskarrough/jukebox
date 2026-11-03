@@ -24,14 +24,15 @@ export const GuideIcon = () => (
 )
 export const LoopIcon = () => (
 	<svg viewBox="0 0 20 20">
-		<path d="M4 9.5V8a2.5 2.5 0 0 1 2.5-2.5H15M12.5 3 15 5.5 12.5 8" />
-		<path d="M16 10.5V12a2.5 2.5 0 0 1-2.5 2.5H5M7.5 17 5 14.5 7.5 12" />
+		<path d="M12 5.5h2.5a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3H8" />
+		<path d="M10 3.5l2 2-2 2" />
 	</svg>
 )
 export const PianoIcon = () => (
 	<svg viewBox="0 0 20 20">
-		<rect x="2.5" y="4.5" width="15" height="11" rx="1.5" />
-		<path d="M7.5 4.5v11M12.5 4.5v11M6 4.5v5.5h3V4.5M11 4.5v5.5h3V4.5" />
+		<rect x="2.5" y="4" width="15" height="12" rx="1.5" />
+		<path d="M7.5 11v5M12.5 11v5" />
+		<path d="M6 4h3v7H6zM11 4h3v7h-3z" fill="currentColor" stroke="none" />
 	</svg>
 )
 export const FeedbackIcon = () => (
@@ -47,10 +48,9 @@ export const PlusIcon = () => (
 )
 export const BricksIcon = () => (
 	<svg viewBox="0 0 20 20">
-		<rect x="3" y="3" width="6" height="6" rx="1" />
-		<rect x="11" y="3" width="6" height="6" rx="1" />
-		<rect x="3" y="11" width="6" height="6" rx="1" />
-		<path d="M14 11v6M11 14h6" />
+		<rect x="2.5" y="10.5" width="7" height="6" rx="1" />
+		<rect x="10.5" y="10.5" width="7" height="6" rx="1" />
+		<rect x="6.5" y="3.5" width="7" height="6" rx="1" />
 	</svg>
 )
 export const PlayIcon = () => (

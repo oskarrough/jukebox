@@ -180,16 +180,6 @@ svg {
 	gap: 0.5rem;
 	min-width: 0;
 }
-.brand {
-	font-size: 1.35rem;
-	font-weight: 900;
-	letter-spacing: -0.04em;
-	margin: 0 0.4rem 0 0.2rem;
-}
-.brand::after {
-	content: '.';
-	color: var(--orange);
-}
 .lcd {
 	flex: 1;
 	min-width: 0;
@@ -941,9 +931,6 @@ kbd {
 }
 
 @media (min-width: 941px) and (max-width: 1100px) {
-	.brand {
-		display: none;
-	}
 	.lcd {
 		grid-template-columns: minmax(5rem, 9rem) minmax(8rem, 1fr) auto auto;
 	}
@@ -1002,7 +989,6 @@ kbd {
 	.top {
 		display: contents;
 	}
-	.brand,
 	.top > .piano-toggle {
 		display: none;
 	}

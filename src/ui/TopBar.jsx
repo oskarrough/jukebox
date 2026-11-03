@@ -24,13 +24,11 @@ const MoreIcon = () => (
 	</svg>
 )
 
-// A chord: three notes on one stem.
+// The chord pad: a wheel with a triad on it.
 const ChordIcon = () => (
 	<svg viewBox="0 0 20 20">
-		<path d="M13 3v11.5" />
-		<ellipse cx="10.5" cy="15" rx="2.5" ry="1.8" />
-		<ellipse cx="10.5" cy="11" rx="2.5" ry="1.8" />
-		<ellipse cx="10.5" cy="7" rx="2.5" ry="1.8" />
+		<circle cx="10" cy="10" r="6.5" />
+		<path d="M10 3.5h.01M15.6 13.2h.01M4.4 13.2h.01" stroke-width="3.6" />
 	</svg>
 )
 
@@ -50,7 +48,6 @@ export function TopBar() {
 					<SidebarIcon />
 				</button>
 			</span>
-			<b class="brand">jukebox</b>
 			<span class="k play">
 				<button id="play" class="go" type="button" title={jb.live() ? 'Stop (Space, ⌘↩)' : 'Play (Space, ⌘↩)'} onClick={jb.toggle}>
 					{jb.live() ? <StopIcon /> : <PlayIcon />}
