@@ -50,7 +50,7 @@
 	outline: 2px solid var(--ink);
 	outline-offset: 2px;
 }
-.k > :is(button, a):not(.on, [aria-pressed='true']):hover,
+.k > :is(button, a):not(.on, .go, [aria-pressed='true']):hover,
 .seg > button:not(.on, [aria-pressed='true']):hover {
 	--f: color-mix(in lab, var(--key) 90%, var(--grey));
 }
@@ -69,6 +69,9 @@
 .k > .go {
 	--f: var(--c-chrome-yellow);
 	--t: var(--ink);
+}
+.k > .go:hover {
+	--f: color-mix(in lab, var(--c-chrome-yellow) 85%, var(--c-chrome-yellow-deep));
 }
 .chip {
 	all: unset;

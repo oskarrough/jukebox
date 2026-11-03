@@ -7,7 +7,7 @@ import { moment, record, recordStep } from './record.js'
 import { jb } from './state.js'
 import './piano.css'
 
-export function VoicePicker() {
+function VoicePicker() {
 	return (
 		<div class="brush-voices">
 			<For each={jb.song()?.voices ?? []} keyed={(v) => v.name}>

@@ -306,7 +306,34 @@ svg {
 .sections.holding > .section {
 	cursor: grabbing;
 }
-/* the play line: light over a black face, dark over the rest */
+/* on the screen, segments and keys glow on black instead of sitting on it */
+.lcd .seg,
+.lcd .k {
+	background: color-mix(in lab, var(--c-white) 4%, var(--screen));
+	box-shadow: inset 0 1px 3px var(--c-black);
+}
+.lcd .seg > button,
+.lcd .k > button {
+	--f: color-mix(in lab, var(--c-white) 9%, var(--screen));
+	--t: color-mix(in lab, var(--lit) 50%, var(--screen));
+	background: var(--f);
+	box-shadow: none;
+	font-family: var(--mono);
+	font-weight: 500;
+}
+.lcd .seg > button:hover,
+.lcd .k > button:hover {
+	--f: color-mix(in lab, var(--c-white) 15%, var(--screen));
+}
+.lcd .sections > .here {
+	--t: var(--lit);
+}
+.lcd .seg > .on,
+.lcd .seg > .on:hover {
+	--f: color-mix(in lab, var(--lit) 28%, var(--screen));
+	--t: var(--c-white);
+}
+/* the play line */
 .sections .head {
 	position: absolute;
 	top: 0;
@@ -314,8 +341,7 @@ svg {
 	left: calc(3px + (100% - 3px) * var(--x));
 	width: 2px;
 	margin-left: -1px;
-	background: var(--key);
-	mix-blend-mode: difference;
+	background: var(--lit);
 	border-radius: 1px;
 	pointer-events: none;
 }
@@ -406,6 +432,12 @@ input[type='range']::-moz-range-thumb {
 .tags {
 	flex-wrap: wrap;
 }
+/* tags are small faces: a filter, not the song list's equal */
+.songs .tags > button {
+	height: 1.4rem;
+	padding: 0 0.5rem;
+	font-size: 0.72rem;
+}
 .list {
 	display: flex;
 	flex-direction: column;
@@ -476,18 +508,17 @@ input[type='range']::-moz-range-thumb {
 .songs > .k > button {
 	flex: 1;
 }
+/* the dot says something or stays away: a ring while changes aren't saved,
+   the Play colour while the song sounds */
 .list button i {
 	flex: none;
 	width: 0.45rem;
 	height: 0.45rem;
 	border-radius: 50%;
-	background: var(--line);
-}
-.list button.on i {
-	background: color-mix(in lab, var(--c-french-grey) 55%, var(--c-black));
 }
 .list button.unsaved i {
-	background: var(--yellow);
+	box-shadow: inset 0 0 0 1.5px currentColor;
+	opacity: 0.6;
 }
 .k > .unsaved {
 	position: relative;
@@ -501,7 +532,7 @@ input[type='range']::-moz-range-thumb {
 	width: 0.4rem;
 	height: 0.4rem;
 	border-radius: 50%;
-	background: var(--yellow);
+	background: currentColor;
 }
 @media (hover: none) {
 	.list .entry:has(.on) .drop {
@@ -509,8 +540,8 @@ input[type='range']::-moz-range-thumb {
 	}
 }
 .live .list button.on i {
-	background: var(--orange);
-	box-shadow: 0 0 6px var(--orange);
+	background: var(--yellow);
+	box-shadow: 0 0 6px var(--yellow);
 }
 .list button span {
 	overflow: hidden;

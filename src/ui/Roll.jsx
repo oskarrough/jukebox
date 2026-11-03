@@ -17,7 +17,7 @@ import { addNote, blocked, moveNote, nameOf, noteAt, placeAt, removeNote, setHit
 import { jb } from './state.js'
 import { ChordPad } from './ChordPad.jsx'
 import { Bricks } from './Bricks.jsx'
-import { Piano, VoicePicker } from './Piano.jsx'
+import { Piano } from './Piano.jsx'
 
 const TIPS = {
 	note: 'Find in the score; drag to move or stretch, double-click to delete',
@@ -70,6 +70,8 @@ export function Roll() {
 	// The brush never silently follows the caret or a different voice's note.
 	const voiceFor = (song) => song.voices.find((v) => v.name === jb.activeVoice() && !v.drum)
 	const ownEvent = (song, hit) => hit.event && (song.voices[hit.event.v].drum || song.voices[hit.event.v].name === jb.activeVoice())
+	// Another voice's note: clicking it picks that voice up as the brush.
+	const otherVoice = (song, hit) => hit.event && !ownEvent(song, hit) && song.voices[hit.event.v]
 	const sectionOf = (song, place) => song[place.tl].sections[place.i]
 	const stepOf = (sec) => 60 / sec.tempo / sec.steps
 	// Where an event on the roll is in the song, from the moment clicked.
@@ -126,6 +128,8 @@ export function Roll() {
 		if (!cur) return say('pointer', 'Jump here, and to the note in the score')
 		const hit = hitAt(e, cur.song)
 		if (hit.bar) return say('pointer', TIPS.chord)
+		const other = otherVoice(cur.song, hit)
+		if (other) return say('copy', `Draw with ${other.name}`)
 		if (ownEvent(cur.song, hit)) {
 			const drum = cur.song.voices[hit.event.v].drum
 			return say(drum ? 'pointer' : hit.end ? 'ew-resize' : 'grab', drum ? TIPS.hit : TIPS.note)
@@ -172,6 +176,12 @@ export function Roll() {
 		const hit = hitAt(e, song)
 		if (hit.bar) return jb.pickBar(hit.bar.section.name, hit.bar.b)
 		if (!cur || (hit.section && !hit.event)) return jump(hit)
+		const other = otherVoice(cur.song, hit)
+		if (other) {
+			jb.chooseVoice(other.name)
+			jb.showNote(hit.event, hit.section)
+			return
+		}
 		const start = { ...cur, x: e.clientX, y: e.clientY, moved: false, next: null, key: null }
 		if (ownEvent(cur.song, hit)) {
 			const v = cur.song.voices[hit.event.v]
@@ -308,7 +318,7 @@ export function Roll() {
 				onDblClick={remove}
 			/>
 			<span class="tape-brush" ref={brush} hidden aria-hidden="true" />
-			<Show when={jb.piano()} fallback={<VoicePicker />}>
+			<Show when={jb.piano()}>
 				<Piano />
 			</Show>
 			<Show when={jb.padOpen()}>
