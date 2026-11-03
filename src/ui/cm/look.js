@@ -24,13 +24,14 @@ export const info = StateField.define({
 const MUSIC = /^\s*(\w+)(@\d+)?\s*\|/
 const marks = new Map()
 // One mark per look, made once: `cls`, the voice colour `c`, a drum step's
-// `hit`, and for a voice's name, the voice and its place `i` in the song.
-function markOf(cls, c, hit, voice, i) {
-	const id = `${cls}|${c ?? ''}|${hit ?? ''}|${voice ?? ''}|${i ?? ''}`
+// `hit`, for a voice's name the voice and its place `i` in the song, and the
+// width `w` in letters a line's label is drawn to, so every bar starts in one column.
+function markOf(cls, c, hit, voice, i, w) {
+	const id = `${cls}|${c ?? ''}|${hit ?? ''}|${voice ?? ''}|${i ?? ''}|${w ?? ''}`
 	let m = marks.get(id)
 	if (!m) {
-		const attributes = {}
-		if (c) attributes.style = `--c: ${c}`
+		const attributes = { style: w ? `--w: ${w}` : '' }
+		if (c) attributes.style += `; --c: ${c}`
 		if (hit) attributes['data-hit'] = hit
 		if (voice) {
 			attributes['data-voice'] = voice
@@ -50,6 +51,7 @@ function paintView(view) {
 	const head = state.selection.main.head
 	const caretLine = state.doc.lineAt(head).number
 	const ruled = view.hasFocus && state.selection.main.empty ? ruler(state.doc.toString(), head) : null
+	const w = Math.max(6, ...names.map((n) => n.length))
 	const out = []
 	for (const { from, to } of view.visibleRanges) {
 		for (let pos = from; pos <= to;) {
@@ -58,13 +60,19 @@ function paintView(view) {
 			out.push((line.number === caretLine ? HERE : LINE).range(at))
 			const drum = drums.has(MUSIC.exec(line.text)?.[1])
 			let col = 0
+			let label = false
 			for (const [kind, text, voice] of paint(line.text, names)) {
+				// the spaces after a label, however many were typed, take one letter
+				if (label && kind === 'space') out.push(markOf('gap').range(at + col, at + col + text.length))
+				label = kind === 'name' || (kind === 'word' && text === 'chords')
 				const c = voice ? colors[voice] : null
 				if (drum && col > line.text.indexOf('|') && (kind === 'note' || kind === 'rest')) {
 					for (let i = 0; i < text.length; i++) out.push(markOf(`${kind} step`, c, text[i]).range(at + col + i, at + col + i + 1))
 				} else if (kind === 'name' && c) {
 					const cls = `name chip${muted.has(voice) ? ' off' : ''}${fresh === voice ? ' fresh' : ''}`
-					out.push(markOf(cls, c, null, voice, names.indexOf(voice)).range(at + col, at + col + text.length))
+					out.push(markOf(`${cls} wide`, c, null, voice, names.indexOf(voice), w).range(at + col, at + col + text.length))
+				} else if (kind === 'word' && text === 'chords' && col === line.text.indexOf('chords')) {
+					out.push(markOf('word wide', null, null, null, null, w).range(at + col, at + col + text.length))
 				} else if (kind !== 'space') out.push(markOf(kind, c).range(at + col, at + col + text.length))
 				col += text.length
 			}

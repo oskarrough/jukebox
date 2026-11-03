@@ -5,8 +5,8 @@
 // it, tap a drum step's pad, click a chord to open the chord pad on its bar.
 // ⌥↑/↓ or an ⌥-drag nudges the note, number or drum step there. Each writes
 // text, so ⌘Z, saving and agents still work.
-import { createEffect, createMemo, onSettled, untrack } from 'solid-js'
-import { Annotation, EditorState, Transaction } from '@codemirror/state'
+import { createEffect, createMemo, createSignal, onSettled, untrack } from 'solid-js'
+import { Annotation, Compartment, EditorState, Transaction } from '@codemirror/state'
 import { EditorView, closeHoverTooltips, hoverTooltip, keymap, drawSelection } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap, isolateHistory } from '@codemirror/commands'
 import {
@@ -422,6 +422,17 @@ export function Editor() {
 		}
 	})
 
+	// Painted, the score shows pads, chips and controls; plain, only its text.
+	const [plain, setPlain] = createSignal(localStorage.getItem('jukebox:plain') === '1')
+	const look = new Compartment()
+	const looks = () => (untrack(plain) ? [] : [painted, meaning, ghost, notes, hovers])
+	function togglePlain() {
+		const next = !plain()
+		setPlain(next)
+		localStorage.setItem('jukebox:plain', next ? '1' : '')
+		view?.dispatch({ effects: look.reconfigure(next ? [] : [painted, meaning, ghost, notes, hovers]) })
+	}
+
 	function stateOf(doc) {
 		return EditorState.create({
 			doc,
@@ -442,12 +453,8 @@ export function Editor() {
 						(b) => !PAGE_KEYS.has(b.key),
 					),
 				),
-				painted,
-				meaning,
-				ghost,
+				look.of(looks()),
 				lint,
-				notes,
-				hovers,
 				listen,
 				EditorView.contentAttributes.of({ 'aria-label': 'Score', spellcheck: 'false' }),
 				EditorView.domEventHandlers({
@@ -537,7 +544,18 @@ export function Editor() {
 
 	return (
 		<section class="editor">
-			<div class={{ code: true, cm: true, piano: jb.piano() }} ref={host} />
+			<div class={{ code: true, cm: true, piano: jb.piano(), plain: plain() }} ref={host}>
+				<span class="k look-toggle">
+					<button
+						type="button"
+						aria-pressed={String(plain())}
+						title={plain() ? 'Show pads and controls in the score' : 'Show the score as plain text'}
+						onClick={togglePlain}
+					>
+						{'{}'}
+					</button>
+				</span>
+			</div>
 		</section>
 	)
 }

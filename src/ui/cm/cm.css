@@ -201,6 +201,20 @@
 	outline-offset: 3px;
 }
 
+/* a line's label is drawn as wide as the longest, so every line's bars start in one column */
+.cm .line .wide {
+	display: inline-block;
+	min-width: calc(var(--w) * 1ch);
+	line-height: 1.2;
+}
+.cm .line .gap {
+	display: inline-block;
+	width: 1ch;
+	overflow: hidden;
+	vertical-align: bottom;
+	white-space: pre;
+}
+
 /* lines a pattern gets from the one it starts from: faded, until you touch one */
 .cm .inherited {
 	opacity: 0.4;
@@ -221,4 +235,15 @@
 }
 .cm .again .step {
 	color: transparent;
+}
+
+/* painted or plain, bottom right of the score */
+.cm .look-toggle {
+	position: absolute;
+	right: 0.6rem;
+	bottom: 0.6rem;
+	z-index: 5;
+}
+.cm .look-toggle > button {
+	font: 600 0.75rem var(--score);
 }
