@@ -18,9 +18,6 @@ import { NAMES, SONGS } from '../songs.js'
 // Hearing the song as written: every device bypassed.
 const DRY = Object.fromEntries(EFFECTS.map((d) => [d.id, { on: false }]))
 
-// How much of a starter style you hear when you point at it, in seconds.
-const TASTE = 4
-
 // Compiling is the slow part; the same text compiles once, and once more
 // looping just its pattern `only`.
 const compiled = new Map()
@@ -528,28 +525,13 @@ export const jb = createRoot(() => {
 		flush()
 	}
 
-	// The first few seconds of a style, quietly, to choose by ear.
-	let tasting = null
-	function hearStyle(id) {
-		const made = compileText(starter('C', { style: id }))
-		const events = made.loop.events.filter((e) => e.t < TASTE)
-		sample(made.voices, events, made.reverb)
-		clearTimeout(tasting)
-		tasting = setTimeout(stopSample, TASTE * 1000 + 600)
-	}
-	function stopStyle() {
-		clearTimeout(tasting)
-		stopSample()
-	}
-
-	// A new song, blank or in one of the starter styles.
-	function create(style = '') {
-		stopStyle()
+	// A new song, blank, with the bricks open to start it.
+	function create() {
 		let n = 'new'
 		for (let i = 2; names().includes(n); i++) n = `new-${i}`
 		// Filtered by a tag, the song starts with it.
 		const title = newTitle(songs().map((s) => s.song?.title ?? s.name))
-		const blank = starter('C', { title, tag: untrack(tag) ?? '', style })
+		const blank = starter('C', { title, tag: untrack(tag) ?? '' })
 		if (playing) stop()
 		setMade((m) => [...m, n])
 		setTexts((s) => void (s[n] = blank))
@@ -778,8 +760,6 @@ export const jb = createRoot(() => {
 		audition,
 		draw,
 		hearBrick,
-		hearStyle,
-		stopStyle,
 		stopSample,
 		piano,
 		togglePiano,

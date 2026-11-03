@@ -1,6 +1,5 @@
 // The songs: tag chips to narrow the list, a line per song, and a key to start a new one.
 import { createEffect, For, Show } from 'solid-js'
-import { STARTERS } from '../starters.js'
 import { jb } from './state.js'
 import { PlusIcon } from './Icons.jsx'
 
@@ -15,10 +14,9 @@ function discard(name) {
 	if (to) requestAnimationFrame(() => document.querySelector(`#songs [data-name="${to}"] .song`)?.focus())
 }
 
-// Makes the song in `style` and puts the key tray away.
-function make(style) {
-	document.getElementById('styles')?.hidePopover()
-	jb.create(style)
+// Makes a blank song, with the bricks open to start it.
+function make() {
+	jb.create()
 	leave()
 }
 
@@ -41,7 +39,7 @@ export function SongList() {
 			}}
 		>
 			<span class="k add">
-				<button type="button" title="Choose how to start a song" popovertarget="styles">
+				<button type="button" title="Start a new song" onClick={make}>
 					<PlusIcon />
 				</button>
 			</span>
@@ -106,38 +104,6 @@ export function SongList() {
 					</button>
 				</span>
 			</Show>
-			<div
-				id="styles"
-				popover
-				onToggle={(e) => {
-					if (e.newState === 'open') e.currentTarget.querySelector('button')?.focus()
-					else jb.stopStyle()
-				}}
-			>
-				<span class="k">
-					<button type="button" title="Start a blank song (Enter)" onClick={() => make('')}>
-						Blank
-					</button>
-				</span>
-				<For each={STARTERS}>
-					{(s) => (
-						<span class="k">
-							<button
-								type="button"
-								title={`Start a ${s.name.toLowerCase()} song`}
-								onClick={() => make(s.id)}
-								onPointerEnter={() => jb.hearStyle(s.id)}
-								onPointerLeave={() => jb.stopStyle()}
-								onFocus={(e) => {
-									if (!e.currentTarget.matches(':hover')) jb.hearStyle(s.id)
-								}}
-							>
-								{s.name}
-							</button>
-						</span>
-					)}
-				</For>
-			</div>
 		</nav>
 	)
 }

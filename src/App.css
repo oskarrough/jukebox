@@ -537,36 +537,6 @@ input[type='range']::-moz-range-thumb {
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
-/* the styles for a new song: a tray of keys over the + (or under it) */
-.add {
-	anchor-name: --add;
-}
-#styles {
-	position-anchor: --add;
-	inset: auto;
-	bottom: anchor(top);
-	left: anchor(left);
-	width: anchor-size(width);
-	margin: 0 0 0.4rem;
-	/* below the + when there's no room above it */
-	position-try-fallbacks: flip-block;
-	padding: 0.4rem;
-	border: 0;
-	border-radius: var(--r);
-	background: var(--panel);
-	box-shadow: var(--well), var(--drop);
-	overflow: visible;
-}
-#styles:popover-open {
-	display: grid;
-	grid-template-columns: repeat(3, 1fr);
-	gap: 0.35rem;
-}
-#styles .k > button {
-	flex: 1;
-	padding: 0 0.3rem;
-}
-
 /* the screen */
 .screen {
 	position: relative;

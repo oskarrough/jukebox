@@ -1,7 +1,6 @@
 // Song key: parse, infer, transpose the score text, and drop bricks into it.
 // Bricks and the new-song starter are written in C; they move with the song.
 import { CHORD_RE, compile, noteToMidi, parse, parseKey } from './score.js'
-import { STARTERS } from './starters.js'
 
 const SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 const FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
@@ -169,16 +168,14 @@ export function transposeBrick(brick, key) {
 	}
 }
 
-// A new song: a blank canvas in C (or the key you give it) with only its head,
-// or one of the `STARTERS` styles, in its own key. Tagged with `tag` when you're
-// looking at one.
-export function starter(key = 'C', { title = 'New song', tag = '', style = '' } = {}) {
-	const made = STARTERS.find((s) => s.id === style)
-	const k = typeof key === 'string' ? parseKey(made?.key ?? key) : key
+// A new song: a blank canvas in C (or the key you give it) with only its head.
+// Tagged with `tag` when you're looking at one.
+export function starter(key = 'C', { title = 'New song', tag = '' } = {}) {
+	const k = typeof key === 'string' ? parseKey(key) : key
 	const head = [`title    ${title}`]
 	if (tag) head.push(`tags     ${tag}`)
 	head.push(`key      ${k?.name ?? 'C'}`)
-	return `${head.join('\n')}\n${made?.text ?? 'tempo    100\nbeats    4\nsteps    4\n'}`
+	return `${head.join('\n')}\ntempo    100\nbeats    4\nsteps    4\n`
 }
 
 // A name for a new song: Untitled, then Untitled 2, 3 … until you name it.
