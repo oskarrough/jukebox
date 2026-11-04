@@ -1,4 +1,4 @@
-# Settings for the feedback loop (arbe-orchestrate's loop.md) and arbe-autobot.
+# Settings for arbe-file-as-issues and arbe-autobot.
 repo = "oskarrough/jukebox"
 inbox = { inkast = "psmy9pmw", key = "~/.config/inkast/jukebox.env", label = "player-feedback" }
 bb = { project = "proj_cd6wmkac89", machine = "office-linux" }
