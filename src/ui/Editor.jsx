@@ -24,6 +24,7 @@ import {
 } from '@codemirror/autocomplete'
 import { linter } from '@codemirror/lint'
 import { jb, useEditor } from './state.js'
+import { ChordLadder, holdChord } from './ChordPad.jsx'
 import { caretAt } from './link.js'
 import { nudge } from './nudge.js'
 import { sample, suggest } from './complete.js'
@@ -385,7 +386,8 @@ export function Editor() {
 			startCompletion(v)
 			return true
 		}
-		// A chord on the chord row: the chord pad opens on its bar.
+		// A chord on the chord row: dragged up or down it climbs its ladder; a
+		// click opens the chord pad on its bar.
 		const t = text()
 		const at = caretAt(t, pos)
 		if (!/^\s*chords\b/.test(v.state.doc.lineAt(pos).text) || !at.pattern) return false
@@ -395,7 +397,14 @@ export function Editor() {
 		e.preventDefault()
 		v.focus()
 		v.dispatch({ selection: { anchor: pos } })
-		jb.pickBar(at.pattern, bar < 0 ? at.k : bar)
+		const box = el.getBoundingClientRect()
+		holdChord(e, {
+			pattern: at.pattern,
+			bar: bar < 0 ? at.k : bar,
+			x: box.left + box.width / 2,
+			y: box.top + box.height / 2,
+			click: () => jb.pickBar(at.pattern, bar < 0 ? at.k : bar),
+		})
 		return true
 	}
 
@@ -598,6 +607,7 @@ export function Editor() {
 					</button>
 				</span>
 			</div>
+			<ChordLadder />
 		</section>
 	)
 }

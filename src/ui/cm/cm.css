@@ -278,3 +278,38 @@
 		left: 0;
 	}
 }
+
+/* a held chord's ladder: a chip for each chord it can become, above and
+   below it, the one it would land on lit; they glide out of the chord */
+.ladder {
+	inset: 0;
+	width: auto;
+	height: auto;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	overflow: visible;
+	pointer-events: none;
+}
+.ladder .k {
+	position: fixed;
+	left: var(--x);
+	top: var(--y);
+	translate: -50% -50%;
+	padding: 2px;
+	transition:
+		top 120ms ease-out,
+		opacity 120ms;
+	@starting-style {
+		top: var(--y0);
+		opacity: 0;
+	}
+}
+.ladder .k > button {
+	--t: var(--dim);
+	height: var(--chip);
+	padding: 0 0.4rem;
+	font-family: var(--mono);
+	transition: background 120ms;
+}

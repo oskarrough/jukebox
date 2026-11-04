@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { compile, parseKey } from '../src/score.js'
 import { starter } from '../src/key.js'
 import { growRepeats } from '../src/bricks.js'
-import { addPad, barsOf, harmonyVoice, padChords, writeChord } from '../src/ui/pad.js'
+import { addPad, barsOf, chordLadder, harmonyVoice, padChords, writeChord } from '../src/ui/pad.js'
 
 const rowOf = (text, name = 'A') => compile(text, name).loop.sections[0].chords.map((c) => c.sym)
 // Every tap leaves a song that still compiles.
@@ -117,5 +117,29 @@ describe('a pad to play them', () => {
 		expect(out.text.split('\n')[3]).toBe('voice pad2 pad vol=0.4 rev=0.6 bright=0.8')
 		expect(out.text.split('\n').at(-2)).toBe('pad2 | x----------- | % |')
 		expect(compile(out.text).errors).toEqual([])
+	})
+})
+
+describe('a chord dragged', () => {
+	test('climbs the circle of fifths in the key, the key’s own chords nearest', () => {
+		expect(chordLadder('Dm', parseKey('Dm'))).toEqual({ chords: ['Eb', 'Bb', 'F', 'C', 'Gm', 'Dm', 'Am', 'A7'], home: 5 })
+		expect(chordLadder('C', parseKey('C'))).toEqual({ chords: ['Bb', 'F', 'C', 'G', 'Dm', 'Am', 'Em'], home: 2 })
+	})
+	test('keeps its colour', () => {
+		expect(chordLadder('Dm9', parseKey('Dm')).chords).toEqual(['Ebmaj9', 'Bbmaj9', 'Fmaj9', 'C9', 'Gm9', 'Dm9', 'Am9', 'A9'])
+		expect(chordLadder('Am7', parseKey('C')).chords).toEqual(['Bbmaj7', 'Fmaj7', 'Cmaj7', 'G7', 'Dm7', 'Am7', 'Em7'])
+		expect(chordLadder('C6/9', parseKey('Dm'))).toMatchObject({ home: 3 })
+		for (const [sym, key] of [
+			['Bbmaj9', 'Dm'],
+			['C6/9', 'Dm'],
+			['Csus4', 'C'],
+			['F#m11', 'A'],
+		])
+			for (const c of chordLadder(sym, parseKey(key)).chords) expect(compile(`pattern A\nchords | ${c} |\nloop A`).errors).toEqual([])
+	})
+	test('a chord from outside the key takes its own rung', () => {
+		const out = chordLadder('E7', parseKey('C'))
+		expect(out.chords.at(-1)).toBe('E7')
+		expect(out.home).toBe(7)
 	})
 })

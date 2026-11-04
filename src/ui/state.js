@@ -9,7 +9,7 @@ import { chordToMidis, compile, noteToMidi, parse, parseKey } from '../score.js'
 import { addSection as addPattern, moveSection, removeSection, repeatSection, sectionsOf } from './arrange.js'
 import { fate, neighbour, reinsert } from './discard.js'
 import { columnOf, marksFor } from './link.js'
-import { addPad, barsIn, harmonyVoice, writeChord } from './pad.js'
+import { addPad, barsIn, followers, harmonyVoice, writeChord } from './pad.js'
 import { roll } from './dice.js'
 import { slug } from './slug.js'
 import { voiceColors } from '../roll.js'
@@ -104,6 +104,8 @@ export const jb = createRoot(() => {
 	// The arrangement a section being dragged would make, while it's held: the
 	// score with it, which the score and the tape show instead; and its song.
 	const [arranged, setArranged] = createSignal(null)
+	// Whether it's a chord being dragged, which a playing song plays too.
+	const [heldChord, setHeldChord] = createSignal(false)
 	const previewSong = createMemo(() => {
 		const t = arranged()
 		const s = t && compileText(t, only())
@@ -256,7 +258,7 @@ export const jb = createRoot(() => {
 
 	// An edit or another song swaps in what plays; muting turns voices down.
 	createEffect(
-		() => song(),
+		() => (heldChord() && previewSong()) || song(),
 		(s) => {
 			if (!s) {
 				if (playing) stop()
@@ -520,6 +522,33 @@ export const jb = createRoot(() => {
 		draw(growRepeats(out.text, was), out.ln, out.col)
 		const pattern = at.pattern ?? parse(out.text).song.patternOrder[0]
 		setPicked({ pattern, bar: at.bar + 1, at: playing ? performance.now() : null })
+	}
+	// A chord being dragged up or down its ladder: the score `t` with it,
+	// which the score and the tape show and a playing song plays, and every
+	// voice that follows the chord row strums it at bar `bar` of `pattern`;
+	// null when it's let go.
+	function holdChord(t, at) {
+		setArranged(t)
+		setHeldChord(t != null)
+		if (at) strum(t ?? text(), at)
+	}
+	function strum(t, { pattern, bar }) {
+		const s = compileText(t)
+		if (s.errors.length) return
+		const tl = [s.intro, s.loop].find((tl) => tl.sections.some((x) => x.name === pattern))
+		const sec = tl?.sections.find((x) => x.name === pattern)
+		if (!sec) return
+		const from = (tl === s.loop ? s.intro.dur : 0) + sec.start + bar * sec.barDur
+		const beat = 60 / sec.tempo
+		const play = followers(t)
+		const off = untrack(mutedSet)
+		const events = [...s.intro.events.map((e) => [e, e.t]), ...s.loop.events.map((e) => [e, e.t + s.intro.dur])]
+			.filter(([e, at]) => at >= from && at < from + beat && play.has(s.voices[e.v].name) && !off.has(s.voices[e.v].name))
+			.map(([e, at]) => ({ ...e, t: at - from, d: Math.min(e.d, 2 * beat) }))
+		if (events.length) return sample(s.voices, events, s.reverb)
+		const step = bar * sec.beats * sec.steps
+		const sym = sec.chords?.find((c) => step >= c.step && step < c.step + c.len)?.sym
+		if (sym) hearChord(sym)
 	}
 	// A pad that plays the chord row, in every pattern.
 	function addChordVoice() {
@@ -809,6 +838,7 @@ export const jb = createRoot(() => {
 		harmony,
 		chordNow,
 		hearChord,
+		holdChord,
 		tapChord,
 		addChordVoice,
 		inGame,

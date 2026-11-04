@@ -1,7 +1,7 @@
 // The chord pad, as text: the chords it lays out for a song's key, on the
 // circle of fifths with the key's own in the middle, and a tap written into
 // a pattern's chord row, the way you'd type it.
-import { compile, parse } from '../score.js'
+import { CHORD_RE, compile, parse } from '../score.js'
 import { prefersFlats } from '../key.js'
 import { BRICKS, brickVoice } from '../bricks.js'
 import { barAt } from './link.js'
@@ -38,6 +38,51 @@ export function padChords(key, mod) {
 	})
 }
 
+// The colour a chord's name gives it beyond major or minor, as the major,
+// minor and dominant ways to write it, like MODS: Dm9 is a 9th, C6/9 a 6/9.
+const COLOURS = [
+	[/^(maj|m|min)?$/, ['', 'm', '']],
+	[/^(maj7|m7|7|mmaj7)$/, MODS[7]],
+	[/^(maj9|m9|9)$/, MODS[9]],
+	[/^m?add9$/, MODS.add9],
+	[/^m?6$/, ['6', 'm6', '7']],
+	[/^m?6\/9$/, ['6/9', 'm6/9', '9']],
+	[/^m?11$/, ['add9', 'm11', '11']],
+	[/^(maj13|m13|13)$/, ['maj13', 'm13', '13']],
+	[/^\d*sus\d?$/, null],
+]
+
+// The chords chord `sym` can become in `key`, as a ladder up the circle of
+// fifths: the key's six major and minor chords (not the diminished one), the
+// major a fifth below them, and in a minor key its dominant 7th, each in
+// `sym`'s colour, `sym` itself in its own place. Returns { chords, home },
+// the chords from the bottom rung up and `sym`'s index.
+export function chordLadder(sym, key) {
+	const m = CHORD_RE.exec(sym)
+	if (!m) return { chords: [sym], home: 0 }
+	const suffix = m[3]
+	const colour = COLOURS.find(([re]) => re.test(suffix))
+	const [maj, min, dom] = colour ? (colour[1] ?? [suffix, suffix, suffix]) : ['', 'm', '']
+	const cols = padChords(key)
+	const at = (off) => cols[off + 3]
+	// Each rung: its root, where it sits round the circle from the key's major
+	// chord, and whether it's minor; minor first where both share a root.
+	const rungs = [-2, -1, 0, 1].map((off) => ({ sym: at(off).major + (off > 0 ? dom : maj), pos: off, minor: false }))
+	for (const off of [-1, 0, 1]) rungs.push({ sym: at(off).minor.slice(0, -1) + min, pos: off + 3, minor: true })
+	if (key.minor) rungs.push({ sym: at(1).minor.slice(0, -1) + (dom || '7'), pos: 4, minor: false })
+	// Where `sym` sits: in place of the rung on its root, or between them.
+	const home = pcOf(key.pc + (key.minor ? 3 : 0))
+	let pos = pcOf((pcOf(PCS[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0)) - home) * 7)
+	if (pos > 7) pos -= 12
+	const minor = /^m(?!aj)/.test(suffix) || /^dim/.test(suffix)
+	const own = rungs.findIndex((r) => r.pos === pos && r.minor === minor)
+	if (own >= 0) rungs[own].sym = sym
+	else rungs.push({ sym, pos, minor })
+	rungs.sort((a, b) => a.pos - b.pos || b.minor - a.minor)
+	return { chords: rungs.map((r) => r.sym), home: rungs.findIndex((r) => r.sym === sym) }
+}
+const PCS = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }
+
 const strip = (line) => line.replace(/(^|\s)#.*$/, '').trim()
 const MUSIC = /^([A-Za-z_]\w*)(?:@(\d+))?\s*\|/
 const STEPS = /^[xXo.\-\s]*[xXo][xXo.\-\s]*$/
@@ -46,10 +91,18 @@ const STEPS = /^[xXo.\-\s]*[xXo][xXo.\-\s]*$/
 // if any: the one to hear a chord on.
 export function harmonyVoice(text) {
 	const { song } = parse(text)
-	const follows = new Set()
+	const follows = followers(text, song)
+	return song.voices.find((v) => follows.has(v.name) && (v.part === 'chord' || v.part === 'rootless'))?.name ?? null
+}
+
+// The melodic voices that play the chord row's chords, by name: those with
+// steps (x, o) rather than notes.
+export function followers(text, song = parse(text).song) {
+	const out = new Set()
 	for (const p of Object.values(song.patterns))
-		for (const [name, lines] of Object.entries(p.raw)) if (lines.some((l) => l.bars.some((b) => STEPS.test(b)))) follows.add(name)
-	return song.voices.find((v) => !v.drum && follows.has(v.name) && (v.part === 'chord' || v.part === 'rootless'))?.name ?? null
+		for (const [name, lines] of Object.entries(p.raw)) if (lines.some((l) => l.bars.some((b) => STEPS.test(b)))) out.add(name)
+	for (const v of song.voices) if (v.drum) out.delete(v.name)
+	return out
 }
 
 // Where pattern `p`'s lines end: the last line of music or mute under it.

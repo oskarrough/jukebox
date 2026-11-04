@@ -15,7 +15,7 @@ import { compile } from '../score.js'
 import { prefersFlats, transposeToken } from '../key.js'
 import { addNote, blocked, moveNote, nameOf, noteAt, placeAt, removeNote, setHit, snap, stretchNote, timeAt } from './draw.js'
 import { jb } from './state.js'
-import { ChordPad } from './ChordPad.jsx'
+import { ChordPad, holdChord } from './ChordPad.jsx'
 import { Bricks } from './Bricks.jsx'
 import { Piano } from './Piano.jsx'
 
@@ -23,7 +23,7 @@ const TIPS = {
 	note: 'Find in the score; drag to move or stretch, double-click to delete',
 	hit: 'Switch this step on or off',
 	jump: 'Jump here, and to the pattern in the score',
-	chord: 'Pick a chord for this bar on the pad',
+	chord: 'Pick a chord for this bar on the pad; drag up or down to change it',
 	broken: 'Fix this bar in the score to draw here',
 }
 
@@ -183,7 +183,12 @@ export function Roll() {
 		if (e.button !== 0 || !song) return
 		const cur = current()
 		const hit = hitAt(e, song)
-		if (hit.bar) return jb.pickBar(hit.bar.section.name, hit.bar.b)
+		if (hit.bar) {
+			const { section, b } = hit.bar
+			const box = canvas.getBoundingClientRect()
+			const pick = () => jb.pickBar(section.name, b)
+			return cur ? holdChord(e, { pattern: section.name, bar: b, x: e.clientX, y: box.top + 26, click: pick }) : pick()
+		}
 		if (!cur || (hit.section && !hit.event)) return jump(hit)
 		const other = otherVoice(cur.song, hit)
 		if (other) {
