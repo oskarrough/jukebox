@@ -36,6 +36,8 @@ import './cm/cm.css'
 
 // A caret put somewhere by the roll, not by hand.
 const revealed = Annotation.define()
+// A section's drag showing its arrangement, not an edit.
+const previewed = Annotation.define()
 const lineOf = (state) => state.doc.lineAt(state.selection.main.head).number
 // The commands the page has on ⌘, which the score leaves alone.
 const PAGE_KEYS = new Set(['Mod-Enter', 'Mod-l', 'Mod-k', 'Mod-j', 'Mod-s'])
@@ -402,6 +404,7 @@ export function Editor() {
 	let picked = null
 	let hush = false
 	const listen = EditorView.updateListener.of((u) => {
+		if (u.transactions.some((tr) => tr.annotation(previewed))) return
 		if (u.docChanged) {
 			const t = u.state.doc.toString()
 			const outside = u.transactions.some((tr) => tr.annotation(isolateHistory))
@@ -544,6 +547,25 @@ export function Editor() {
 			write(a, now.length - z, t.slice(a, t.length - z))
 		},
 	)
+
+	// A section held in the strip: the score reads as its arrangement would,
+	// outside the undo history, until it's let go.
+	let before = null
+	createEffect(jb.preview, (t) => {
+		if (!view || (t == null && before == null)) return
+		if (before == null) before = text()
+		const next = t ?? before
+		if (t == null) before = null
+		const now = text()
+		let a = 0
+		while (a < now.length && now[a] === next[a]) a++
+		let z = 0
+		while (z < now.length - a && z < next.length - a && now[now.length - 1 - z] === next[next.length - 1 - z]) z++
+		view.dispatch({
+			changes: { from: a, to: now.length - z, insert: next.slice(a, next.length - z) },
+			annotations: [previewed.of(true), Transaction.addToHistory.of(false)],
+		})
+	})
 
 	// The roll asked for a line: the caret goes there, and into view.
 	createEffect(

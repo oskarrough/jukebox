@@ -295,6 +295,41 @@ svg {
 }
 .sections.holding > .section {
 	cursor: grabbing;
+	transition:
+		left 120ms ease-out,
+		width 120ms ease-out;
+}
+/* while one is held: where it can land, and below, where it goes to be taken out */
+.sections > .spot {
+	position: absolute;
+	bottom: 0;
+	left: calc(3px + (100% - 3px) * var(--x));
+	width: 4px;
+	height: 2px;
+	margin-left: -2px;
+	border-radius: 1px;
+	background: color-mix(in lab, var(--lit) 35%, transparent);
+	pointer-events: none;
+}
+.sections > .spot.on {
+	background: var(--lit);
+}
+.sections > .away {
+	position: absolute;
+	z-index: 2;
+	top: calc(100% + 6px);
+	left: 0;
+	right: 0;
+	height: calc(var(--face) + 6px);
+	border: 1px dashed color-mix(in lab, var(--lit) 35%, transparent);
+	border-radius: inherit;
+	background: var(--screen);
+	pointer-events: none;
+}
+.sections > .away.on {
+	border-style: solid;
+	border-color: var(--lit);
+	background: color-mix(in lab, var(--lit) 20%, var(--screen));
 }
 /* on the screen, segments and keys glow on black instead of sitting on it */
 .lcd .seg,

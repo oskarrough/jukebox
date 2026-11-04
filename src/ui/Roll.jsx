@@ -46,7 +46,16 @@ export function Roll() {
 			const song = jb.nowPlaying()
 			if (!song) return canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
 			const bar = jb.padOpen() ? jb.target() : null
-			const sounding = drawRoll(canvas, preview ?? song, jb.elapsed(), jb.mutedSet(), jb.marks(), ghost, drag?.song, bar)
+			const sounding = drawRoll(
+				canvas,
+				preview ?? jb.previewSong() ?? song,
+				jb.elapsed(),
+				jb.mutedSet(),
+				jb.marks(),
+				ghost,
+				drag?.song,
+				bar,
+			)
 			const next = song.voices.map((_, i) => (jb.live() && sounding.has(i) ? 1 : (levels[i] ?? 0) * 0.85))
 			const quiet = (l) => (l < 0.01 ? 0 : l)
 			if (next.some((l, i) => Math.abs(quiet(l) - quiet(levels[i] ?? 0)) > 0.01) || next.length !== levels.length)

@@ -101,6 +101,14 @@ export const jb = createRoot(() => {
 	// The whole song, even while one pattern loops, and its sections in play order.
 	const whole = createMemo(() => songOf(name()))
 	const sections = createMemo(() => sectionsOf(text(), whole()))
+	// The arrangement a section being dragged would make, while it's held: the
+	// score with it, which the score and the tape show instead; and its song.
+	const [arranged, setArranged] = createSignal(null)
+	const previewSong = createMemo(() => {
+		const t = arranged()
+		const s = t && compileText(t, only())
+		return s && !s.errors.length ? s : null
+	})
 	// The bars on the roll the caret is in.
 	const marks = createMemo(() => marksFor(song(), caret()))
 	const songs = createMemo(() => names().map((n) => ({ name: n, song: songOf(n), made: made().includes(n) })))
@@ -345,6 +353,22 @@ export const jb = createRoot(() => {
 	function stopSample() {
 		if (sampling) end(sampling, context, 0.02)
 		sampling = null
+	}
+
+	// Plays the join at `seam` seconds into the song as score `t` has it: its
+	// last beat before running into its first beat after. Not over the song.
+	function taste(t, seam) {
+		if (playing) return
+		const s = compileText(t)
+		if (s.errors.length) return
+		const beat = 60 / (s.tempo ?? 120)
+		const [a, b] = [seam - beat, seam + beat]
+		const off = untrack(mutedSet)
+		const all = [...s.intro.events.map((e) => [e, e.t]), ...s.loop.events.map((e) => [e, e.t + s.intro.dur])]
+		const events = all
+			.filter(([e, t]) => t >= a && t < b && !off.has(s.voices[e.v].name))
+			.map(([e, t]) => ({ ...e, t: t - a, d: Math.min(e.d, b - t) }))
+		sample(s.voices, events, s.reverb)
 	}
 
 	// Plays loop brick `id` once, in the song's key and tempo.
@@ -745,6 +769,10 @@ export const jb = createRoot(() => {
 		remove,
 		repeat,
 		addSection,
+		preview: arranged,
+		setPreview: setArranged,
+		previewSong,
+		taste,
 		shown,
 		colors,
 		activeVoice,

@@ -649,3 +649,48 @@ describe('bricks come mixed', () => {
 		expect(brickInto(addBrick(empty, brick('kick')).text, brick('organ'), 'A').text).toContain('pump=0.3')
 	})
 })
+
+import { dragStates, layout, nearest, unchanged, writeOrder } from '../src/ui/arrange.js'
+
+describe('dragging a section', () => {
+	const KONVOI = readFileSync(new URL('konvoi.song', dir), 'utf8')
+	const all = sectionsOf(KONVOI, compile(KONVOI)).all
+	const words = (st) => st.list.filter((s) => !s.gone).map((s) => s.word)
+	const order = (t) => t.match(/^(play|loop)\b.*$/gm)
+
+	test('lists every gap to move or copy to, and taking it out', () => {
+		const states = dragStates(all, 2)
+		expect(states.filter((st) => !st.copy && !st.away)).toHaveLength(all.length + 1)
+		expect(states.filter((st) => st.copy)).toHaveLength(all.length + 1)
+		expect(words(states.find((st) => st.away))).toEqual(['intro', 'A', 'A', 'A+5'])
+		expect(states.filter((st) => unchanged(st, all)).every((st) => !st.copy)).toBe(true)
+		const moved = states.find((st) => !st.copy && st.to === 5)
+		expect(order(writeOrder(KONVOI, moved.list))).toEqual(['play intro', 'loop A A A+5 A2'])
+	})
+
+	test('by its edge, each count from 1 to 16', () => {
+		const states = dragStates(all, 1, true)
+		expect(states.map((st) => st.times)).toEqual(Array.from({ length: 16 }, (_, k) => k + 1))
+		expect(order(writeOrder(KONVOI, states[2].list))).toEqual(['play intro', 'loop A*3 A2 A A+5'])
+		expect(states[1].list[1].dur).toBeCloseTo(all[1].dur * 2)
+	})
+
+	test('the last section left to loop has nowhere to go but along', () => {
+		const one = 'tempo 120\npattern A\nkick | x... |\nloop A'
+		const states = dragStates(sectionsOf(one, compile(one)).all, 0)
+		expect(states.some((st) => st.away)).toBe(false)
+	})
+
+	test('picks the state whose spot is nearest the pointer', () => {
+		const states = dragStates(all, 0).filter((st) => !st.copy && !st.away)
+		const at = (st) => {
+			const k = st.list.findIndex((s) => s.moved)
+			const s = layout(st.list)[k]
+			return { x: s.left + s.width / 2, y: 0 }
+		}
+		expect(nearest(states, at, { x: 0.99, y: 0 }).to).toBe(all.length)
+		expect(unchanged(nearest(states, at, { x: 0, y: 0 }), all)).toBe(true)
+		const spread = layout(all)
+		expect(spread.at(-1).left + spread.at(-1).width).toBeCloseTo(1)
+	})
+})

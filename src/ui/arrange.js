@@ -150,3 +150,58 @@ export function repeatSection(text, i, times) {
 	list[i] = { ...s, times, word: s.name + trans + (times > 1 ? `*${times}` : '') }
 	return writeOrder(text, list)
 }
+
+// Where each section of `list` sits on a strip as wide as the whole song:
+// `left` and `width` as fractions of it.
+export function layout(list) {
+	const T = list.reduce((n, s) => n + s.dur, 0) || 1
+	let t = 0
+	return list.map((s) => {
+		const out = { ...s, left: t / T, width: s.dur / T }
+		t += s.dur
+		return out
+	})
+}
+
+// Every arrangement a drag of section `from` in `list` (from sectionsOf) can
+// lead to, the held section marked `moved`: by its edge, { times, list }
+// for each count from 1 to 16; else { to, copy, list } for each gap it can
+// be moved or copied to, and { away, list } taken out, unless it's the last
+// one left to loop.
+export function dragStates(list, from, edge) {
+	const s = list[from]
+	if (edge) {
+		const trans = s.trans ? (s.trans > 0 ? '+' : '') + s.trans : ''
+		return Array.from({ length: 16 }, (_, k) => {
+			const times = k + 1
+			const word = s.name + trans + (times > 1 ? `*${times}` : '')
+			const held = { ...s, times, word, dur: (s.dur / s.times) * times, moved: true }
+			return { times, list: list.map((x, i) => (i === from ? held : x)) }
+		})
+	}
+	const out = []
+	for (const copy of [false, true])
+		for (let to = 0; to <= list.length; to++) {
+			const next = reorder(list, from, to, copy)
+			if (next) out.push({ to, copy, list: copy ? next.map((x) => (x.moved ? { ...x, copy } : x)) : next })
+		}
+	if (list.some((x, i) => i !== from && x.line === 'loop'))
+		out.push({ away: true, list: list.map((x, i) => (i === from ? { ...x, gone: true } : x)) })
+	return out
+}
+
+// The state of `states` whose point, by `where(state)`, is nearest `pointer`.
+export function nearest(states, where, pointer) {
+	let best = null
+	let far = Infinity
+	for (const s of states) {
+		const p = where(s)
+		const d = Math.hypot(p.x - pointer.x, p.y - pointer.y)
+		if (d < far) [best, far] = [s, d]
+	}
+	return best
+}
+
+// Whether arrangement `state` (from dragStates) plays as `list` already does.
+export const unchanged = (state, list) =>
+	!state.away && state.list.length === list.length && state.list.every((s, i) => s.word === list[i].word && s.line === list[i].line)
