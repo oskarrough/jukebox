@@ -1,7 +1,7 @@
 # Settings for arbe-inkast-to-issues and arbe-autobot.
 repo = "oskarrough/jukebox"
 inbox = { inkast = "psmy9pmw", key = "~/.config/inkast/jukebox.env", label = "player-feedback" }
-bb = { project = "proj_cd6wmkac89", machine = "hetzner" }
+bb = { project = "proj_cd6wmkac89", machine = ["office-linux", "home-wsl", "hetzner"] }
 orchestrator = "pi openai-codex/gpt-6.1-sol low"
 fix = "claude-code claude-opus-5-5 medium"
 verify = "claude-code claude-opus-5-5 medium"
