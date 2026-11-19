@@ -8,11 +8,11 @@
 import { createEffect, createMemo, createSignal, onSettled, untrack } from 'solid-js'
 import { Annotation, Compartment, EditorState, Transaction } from '@codemirror/state'
 import { EditorView, closeHoverTooltips, hoverTooltip, keymap, drawSelection } from '@codemirror/view'
-import { defaultKeymap, history, historyKeymap, isolateHistory } from '@codemirror/commands'
+import { history, isolateHistory } from '@codemirror/commands'
+import { editorKeymap } from './shortcuts.js'
 import {
 	acceptCompletion,
 	autocompletion,
-	completionKeymap,
 	completionStatus,
 	currentCompletions,
 	insertCompletionText,
@@ -40,8 +40,6 @@ const revealed = Annotation.define()
 // A section's drag showing its arrangement, not an edit.
 const previewed = Annotation.define()
 const lineOf = (state) => state.doc.lineAt(state.selection.main.head).number
-// The commands the page has on ⌘, which the score leaves alone.
-const PAGE_KEYS = new Set(['Mod-Enter', 'Mod-l', 'Mod-k', 'Mod-j', 'Mod-s'])
 
 export function Editor() {
 	let host
@@ -138,14 +136,6 @@ export function Editor() {
 		if (!r) return false
 		write(r.start, r.end, r.to, Math.min(Math.max(pos, r.start), r.start + r.to.length))
 		if (r.voice) jb.audition(text(), r.voice, r.to)
-		return true
-	}
-
-	// ⌘D rolls the die on the voice of the line the caret is on.
-	function rollHere(v) {
-		const at = caretAt(v.state.doc.toString(), v.state.selection.main.head)
-		if (!at.voice || at.voice === 'chords' || !at.pattern) return false
-		jb.rollVoice(at.pattern, at.voice)
 		return true
 	}
 
@@ -475,16 +465,11 @@ export function Editor() {
 				keymap.of([
 					{ key: 'Tab', run: tab },
 					{ key: 'Ctrl-Space', run: ask },
-					{ key: 'Mod-d', run: rollHere, preventDefault: true },
 					{ key: 'Alt-ArrowUp', run: nudging(1, false), shift: nudging(1, true) },
 					{ key: 'Alt-ArrowDown', run: nudging(-1, false), shift: nudging(-1, true) },
 				]),
 				autocompletion({ override: [source], selectOnOpen: false, icons: false, defaultKeymap: false, interactionDelay: 0 }),
-				keymap.of(
-					[...completionKeymap.filter((b) => b.key !== 'Ctrl-Space'), ...historyKeymap, ...defaultKeymap].filter(
-						(b) => !PAGE_KEYS.has(b.key),
-					),
-				),
+				keymap.of(editorKeymap),
 				look.of(looks()),
 				lint,
 				listen,

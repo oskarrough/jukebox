@@ -57,7 +57,7 @@ export function TopBar() {
 				<button
 					type="button"
 					aria-pressed={String(jb.looping())}
-					title={jb.looping() ? 'Play the whole song again (⌘L)' : 'Loop the pattern you’re writing (⌘L)'}
+					title={jb.looping() ? 'Play the whole song again' : 'Loop the pattern you’re writing'}
 					onClick={jb.toggleLoop}
 				>
 					<LoopIcon />
@@ -69,7 +69,7 @@ export function TopBar() {
 					aria-pressed={String(jb.piano())}
 					aria-controls="piano"
 					aria-expanded={String(jb.piano())}
-					title={jb.piano() ? 'Hide the piano (⌘K)' : 'Play and write notes on the piano (⌘K)'}
+					title={jb.piano() ? 'Hide the piano' : 'Play and write notes on the piano'}
 					onClick={jb.togglePiano}
 				>
 					<PianoIcon />
@@ -79,7 +79,7 @@ export function TopBar() {
 				<button
 					type="button"
 					aria-pressed={String(jb.padOpen())}
-					title={jb.padOpen() ? 'Hide the chord pad (⌘J)' : 'Tap chords into the pattern you’re in (⌘J)'}
+					title={jb.padOpen() ? 'Hide the chord pad' : 'Tap chords into the pattern you’re in'}
 					onClick={jb.togglePad}
 				>
 					<ChordIcon />
@@ -107,7 +107,7 @@ export function TopBar() {
 					<button
 						class={{ unsaved: jb.unsaved(jb.name()) }}
 						type="button"
-						title={jb.canSave ? 'Save to music/ (⌘S)' : 'Download as a .song file (⌘S)'}
+						title={jb.canSave ? 'Save to music/' : 'Download as a .song file'}
 						onClick={jb.save}
 					>
 						<DownloadIcon />

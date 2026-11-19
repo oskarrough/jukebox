@@ -54,7 +54,7 @@ class Die extends WidgetType {
 		const el = document.createElement('span')
 		el.className = 'k die'
 		el.innerHTML = `<button type="button" tabindex="-1"><svg viewBox="0 0 20 20"><rect x="3.5" y="3.5" width="13" height="13" rx="3" /><circle cx="7.3" cy="7.3" r="1.1" fill="currentColor" stroke="none" /><circle cx="10" cy="10" r="1.1" fill="currentColor" stroke="none" /><circle cx="12.7" cy="12.7" r="1.1" fill="currentColor" stroke="none" /></svg></button>`
-		el.firstChild.title = `Roll a new take of ${this.voice} (⌘D)`
+		el.firstChild.title = `Roll a new take of ${this.voice}`
 		el.dataset.voice = this.voice
 		return el
 	}
